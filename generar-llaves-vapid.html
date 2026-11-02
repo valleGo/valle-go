@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Generador de llaves de notificaciones</title></head>
+<body style="font-family:sans-serif;max-width:640px;margin:30px auto;padding:0 16px">
+<h1>Llaves para notificaciones</h1>
+<p>Se generan en tu propio navegador y no se envían a ningún lado. Guarda la llave privada en un lugar seguro y <b>nunca la subas a GitHub</b>. Abre este archivo con Chrome o Edge.</p>
+<button id="g" style="padding:10px 16px">Generar llaves</button>
+<h3>Llave pública (va en config.js y en Vercel)</h3>
+<textarea id="pub" rows="3" style="width:100%" readonly></textarea>
+<h3>Llave privada (solo en Vercel)</h3>
+<textarea id="priv" rows="2" style="width:100%" readonly></textarea>
+<script>
+const b64=b=>btoa(String.fromCharCode(...b)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const un=s=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")+"=".repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
+document.getElementById("g").onclick=async()=>{
+  const k=await crypto.subtle.generateKey({name:"ECDSA",namedCurve:"P-256"},true,["sign"]);
+  const j=await crypto.subtle.exportKey("jwk",k.privateKey);
+  document.getElementById("pub").value=b64([4,...un(j.x),...un(j.y)]);
+  document.getElementById("priv").value=j.d;
+};
+</script></body></html>
