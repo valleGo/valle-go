@@ -150,7 +150,7 @@ function adsHTML(){
 function iniAds(){
   clearInterval(adT); const p=$("pista");
   if(!p||p.children.length<2||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-  adT=setInterval(()=>{const i=(Math.round(p.scrollLeft/p.clientWidth)+1)%p.children.length;p.scrollTo({left:i*p.clientWidth,behavior:"smooth"})},4000);
+  adT=setInterval(()=>{const i=(Math.round(p.scrollLeft/p.clientWidth)+1)%p.children.length;p.scrollTo({left:i*p.clientWidth,behavior:"smooth"})},5000);
 }
 
 // ---- Roles ----
