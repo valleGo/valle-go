@@ -1,40 +1,591 @@
-// Service worker de Valle GO: abre sin internet, siempre intenta traer la versión nueva y recibe notificaciones.
-const CACHE = "valle-go-v5";
-const ARCHIVOS = ["./", "./index.html", "./config.js", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-180.png"];
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Valle GO</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FAF7F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1A1D15" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<link rel="icon" type="image/png" href="favicon-64.png"><link rel="apple-touch-icon" href="icon-180.png">
+<style>
+/* ===== Valle GO · estilo moderno y simple · Montserrat + paleta ===== */
+:root{
+  --fondo:#FAF7F0;--tarjeta:#FFFFFF;--texto:#2B2D22;--suave:#6F6A5A;--borde:#E9E3D3;--crema:#EFF2E4;
+  --verde:#5D774A;--on-verde:#FFFFFF;      /* oliva: color principal */
+  --acento:#F6C335;--on-acento:#2B2D22;    /* amarillo */
+  --coral:#E77154;--naranja:#EC9243;--salvia:#A5B574;--cielo:#8DCEE8;--arena:#A48857;
+  --sombra:0 1px 2px rgba(43,45,34,.06),0 6px 20px rgba(43,45,34,.06);
+  --radio:16px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --fondo:#1A1D15;--tarjeta:#24281D;--texto:#F3F0E6;--suave:#A9A590;--borde:#343A29;--crema:#2D3323;
+  --verde:#A5B574;--on-verde:#1A1D15;--sombra:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+}}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-weight:500;line-height:1.45;background:var(--fondo);color:var(--texto);padding-bottom:84px}
+button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:3px solid var(--cielo);outline-offset:2px}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--fondo) 88%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--texto);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--borde)}
+header a{color:var(--verde);text-decoration:none;font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
+.logo{display:flex;align-items:center;gap:10px}.logo img{width:40px;height:40px;flex:none;display:block}
+.hb{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.hb button{background:var(--tarjeta);color:var(--texto);border:1px solid var(--borde);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.85rem}
+.hb #bCarrito{background:var(--acento);color:var(--on-acento);border-color:var(--acento);font-weight:700}
+.hb #bPanel{background:var(--verde);color:var(--on-verde);border-color:var(--verde)}
+main{max-width:920px;margin:auto;padding:18px 16px}
+h2{margin:8px 0 14px;font-weight:700;letter-spacing:-.02em;font-size:1.35rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.card{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sombra)}
+.foto{height:140px;background:var(--crema) center/cover;display:grid;place-items:center;font-size:3.2rem}
+.card .in{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.card .in b{font-weight:700}
+.foto-w{position:relative}
+.logo-c{position:absolute;left:14px;bottom:-26px;width:60px;height:60px;border-radius:50%;object-fit:cover;background:#fff;border:3px solid var(--tarjeta);box-shadow:var(--sombra)}
+.logo-c.g{width:76px;height:76px;bottom:-34px;left:16px}
+.in.cl{padding-top:34px}.in.cl.g{padding-top:44px}
+.suave{color:var(--suave);font-size:.85rem;font-weight:500}.precio{color:var(--verde);font-weight:700}
+.btn{background:var(--verde);color:var(--on-verde);border:0;border-radius:999px;padding:10px 16px;text-decoration:none;text-align:center;font-weight:600;font-size:.9rem;display:inline-block;transition:transform .12s,opacity .12s}
+.btn:hover{opacity:.92}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.55;cursor:default}
+.btn.sec{background:transparent;color:var(--verde);border:1.5px solid var(--verde)}
+.perfil{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden;margin-bottom:16px;box-shadow:var(--sombra)}
+.perfil .foto{height:180px}.perfil .in{padding:16px;display:grid;gap:6px}
+.cats{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}.cats::-webkit-scrollbar{display:none}
+.cats button{border:1px solid var(--borde);background:var(--tarjeta);color:var(--texto);border-radius:999px;padding:8px 16px;white-space:nowrap;font-weight:600;font-size:.85rem}
+.cats button.on{background:var(--verde);color:var(--on-verde);border-color:var(--verde)}
+.item{display:flex;gap:12px;background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);padding:12px;margin-bottom:12px;box-shadow:var(--sombra)}
+.item .foto{width:92px;height:92px;border-radius:12px;font-size:2.3rem;flex:none}
+.item .in{flex:1;display:grid;gap:4px;align-content:start}
+.panel{position:fixed;inset:0;background:rgba(26,29,21,.5);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);display:none;z-index:10}.panel.on{display:block}
+.caja{position:absolute;right:0;top:0;bottom:0;width:min(440px,100%);background:var(--fondo);padding:18px;display:grid;gap:12px;align-content:start;overflow:auto;box-shadow:-8px 0 30px rgba(0,0,0,.15)}
+.linea{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--borde);padding:9px 0;gap:8px}
+.q button{width:30px;height:30px;border-radius:50%;border:1px solid var(--borde);background:var(--tarjeta);color:var(--texto);font-weight:700}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta);color:var(--texto);font-weight:500}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--verde);outline-offset:0;border-color:var(--verde)}
+label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
+.fila{display:flex;justify-content:space-between}.tot{font-weight:800;font-size:1.1rem}
+.x{justify-self:end;background:none;border:0;font-size:1.6rem;color:var(--texto);line-height:1}
+.aviso{background:color-mix(in srgb,var(--cielo) 24%,var(--tarjeta));border:1px solid color-mix(in srgb,var(--cielo) 55%,transparent);border-radius:12px;padding:12px;font-size:.85rem;font-weight:500}
+.estado{display:inline-block;background:color-mix(in srgb,var(--salvia) 30%,var(--tarjeta));color:var(--texto);border-radius:999px;padding:3px 12px;font-size:.78rem;font-weight:600}
+#inst{display:none;position:fixed;bottom:14px;left:14px;right:14px;background:var(--acento);color:var(--on-acento);border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:4;align-items:center;gap:8px;font-size:.9rem;box-shadow:var(--sombra)}
+#inst span{flex:1}#inst button{border:0;border-radius:999px;padding:8px 14px;background:#2B2D22;color:#fff;font-weight:600}#inst #instX{background:none;color:var(--on-acento);font-size:1.3rem;padding:2px 8px}
+.pista{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:20px;margin-bottom:18px;scrollbar-width:none;box-shadow:var(--sombra)}.pista::-webkit-scrollbar{display:none}
+.sl{flex:0 0 100%;scroll-snap-align:start;aspect-ratio:16/7;background:var(--crema) center/cover;display:grid;place-items:center;font-size:1.3rem;font-weight:700;text-align:center;padding:10px;color:var(--texto);text-decoration:none}
+#toast{display:none;position:fixed;top:68px;left:14px;right:14px;max-width:560px;margin:auto;background:var(--verde);color:var(--on-verde);border-radius:var(--radio);padding:14px;font-weight:700;z-index:20;text-align:center;box-shadow:var(--sombra)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.dias{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:6px}.dia{display:inline-flex;align-items:center;gap:4px;font-weight:500}
+.avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;background:var(--arena);display:block}
+.avatar.ini{display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800;color:var(--verde)}
+.hav{width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px}
+</style>
+</head>
+<body>
+<header>
+  <a href="#/" class="logo"><img src="logo.png" alt="" width="40" height="40"><span>Valle GO</span></a>
+  <div class="hb"><button id="bPanel" style="display:none">Panel</button><button id="bCuenta"></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div>
+</header>
+<main id="vista"></main>
+<div class="panel" id="pCarrito"><div class="caja" id="cCarrito"></div></div>
+<div id="toast"></div><div id="inst"><span id="instT"></span><button id="instB">Instalar</button><button id="instX" aria-label="Cerrar">×</button></div>
 
-self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARCHIVOS)));
-  self.skipWaiting();
-});
-self.addEventListener("activate", e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))));
-  self.clients.claim();
-});
-self.addEventListener("fetch", e => {
-  if (e.request.method !== "GET") return;
-  const mismo = new URL(e.request.url).origin === location.origin;
-  e.respondWith(
-    fetch(e.request).then(r => {
-      if (mismo && r.ok) { const copia = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copia)); }
-      return r;
-    }).catch(() => caches.match(e.request).then(r => r || caches.match("./index.html")))
-  );
-});
+<script>
+// ============ CONFIGURACIÓN (edita aquí tus comerciantes) ============
+// foto: pon la dirección de una imagen (https://...) o una ruta local como "fotos/tacos.jpg". Si queda vacía se muestra el emoji.
+let COMERCIANTES = [
+ { id:"tacos", nombre:"Tacos Doña Lupe", giro:"Taquería", emoji:"🌮", foto:"", horario:"1:00 pm - 10:00 pm",
+   desc:"Tacos al pastor y de guisado hechos al momento, receta de la familia.", whatsapp:"5213300000001",
+   envio:30, minimo:80, linkPago:"", // linkPago: enlace de cobro de Mercado Pago (ver instrucciones)
+   menu:[
+    {id:"t1",cat:"Tacos",nombre:"Taco al pastor",desc:"Con piña y cilantro",precio:22,emoji:"🌮",foto:""},
+    {id:"t2",cat:"Tacos",nombre:"Taco de bistec",desc:"Con cebolla asada",precio:25,emoji:"🥩",foto:""},
+    {id:"t3",cat:"Antojitos",nombre:"Gringa",desc:"Tortilla de harina, queso y pastor",precio:55,emoji:"🧀",foto:""},
+    {id:"t4",cat:"Bebidas",nombre:"Agua de horchata 1L",desc:"Hecha en casa",precio:40,emoji:"🥛",foto:""}]},
+ { id:"panaderia", nombre:"Panadería La Espiga", giro:"Panadería", emoji:"🥐", foto:"", horario:"7:00 am - 8:00 pm",
+   desc:"Pan dulce y de sal recién horneado todos los días.", whatsapp:"5213300000002",
+   envio:25, minimo:60, linkPago:"",
+   menu:[
+    {id:"p1",cat:"Pan dulce",nombre:"Concha",desc:"Vainilla o chocolate",precio:12,emoji:"🥯",foto:""},
+    {id:"p2",cat:"Pan dulce",nombre:"Caja de 12 piezas",desc:"Surtido del día",precio:130,emoji:"🥐",foto:""},
+    {id:"p3",cat:"Pasteles",nombre:"Pastel tres leches",desc:"Rebanada",precio:48,emoji:"🍰",foto:""}]}
+];
+const MONEDA="MXN";
+// ---- BASE DE DATOS (Supabase). Si los dos campos quedan vacíos, la app funciona en modo demo ----
+let db=null;
+try{ if(SUPABASE_URL&&window.supabase) db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
+// =====================================================================
 
-// Notificaciones de pedidos nuevos
-self.addEventListener("push", e => {
-  let d = {};
-  try { d = e.data.json(); } catch (x) {}
-  e.waitUntil(self.registration.showNotification(d.titulo || "Valle GO", {
-    body: d.cuerpo || "", icon: "icon-192.png", badge: "icon-192.png",
-    tag: d.tag, data: { url: d.url || "./index.html#/panel" }
-  }));
+const $=i=>document.getElementById(i);
+const $$=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+const $s=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const din=n=>n.toLocaleString("es-MX",{style:"currency",currency:MONEDA});
+const foto=o=>o.foto?`style="background-image:url('${o.foto}')"`:"";
+const em=o=>o.foto?"":o.emoji;
+function diasTxt(x){const a=(x||"").split(",").filter(Boolean).map(d=>DIAS.indexOf(d)).filter(i=>i>=0).sort((m,n)=>m-n);
+  if(!a.length)return"";if(a.length===7)return"Todos los días";const g=[];let i=0;
+  while(i<a.length){let j=i;while(j+1<a.length&&a[j+1]===a[j]+1)j++;g.push(j-i>=2?DIAS[a[i]]+" a "+DIAS[a[j]]:a.slice(i,j+1).map(k=>DIAS[k]).join(", "));i=j+1}
+  return g.join(", ")}
+let sesion=$$("sesion",null), carrito=$$("carrito",{tienda:null,items:{}}), cat="Todo";
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let ANUNCIOS=[{titulo:"Anuncia tu negocio en Valle GO",imagen_url:"",enlace:""},{titulo:"Pide fácil, recibe rápido",imagen_url:"",enlace:""}];
+let adT,esAdmin=false,misCom=[];
+const ESTADOS=["Enviado al comercio","Preparando","En camino","Entregado","Cancelado"];
+
+// ---- Publicidad: máximo 5 imágenes deslizándose ----
+function adsHTML(){
+  const L=ANUNCIOS.slice(0,5); if(!L.length)return "";
+  return `<div class="pista" id="pista">`+L.map(a=>{
+    const st=a.imagen_url?`style="background-image:url('${esc(a.imagen_url)}')" role="img" aria-label="${esc(a.titulo)}"`:"";
+    const dentro=a.imagen_url?"":esc(a.titulo);
+    return /^(https?:|#)/.test(a.enlace||"")?`<a class="sl" href="${esc(a.enlace)}" ${/^https?:/.test(a.enlace)?'target="_blank" rel="noopener"':""} ${st}>${dentro}</a>`:`<div class="sl" ${st}>${dentro}</div>`;
+  }).join("")+`</div>`;
+}
+function iniAds(){
+  clearInterval(adT); const p=$("pista");
+  if(!p||p.children.length<2||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  adT=setInterval(()=>{const i=(Math.round(p.scrollLeft/p.clientWidth)+1)%p.children.length;p.scrollTo({left:i*p.clientWidth,behavior:"smooth"})},4000);
+}
+
+// ---- Roles ----
+async function cargarRol(){
+  esAdmin=false;misCom=[];
+  if(!db||!sesion||!sesion.id){pintaHeader();return}
+  const a=await db.from("admins").select("user_id").eq("user_id",sesion.id); esAdmin=!!(a.data&&a.data.length);
+  const c=await db.from("comercios").select("id,nombre").eq("dueno_id",sesion.id); misCom=c.data||[];
+  pintaHeader();escucharPedidos();
+}
+
+// ---- Subir foto comprimida (WebP, máx. 1000 px) ----
+async function subirFoto(archivo,carpeta,max=1000){
+  const img=await createImageBitmap(archivo), esc2=Math.min(1,max/Math.max(img.width,img.height));
+  const c=document.createElement("canvas"); c.width=Math.round(img.width*esc2); c.height=Math.round(img.height*esc2);
+  c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+  const blob=await new Promise(r=>c.toBlob(r,"image/webp",0.75));
+  const ruta=`${carpeta}/${Date.now()}-${Math.random().toString(36).slice(2,7)}.webp`;
+  const {error}=await db.storage.from("fotos").upload(ruta,blob,{cacheControl:"31536000",contentType:"image/webp"});
+  if(error)throw error;
+  return db.storage.from("fotos").getPublicUrl(ruta).data.publicUrl;
+}
+
+// ---- Tarjeta de pedido (la usan el comerciante y el administrador) ----
+const ped2html=(p,admin)=>`<div class="item"><div class="in"><b>${esc(p.comercios?p.comercios.nombre:"")}</b> <span class="suave">${new Date(p.creado).toLocaleString("es-MX")}</span>
+ <span>${(p.lineas||[]).map(esc).join("<br>")}</span><span class="tot">${din(Number(p.total))}</span>
+ <span class="suave">${esc(p.cliente_nombre)} · ${esc(p.cliente_tel)}<br>${p.entrega==="domicilio"?"A domicilio: "+esc(p.direccion):"Recoge en tienda"} · ${NPAGO[p.pago]||p.pago} · <b>${esc(p.estado_pago||"Pendiente")}</b>${p.notas?"<br>Notas: "+esc(p.notas):""}</span>
+ ${admin?`<select data-pag="${p.id}">${["Pendiente","Pagado","Fallido","Expirado"].map(e=>`<option ${e===(p.estado_pago||"Pendiente")?"selected":""}>${e}</option>`).join("")}</select> <select data-est="${p.id}">${ESTADOS.map(e=>`<option ${e===p.estado?"selected":""}>${e}</option>`).join("")}</select>`:`<span class="estado">${esc(p.estado)}</span>`}</div></div>`;
+
+// ---- Panel del comerciante: SOLO consulta ----
+async function vistaPanel(){
+  if(!sesion||!db){location.hash="#/cuenta";return}
+  $("vista").innerHTML="<p>Cargando...</p>"; await cargarRol();
+  if(!misCom.length&&esAdmin){location.hash="#/admin";return}
+  if(!misCom.length){$("vista").innerHTML=`<h2>Panel de comerciante</h2><p>Esta cuenta aún no está vinculada a un comercio. Pide al administrador de Valle GO que la vincule con tu correo.</p>`;return}
+  const ids=misCom.map(c=>c.id);
+  const [pe,me]=await Promise.all([
+    db.from("pedidos").select("*, comercios(nombre)").in("comercio_id",ids).order("creado",{ascending:false}).limit(100),
+    db.from("menu_items").select("*").in("comercio_id",ids).order("categoria")]);
+  const P=pe.data||[], M=me.data||[];
+  const ventas=P.filter(p=>p.estado!=="Cancelado").reduce((a,p)=>a+Number(p.total),0);
+  $("vista").innerHTML=`<h2>Mi panel</h2><p class="suave">Solo consulta. Para cambiar fotos, precios o platillos, contacta al administrador de Valle GO.</p>
+   ${notifBtnHTML()}<div class="aviso">${P.length} pedidos recientes · ${din(ventas)} en ventas</div><h2>Historial de pedidos</h2>`+
+   (P.map(p=>ped2html(p,false)).join("")||"<p>Aún no hay pedidos.</p>")+`<h2>Mi menú completo</h2>`+
+   (M.map(m=>`<div class="item"><div class="foto" ${foto({foto:m.foto_url})}>${m.foto_url?"":esc(m.emoji||"🍽️")}</div><div class="in"><b>${esc(m.nombre)}</b>
+    <span class="suave">${esc(m.categoria)} · ${m.disponible?"Disponible":"No disponible"}</span><span class="precio">${din(Number(m.precio))}</span></div></div>`).join("")||"<p>Sin platillos.</p>");
+}
+
+// ---- Panel de administración: SOLO el administrador edita ----
+let adm={tab:"anuncios",com:null};
+const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
+const CF_COM=[{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"link_pago",l:"Enlace de cobro Mercado Pago"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
+const DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+const formHTML=(cs,v)=>cs.map(c=>c.t==="dias"?`<label>${c.l}<span class="dias">${DIAS.map(d=>`<span class="dia"><input type="checkbox" data-dia="${d}" ${(v[c.k]||"").split(",").includes(d)?"checked":""} style="width:auto"> ${d}</span>`).join("")}</span><input type="hidden" data-f="${c.k}"></label>`
+  :c.t==="file"?`<label>${c.l}<input type="file" accept="image/*" data-f="${c.k}">${v[c.k]?`<img src="${esc(v[c.k])}" alt="" style="height:60px;border-radius:8px">`:""}</label>`
+  :c.t==="check"?`<label><span><input type="checkbox" data-f="${c.k}" ${v[c.k]?"checked":""} style="width:auto"> ${c.l}</span></label>`
+  :`<label>${c.l}<input data-f="${c.k}" type="${c.t||"text"}" value="${esc(v[c.k]??"")}"></label>`).join("");
+async function leerForm(cs,raiz,v){const o={};
+  for(const c of cs){const el=raiz.querySelector(`[data-f="${c.k}"]`);
+    if(c.t==="dias")o[c.k]=[...el.closest("label").querySelectorAll("[data-dia]")].filter(x=>x.checked).map(x=>x.dataset.dia).join(",");
+    else if(c.t==="file")o[c.k]=el.files[0]?await subirFoto(el.files[0],c.carpeta):(v[c.k]||null);
+    else if(c.t==="check")o[c.k]=el.checked; else if(c.t==="number")o[c.k]=Number(el.value||0); else o[c.k]=el.value.trim();}
+  return o;}
+async function vistaAdmin(){
+  if(!sesion||!db){location.hash="#/cuenta";return}
+  if(!esAdmin)await cargarRol();
+  if(!esAdmin){$("vista").innerHTML="<h2>Acceso restringido</h2><p>Esta sección es solo para el administrador.</p>";return}
+  const T={anuncios:"Publicidad",comercios:"Comercios",menu:"Menús",pedidos:"Pedidos",perfil:"Mi perfil"};
+  $("vista").innerHTML=`<h2>Administración</h2>${notifBtnHTML()}<div class="cats">${Object.keys(T).map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
+  await admTab();
+}
+async function admTab(){
+  const box=$("adm"), t=adm.tab; box.innerHTML="<p>Cargando...</p>";
+  if(t==="anuncios"){
+    const L=(await db.from("anuncios").select("*").order("orden")).data||[];
+    box.innerHTML=`<p class="suave">Máximo 5 imágenes; se deslizan en el inicio. Tamaño ideal: 1200 x 500 px.</p>`+
+     L.map(a=>`<div class="item"><div class="foto" style="background-image:url('${esc(a.imagen_url)}');width:120px"></div><div class="in"><b>${esc(a.titulo||"(sin título)")}</b><span class="suave">${a.activo?"Visible":"Oculto"}</span>
+      <span><button class="btn sec" data-aon="${a.id}|${a.activo}">${a.activo?"Ocultar":"Mostrar"}</button> <button class="btn sec" data-adel="${a.id}">Borrar</button></span></div></div>`).join("")+
+     (L.length<5?`<div class="aviso" style="display:grid;gap:8px"><b>Nuevo anuncio</b>${formHTML(CF_AD,{})}<button class="btn" id="gAd">Agregar anuncio</button></div>`:`<p class="suave">Ya hay 5 anuncios. Borra uno para agregar otro.</p>`);
+    if($("gAd"))$("gAd").onclick=async()=>{$("gAd").disabled=true;
+      try{const o=await leerForm(CF_AD,box,{});if(!o.imagen_url)throw new Error("Elige una imagen.");o.orden=L.length;
+        const x=await db.from("anuncios").insert(o);if(x.error)throw x.error;cargarDatos();admTab();}
+      catch(err){alert(err.message);$("gAd").disabled=false}};
+  }
+  if(t==="comercios"){
+    const L=(await db.from("comercios").select("*").order("nombre")).data||[];
+    box.innerHTML=`<button class="btn" data-cnew>+ Nuevo comercio</button><br><br>`+L.map(c=>`<div class="item"><div class="foto" ${foto({foto:c.foto_url})}>${c.foto_url?"":esc(c.emoji||"🏪")}</div><div class="in"><b>${c.logo_url?`<img src="${esc(c.logo_url)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px">`:""}${esc(c.nombre)}</b>
+      <span class="suave">${esc(c.giro)} · ${c.activo?"Visible":"Oculto"}</span><button class="btn sec" data-ced="${c.id}">Editar</button></div></div>`).join("");
+  }
+  if(t==="menu"){
+    const cs=(await db.from("comercios").select("id,nombre").order("nombre")).data||[];
+    if(!cs.length){box.innerHTML="<p>Primero crea un comercio.</p>";return}
+    if(!cs.some(c=>c.id===adm.com))adm.com=cs[0].id;
+    const L=(await db.from("menu_items").select("*").eq("comercio_id",adm.com).order("categoria")).data||[];
+    box.innerHTML=`<label>Comercio<select id="selCom">${cs.map(c=>`<option value="${c.id}" ${c.id===adm.com?"selected":""}>${esc(c.nombre)}</option>`).join("")}</select></label><br><button class="btn" data-mnew>+ Nuevo platillo</button><br><br>`+
+     L.map(m=>`<div class="item"><div class="foto" ${foto({foto:m.foto_url})}>${m.foto_url?"":esc(m.emoji||"🍽️")}</div><div class="in"><b>${esc(m.nombre)}</b><span class="suave">${esc(m.categoria)} · ${din(Number(m.precio))} · ${m.disponible?"Disponible":"Oculto"}</span>
+      <span><button class="btn sec" data-med="${m.id}">Editar</button> <button class="btn sec" data-mdel="${m.id}">Borrar</button></span></div></div>`).join("");
+    $("selCom").onchange=e=>{adm.com=e.target.value;admTab()};
+  }
+  if(t==="perfil"){
+    box.innerHTML=`<p class="suave">${esc(sesion.email)} · Administrador</p>`+perfilHTML();
+    bindPerfil(admTab);
+  }
+  if(t==="pedidos"){
+    const L=(await db.from("pedidos").select("*, comercios(nombre)").order("creado",{ascending:false}).limit(100)).data||[];
+    box.innerHTML=L.map(p=>ped2html(p,true)).join("")||"<p>Aún no hay pedidos.</p>";
+  }
+}
+function formAdm(tabla,cs,v){
+  const extra=tabla==="comercios"?`<label>Correo del comerciante, para su panel de consulta (vacío = no cambiar)<input id="dueno" type="email"></label>`:"";
+  $("adm").innerHTML=`<div class="aviso"><b>${v.id?"Editar":"Nuevo"}</b></div>`+formHTML(cs,v)+extra+`<br><button class="btn" id="gF">Guardar</button> <button class="btn sec" id="cF">Cancelar</button>`;
+  $("cF").onclick=admTab;
+  $("gF").onclick=async()=>{$("gF").disabled=true;$("gF").textContent="Guardando...";
+    try{const o=await leerForm(cs,$("adm"),v); if(!o.nombre)throw new Error("Falta el nombre.");
+      if(tabla==="menu_items")o.comercio_id=v.comercio_id;
+      if(tabla==="comercios"&&$("dueno").value.trim()){const r=await db.rpc("usuario_por_correo",{correo:$("dueno").value.trim()});if(!r.data)throw new Error("Ese correo no está registrado en la app.");o.dueno_id=r.data}
+      const r=await (v.id?db.from(tabla).update(o).eq("id",v.id):db.from(tabla).insert(o)); if(r.error)throw r.error;
+      cargarDatos(); admTab();
+    }catch(err){alert(err.message);$("gF").disabled=false;$("gF").textContent="Guardar"}};
+}
+document.addEventListener("click",async e=>{
+  const d=e.target.dataset; if(!esAdmin)return;
+  if(d.tab){adm.tab=d.tab;return vistaAdmin()}
+  if(d.aon){const[i,a]=d.aon.split("|");await db.from("anuncios").update({activo:a!=="true"}).eq("id",i);cargarDatos();return admTab()}
+  if(d.adel&&confirm("¿Borrar este anuncio?")){await db.from("anuncios").delete().eq("id",d.adel);cargarDatos();return admTab()}
+  if(d.cnew!==undefined)return formAdm("comercios",CF_COM,{activo:true,envio:30,minimo:0,ofrece_domicilio:true,dias_abiertos:DIAS.join(",")});
+  if(d.ced){const r=await db.from("comercios").select("*").eq("id",d.ced).single();return formAdm("comercios",CF_COM,r.data)}
+  if(d.mnew!==undefined)return formAdm("menu_items",CF_MENU,{disponible:true,comercio_id:adm.com});
+  if(d.med){const r=await db.from("menu_items").select("*").eq("id",d.med).single();return formAdm("menu_items",CF_MENU,r.data)}
+  if(d.mdel&&confirm("¿Borrar este platillo?")){await db.from("menu_items").delete().eq("id",d.mdel);cargarDatos();return admTab()}
 });
-self.addEventListener("notificationclick", e => {
-  e.notification.close();
-  const url = e.notification.data.url;
-  e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then(l => {
-    for (const c of l) { if ("focus" in c) { c.navigate(url); return c.focus(); } }
-    return clients.openWindow(url);
-  }));
-});
+document.addEventListener("change",async e=>{const g=e.target.dataset.pag;
+  if(g&&esAdmin){const r=await db.from("pedidos").update({estado_pago:e.target.value}).eq("id",g);if(r.error)alert(r.error.message)}});
+document.addEventListener("change",async e=>{const i=e.target.dataset.est;
+  if(i&&esAdmin){const r=await db.from("pedidos").update({estado:e.target.value}).eq("id",i);if(r.error)alert(r.error.message)}});
+
+const NPAGO={efectivo:"Efectivo",transferencia:"Transferencia",tarjeta:"Tarjeta en línea",en_linea:"Pago en línea"};
+let canal=null;
+const b64u=x=>{const r=atob((x+"=".repeat((4-x.length%4)%4)).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))};
+const notifOK=()=>"Notification"in window&&"serviceWorker"in navigator&&"PushManager"in window;
+const notifBtnHTML=()=>notifOK()
+  ?(Notification.permission==="granted"
+    ?`<p class="aviso">🔔 Avisos de pedidos activados en este dispositivo. <button class="btn sec" id="bNotif">Reactivar</button></p>`
+    :`<p class="aviso">Recibe un aviso en tu celular cuando entre un pedido nuevo. <button class="btn" id="bNotif">Activar notificaciones</button></p>`)
+  :`<p class="aviso">Para recibir avisos en iPhone, instala primero la app (Compartir → Agregar a inicio), ábrela desde su ícono y vuelve aquí.</p>`;
+function aviso(t){const x=$("toast");x.textContent=t;x.style.display="block";setTimeout(()=>x.style.display="none",6000)}
+function sonido(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.2;o.start();o.stop(a.currentTime+.4)}catch(e){}}
+async function activarNotif(){
+  try{
+    if(!VAPID_PUBLIC)throw new Error("Falta VAPID_PUBLIC en config.js");
+    if(await Notification.requestPermission()!=="granted")return alert("No se activaron. Permite las notificaciones en los ajustes del navegador.");
+    const reg=await navigator.serviceWorker.ready;
+    const llave=b64u(VAPID_PUBLIC);
+    let sub=await reg.pushManager.getSubscription();
+    if(sub){ // si la suscripción se hizo con otra llave (por ejemplo, una anterior), se descarta y se crea una nueva
+      const k=sub.options&&sub.options.applicationServerKey?new Uint8Array(sub.options.applicationServerKey):null;
+      if(!k||k.length!==llave.length||k.some((v,i)=>v!==llave[i])){
+        try{await db.from("push_suscripciones").delete().eq("endpoint",sub.endpoint)}catch(e){}
+        await sub.unsubscribe();sub=null}}
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:llave});
+    const j=sub.toJSON();
+    const r=await db.from("push_suscripciones").upsert({user_id:sesion.id,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth},{onConflict:"endpoint"});
+    if(r.error)throw r.error;
+    alert("Listo: recibirás avisos de pedidos nuevos en este dispositivo.");ruta();
+  }catch(err){alert("No se pudo activar: "+err.message)}
+}
+function escucharPedidos(){
+  if(!db||canal||!(esAdmin||misCom.length))return;
+  canal=db.channel("pedidos-nuevos").on("postgres_changes",{event:"INSERT",schema:"public",table:"pedidos"},p=>{
+    sonido();aviso("🛎️ Nuevo pedido por "+din(Number(p.new.total)));
+    if(location.hash==="#/panel"||location.hash==="#/admin")ruta();
+  }).subscribe();
+}
+async function cerrarAvisos(){
+  if(!db)return;
+  try{if(canal){db.removeChannel(canal);canal=null}
+    if(notifOK()){const reg=await navigator.serviceWorker.ready,x=await reg.pushManager.getSubscription();
+      if(x){await db.from("push_suscripciones").delete().eq("endpoint",x.endpoint);await x.unsubscribe()}}
+  }catch(e){}
+}
+document.addEventListener("click",e=>{if(e.target.id==="bNotif")activarNotif()});
+
+// ---- Pago en línea (Stripe): abre la página segura de pago ----
+async function pagarPedido(id){
+  try{
+    const {data}=await db.auth.getSession();
+    const r=await fetch("/api/crear-pago",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+data.session.access_token},body:JSON.stringify({pedido_id:id})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.url)throw new Error(j.error||"No se pudo iniciar el pago.");
+    location.href=j.url; return true;
+  }catch(err){alert(err.message);return false}
+}
+document.addEventListener("click",e=>{const g=e.target.dataset.pagar;if(g)pagarPedido(g)});
+
+const sesionDe=u=>{const m=u.user_metadata||{};return {id:u.id,nombre:m.nombre||m.full_name||m.name||(u.email||"").split("@")[0],email:u.email,tel:m.tel||"",dir:m.dir||"",foto:m.foto||m.avatar_url||m.picture||""}};
+const avatarHTML=u=>u.foto?`<img class="avatar" src="${esc(u.foto)}" alt="Foto de perfil" referrerpolicy="no-referrer">`:`<div class="avatar ini">${esc((u.nombre||"?").trim().charAt(0).toUpperCase())}</div>`;
+let _gAct=null;
+async function googleActivo(){if(!db)return false;if(_gAct!==null)return _gAct;
+  try{const r=await fetch(SUPABASE_URL+"/auth/v1/settings",{headers:{apikey:SUPABASE_KEY}});const j=await r.json();_gAct=!!(j.external&&j.external.google)}catch(e){_gAct=false}return _gAct}
+async function entrarGoogle(){const r=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+"/"}});if(r.error)alert("No se pudo iniciar con Google: "+r.error.message)}
+async function cargarDatos(){
+  if(!db)return;
+  const an=await db.from("anuncios").select("*").eq("activo",true).order("orden").limit(5); if(an.data)ANUNCIOS=an.data;
+  const {data,error}=await db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre");
+  if(error||!data||!data.length)return;
+  COMERCIANTES=data.map(c=>({id:c.id,nombre:c.nombre,giro:c.giro||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
+    desc:c.descripcion||"",whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),linkPago:c.link_pago||"",clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
+    menu:(c.menu_items||[]).filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
+      desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}))}));
+}
+const tienda=id=>COMERCIANTES.find(t=>t.id===id);
+const logoHTML=(t,g)=>t.logo?`<img class="logo-c${g?" g":""}" src="${esc(t.logo)}" alt="Logotipo de ${esc(t.nombre)}" loading="lazy">`:"";
+
+// ---------- Vistas ----------
+function ruta(){
+  clearInterval(adT);
+  const [,r,id]=location.hash.split("/");
+  if(r==="t")return vistaTienda(id);
+  if(r==="cuenta")return vistaCuenta();
+  if(r==="panel")return vistaPanel();
+  if(r==="admin")return vistaAdmin();
+  if(r==="pedidos")return vistaPedidos();
+  vistaInicio();
+}
+function vistaInicio(){
+  $("vista").innerHTML=adsHTML()+`<h2>Comercios cerca de ti</h2><div class="grid">`+COMERCIANTES.map(t=>`
+   <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
+   <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
+   ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
+   ${t.dias?`<span class="suave">📅 ${diasTxt(t.dias)}</span>`:""}
+   <span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
+   <a class="btn" href="#/t/${t.id}">Ver menú</a></div></div>`).join("")+`</div>`;iniAds();
+}
+function vistaTienda(id){
+  const t=tienda(id); if(!t)return vistaInicio();
+  const cats=["Todo",...new Set(t.menu.map(m=>m.cat))];
+  $("vista").innerHTML=`<div class="perfil"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t,1)}</div><div class="in${t.logo?" cl g":""}">
+   <h2>${esc(t.nombre)}</h2><span>${t.desc}</span>
+   <span class="suave">${t.giro} · Abierto ${t.horario}</span>
+   ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
+   ${t.dias?`<span class="suave">📅 Días: ${diasTxt(t.dias)}</span>`:""}
+   <span class="suave">${t.domicilio?"Envío "+din(t.envio)+" · ":"Solo recoger en tienda · "}Pedido mínimo ${din(t.minimo)}</span></div></div>
+   <div class="cats">${cats.map(c=>`<button class="${c===cat?"on":""}" data-cat="${c}">${c}</button>`).join("")}</div>`+
+   t.menu.filter(m=>cat==="Todo"||m.cat===cat).map(m=>`
+   <div class="item"><div class="foto" ${foto(m)}>${em(m)}</div><div class="in">
+   <b>${m.nombre}</b><span class="suave">${m.desc}</span><span class="precio">${din(m.precio)}</span>
+   <button class="btn" data-add="${t.id}|${m.id}">Agregar al carrito</button></div></div>`).join("");
+}
+function perfilHTML(){return `<div class="aviso" style="display:grid;gap:10px;max-width:360px;justify-items:start"><b>Mi perfil</b>${avatarHTML(sesion)}
+    <label style="width:100%">Foto de perfil<input type="file" accept="image/*" id="fPerfil"></label><span id="fMsg" class="suave"></span>
+    <label style="width:100%">Nombre<input id="dn" autocomplete="name" value="${esc(sesion.nombre)}"></label>
+    <label style="width:100%">Teléfono<input id="dt" type="tel" autocomplete="tel" value="${esc(sesion.tel)}"></label>
+    <label style="width:100%">Dirección de entrega<textarea id="dd" rows="2" autocomplete="street-address">${esc(sesion.dir)}</textarea></label>
+    <button class="btn" id="gDatos">Guardar mis datos</button></div>`}
+function bindPerfil(volver){
+if($("fPerfil"))$("fPerfil").onchange=async e=>{const f=e.target.files[0];if(!f)return;
+    $("fMsg").textContent="Subiendo foto...";
+    try{const url=await subirFoto(f,"perfiles/"+sesion.id,400);
+      const r=await db.auth.updateUser({data:{foto:url}});if(r.error)throw r.error;
+      sesion.foto=url;$s("sesion",sesion);pintaHeader();(volver||vistaCuenta)();}
+    catch(err){$("fMsg").textContent="";alert("No se pudo subir la foto: "+err.message)}};
+  if($("gDatos"))$("gDatos").onclick=async()=>{
+    const d={nombre:$("dn").value.trim(),tel:$("dt").value.trim(),dir:$("dd").value.trim()};
+    if(!d.nombre)return alert("Escribe tu nombre.");
+    const bt=$("gDatos");bt.disabled=true;bt.textContent="Guardando...";
+    const r=await db.auth.updateUser({data:d});
+    bt.disabled=false;bt.textContent="Guardar mis datos";
+    if(r.error)return alert("No se pudo guardar: "+r.error.message);
+    Object.assign(sesion,d);$s("sesion",sesion);pintaHeader();alert("Datos guardados.");(volver||vistaCuenta)();};
+}
+function vistaCuenta(){
+  if(sesion){ $("vista").innerHTML=`<h2>Hola, ${esc(sesion.nombre)}</h2><p class="suave">${esc(sesion.email)}</p><br>
+   <a class="btn" href="#/pedidos">Ver mis pedidos</a> <button class="btn sec" id="salir">Cerrar sesión</button>`+
+   (db&&sesion.id?"<br><br>"+perfilHTML():"")+
+   (db&&sesion.id?`<br><br><div class="aviso" style="display:grid;gap:8px;max-width:360px"><b>Cambiar contraseña</b>
+    <label>Nueva contraseña (mínimo 8)<input id="np1" type="password" autocomplete="new-password"></label>
+    <label>Repite la nueva contraseña<input id="np2" type="password" autocomplete="new-password"></label>
+    <button class="btn" id="cambiarPass">Guardar contraseña</button></div>`:"");
+   bindPerfil(vistaCuenta);
+   if($("cambiarPass"))$("cambiarPass").onclick=async()=>{
+     const a=$("np1").value,b=$("np2").value;
+     if(a.length<8)return alert("La contraseña debe tener al menos 8 caracteres.");
+     if(a!==b)return alert("Las dos contraseñas no coinciden.");
+     const bt=$("cambiarPass");bt.disabled=true;bt.textContent="Guardando...";
+     const r=await db.auth.updateUser({password:a});
+     bt.disabled=false;bt.textContent="Guardar contraseña";
+     if(r.error)return alert("No se pudo cambiar: "+r.error.message);
+     $("np1").value="";$("np2").value="";alert("Contraseña actualizada. Úsala la próxima vez que entres.");
+   };
+   $("salir").onclick=async()=>{await cerrarAvisos();if(db)db.auth.signOut();esAdmin=false;misCom=[];sesion=null;$s("sesion",null);pintaHeader();location.hash="#/"};return;}
+  $("vista").innerHTML=`<h2>Crear cuenta de comprador</h2><div id="gBox"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+   <div class="caja" style="position:static;width:auto;padding:0">
+    <label>Nombre<input id="rn" autocomplete="name"></label><label>Correo<input id="re" type="email" autocomplete="email"></label>
+    <label>Teléfono<input id="rt" type="tel" autocomplete="tel"></label><label>Dirección de entrega<textarea id="rd" rows="2" autocomplete="street-address"></textarea></label>
+    <label>Contraseña (mínimo 6)<input id="rp" type="password" autocomplete="new-password"></label>
+    <button class="btn" id="reg">Crear cuenta</button></div>
+   <div class="caja" style="position:static;width:auto;padding:0">
+    <h2>Ya tengo cuenta</h2><label>Correo<input id="le" type="email" autocomplete="username"></label>
+    <label>Contraseña<input id="lp" type="password" autocomplete="current-password"></label><button class="btn sec" id="ent">Entrar</button></div></div>`;
+  $("reg").onclick=registrar; $("ent").onclick=entrar;
+  googleActivo().then(ok=>{const b=$("gBox");if(!ok||!b)return;
+    b.innerHTML=`<button class="btn" id="gBtn" style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#1f1f1f;border:1px solid #dadce0"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continuar con Google</button><p class="suave">o usa tu correo:</p>`;
+    $("gBtn").onclick=entrarGoogle});
+}
+async function vistaPedidos(){
+  if(!sesion){location.hash="#/cuenta";return}
+  let ps=$$("pedidos",[]).filter(p=>p.email===sesion.email).reverse();
+  if(db&&sesion.id){const r=await db.from("pedidos").select("*, comercios(nombre)").eq("comprador_id",sesion.id).order("creado",{ascending:false});
+    if(r.data)ps=r.data.map(p=>({id:p.id,tienda:p.comercios?p.comercios.nombre:"",fecha:new Date(p.creado).toLocaleString("es-MX"),lineas:(p.lineas||[]).map(esc),total:Number(p.total),entrega:p.entrega,pago:p.pago,estado_pago:p.estado_pago,estado:p.estado}));}
+  $("vista").innerHTML=`<h2>Mis pedidos</h2>`+(ps.length?ps.map(p=>`<div class="item"><div class="in">
+   <b>${p.tienda}</b><span class="suave">${p.fecha}</span>
+   <span>${p.lineas.join("<br>")}</span><span class="tot">${din(p.total)}</span>
+   <span class="suave">${p.entrega==="domicilio"?"A domicilio":"Recoger en tienda"} · ${NPAGO[p.pago]||p.pago}${p.estado_pago?" · "+p.estado_pago:""}</span>
+   <span class="estado">${p.estado}</span>${p.id&&p.pago==="en_linea"&&p.estado_pago==="Pendiente"?`<button class="btn" data-pagar="${p.id}">Pagar ahora</button>`:""}</div></div>`).join(""):"<p>Aún no tienes pedidos.</p>");
+}
+
+// ---------- Cuentas (demo local) ----------
+async function hash(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+async function registrar(){
+  const u={nombre:$("rn").value.trim(),email:$("re").value.trim().toLowerCase(),tel:$("rt").value.trim(),dir:$("rd").value.trim()};
+  const p=$("rp").value;
+  if(!u.nombre||!u.email.includes("@")||p.length<6)return alert("Completa nombre, correo válido y una contraseña de 6 o más caracteres.");
+  if(db){const {data,error}=await db.auth.signUp({email:u.email,password:p,options:{data:{nombre:u.nombre,tel:u.tel,dir:u.dir}}});
+    if(error)return alert(error.message);
+    if(!data.session)return alert("Revisa tu correo para confirmar tu cuenta y luego inicia sesión.");
+    return abrirSesion(sesionDe(data.user));}
+  const us=$$("usuarios",[]);
+  if(us.some(x=>x.email===u.email))return alert("Ese correo ya está registrado. Inicia sesión.");
+  u.pass=await hash(p); us.push(u); $s("usuarios",us); abrirSesion(u);
+}
+async function entrar(){
+  const e=$("le").value.trim().toLowerCase();
+  if(db){const {data,error}=await db.auth.signInWithPassword({email:e,password:$("lp").value});
+    if(error)return alert("Correo o contraseña incorrectos.");return abrirSesion(sesionDe(data.user));}
+  const h=await hash($("lp").value);
+  const u=$$("usuarios",[]).find(x=>x.email===e&&x.pass===h);
+  if(!u)return alert("Correo o contraseña incorrectos.");
+  abrirSesion(u);
+}
+function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol();location.hash="#/"}
+function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";$("bPanel").style.display=(esAdmin||misCom.length)?"":"none"}
+
+// ---------- Carrito ----------
+function agregar(tid,mid){
+  if(carrito.tienda&&carrito.tienda!==tid){
+    if(!confirm("Tu carrito tiene productos de otro comercio. ¿Vaciarlo y empezar uno nuevo?"))return;
+    carrito={tienda:null,items:{}};
+  }
+  carrito.tienda=tid; carrito.items[mid]=(carrito.items[mid]||0)+1; gcar(); pintaCarrito();
+}
+function cambia(mid,d){carrito.items[mid]+=d;if(carrito.items[mid]<=0)delete carrito.items[mid];
+  if(!Object.keys(carrito.items).length)carrito.tienda=null;gcar();pintaCarrito()}
+function gcar(){$s("carrito",carrito)}
+function subtotal(t){return Object.entries(carrito.items).reduce((s,[id,c])=>s+t.menu.find(m=>m.id===id).precio*c,0)}
+function pintaCarrito(){
+  const t=tienda(carrito.tienda), ids=Object.keys(carrito.items);
+  $("n").textContent=Object.values(carrito.items).reduce((a,b)=>a+b,0);
+  if(!t){$("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>Tu carrito</h2><p>Está vacío. Elige un comercio y agrega platillos.</p>`;return}
+  const sub=subtotal(t), dom=t.domicilio&&($("entrega")?$("entrega").value==="domicilio":true), env=dom?t.envio:0;
+  const keep=["entrega","pago","dir","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});
+  $("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>${t.nombre}</h2>`+
+   ids.map(id=>{const m=t.menu.find(x=>x.id===id);return `<div class="linea"><span>${m.emoji} ${m.nombre}<br><small>${din(m.precio)}</small></span>
+    <span class="q"><button data-menos="${id}">−</button> ${carrito.items[id]} <button data-mas="${id}">+</button></span></div>`}).join("")+
+   `<label>¿Cómo lo quieres?<select id="entrega">${t.domicilio?`<option value="domicilio">Entrega a domicilio</option>`:""}<option value="recoger">Recoger en tienda</option></select></label>
+    <label>Dirección de entrega<input id="dir" placeholder="Calle, número, colonia"></label>
+    <label>¿Cómo pagas?<select id="pago"><option value="efectivo">Efectivo al recibir</option><option value="transferencia">Transferencia bancaria</option>${db?`<option value="en_linea">Pago en línea (Mercado Pago)</option>`:""}</select></label>
+    <label>Notas<textarea id="notas" rows="2" placeholder="Sin cebolla, tocar el timbre..."></textarea></label>
+    <div class="fila"><span>Subtotal</span><span>${din(sub)}</span></div>
+    <div class="fila"><span>Envío</span><span id="env">${din(env)}</span></div>
+    <div class="fila tot"><span>Total</span><span id="tot">${din(sub+env)}</span></div>
+    <button class="btn" id="pedir">Confirmar pedido</button>`;
+  $("entrega").value=keep.entrega||(t.domicilio?"domicilio":"recoger");$("pago").value=keep.pago||"efectivo";
+  $("dir").value=keep.dir||(sesion?sesion.dir:"");$("notas").value=keep.notas;
+  $("entrega").onchange=()=>{$("dir").style.display=$("entrega").value==="domicilio"?"":"none";
+    const e=$("entrega").value==="domicilio"?t.envio:0;$("env").textContent=din(e);$("tot").textContent=din(sub+e)};
+  $("entrega").onchange(); $("pedir").onclick=()=>confirmar(t,sub);
+}
+async function confirmar(t,sub){
+  if(!sesion){$("pCarrito").classList.remove("on");alert("Crea tu cuenta o inicia sesión para pedir.");location.hash="#/cuenta";return}
+  if(sub<t.minimo)return alert("El pedido mínimo de este comercio es "+din(t.minimo)+".");
+  const dom=$("entrega").value==="domicilio", dir=$("dir").value.trim();
+  if(dom&&!dir)return alert("Escribe la dirección de entrega.");
+  const env=dom?t.envio:0, total=sub+env, pago=$("pago").value;
+  const lineas=Object.entries(carrito.items).map(([id,c])=>{const m=t.menu.find(x=>x.id===id);return `${c} x ${m.nombre} - ${din(m.precio*c)}`});
+  const items=Object.entries(carrito.items).map(([id,cant])=>({id,cant}));
+  // Nota: la base de datos recalcula total y detalle con los precios reales del menú.
+  const fila={comprador_id:sesion.id,cliente_nombre:sesion.nombre,cliente_tel:sesion.tel,comercio_id:t.id,lineas,items,total,entrega:dom?"domicilio":"recoger",pago,direccion:dir,notas:$("notas").value,estado:"Enviado al comercio"};
+
+  if(pago==="en_linea"){   // Pago con Stripe: se guarda el pedido y se abre la página de pago
+    if(!db||!sesion.id)return alert("El pago en línea requiere la base de datos conectada.");
+    const b=$("pedir");b.disabled=true;b.textContent="Preparando pago...";
+    try{
+      const r=await db.from("pedidos").insert(fila).select("id").single(); if(r.error)throw r.error;
+      carrito={tienda:null,items:{}};gcar();
+      if(!(await pagarPedido(r.data.id))){$("pCarrito").classList.remove("on");location.hash="#/pedidos"}
+    }catch(err){alert("No se pudo iniciar el pago: "+err.message);b.disabled=false;b.textContent="Confirmar pedido"}
+    return;
+  }
+
+  const ped={email:sesion.email,tienda:t.nombre,fecha:new Date().toLocaleString("es-MX"),lineas,total,entrega:fila.entrega,pago,estado:"Enviado al comercio",estado_pago:"Pendiente"};
+  const ps=$$("pedidos",[]);ps.push(ped);$s("pedidos",ps);
+  if(db&&sesion.id)db.from("pedidos").insert(fila).then(r=>{if(r.error)console.error(r.error)});
+  const msg=`Nuevo pedido de ${sesion.nombre} (${sesion.tel||"sin tel."})\n\n${lineas.map(l=>"• "+l).join("\n")}\n\nEnvío: ${din(env)}\nTotal: ${din(total)}\n${dom?"Entrega en: "+dir:"Pasa a recoger"}\nPago: ${NPAGO[pago]}\nNotas: ${$("notas").value}`;
+  if(pago==="transferencia")alert(t.clabe?`Transfiere ${din(total)} a:\n${t.titular||t.nombre}\n${t.banco||""}\nCLABE: ${t.clabe}\n\nDespués envía tu comprobante por WhatsApp.`:"El comercio te enviará sus datos bancarios por WhatsApp.");
+  window.open(`https://wa.me/${t.whatsapp}?text=${encodeURIComponent(msg)}`,"_blank");
+  carrito={tienda:null,items:{}};gcar();pintaCarrito();$("pCarrito").classList.remove("on");location.hash="#/pedidos";
+}
+
+// ---------- Eventos ----------
+document.addEventListener("click",e=>{const d=e.target.dataset;
+  if(d.cat){cat=d.cat;ruta()} if(d.add){const[a,b]=d.add.split("|");agregar(a,b)}
+  if(d.mas)cambia(d.mas,1); if(d.menos)cambia(d.menos,-1); if(d.cerrar!==undefined)$("pCarrito").classList.remove("on")});
+$("bCarrito").onclick=()=>{pintaCarrito();$("pCarrito").classList.add("on")};
+$("bCuenta").onclick=()=>location.hash="#/cuenta";
+$("bPanel").onclick=()=>location.hash=esAdmin?"#/admin":"#/panel";
+window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+// ---- Instalar como app (acceso directo en la pantalla de inicio) ----
+let ev;
+const yaApp=matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+const esIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+const cerrado=()=>Date.now()-Number($$("instX",0))<6048e5; // no molestar por 7 días
+function banner(txt,btn){ if(yaApp||cerrado())return; $("instT").textContent=txt; $("instB").style.display=btn?"":"none"; $("inst").style.display="flex"; }
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;banner("Instala Valle GO en tu pantalla de inicio",true)});
+window.addEventListener("appinstalled",()=>{$("inst").style.display="none"});
+if(esIOS&&!yaApp)setTimeout(()=>banner("Para instalar: toca Compartir y luego «Agregar a inicio».",false),2500);
+$("instB").onclick=async()=>{if(!ev)return;ev.prompt();await ev.userChoice;$("inst").style.display="none"};
+$("instX").onclick=()=>{$s("instX",Date.now());$("inst").style.display="none"};
+if(/pago=ok/.test(location.search)){aviso("Gracias. Estamos confirmando tu pago; se actualizará en unos segundos.");history.replaceState(null,"",location.pathname+location.hash)}
+pintaHeader();pintaCarrito();ruta();
+(async()=>{
+  if(db){const {data}=await db.auth.getSession(); if(data.session){sesion=sesionDe(data.session.user);$s("sesion",sesion);await cargarRol();}
+    if(/access_token=|refresh_token=/.test(location.hash))history.replaceState(null,"",location.pathname+location.search);}
+  await cargarDatos();
+  if(carrito.tienda&&!tienda(carrito.tienda)){carrito={tienda:null,items:{}};gcar();}
+  pintaHeader();pintaCarrito();ruta();
+})();
+</script>
+</body>
+</html>
