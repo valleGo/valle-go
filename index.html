@@ -45,6 +45,10 @@ h2{margin:8px 0 14px;font-weight:700;letter-spacing:-.02em;font-size:1.35rem}
 .foto{height:140px;background:var(--crema) center/cover;display:grid;place-items:center;font-size:3.2rem}
 .card .in{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
 .card .in b{font-weight:700}
+.foto-w{position:relative}
+.logo-c{position:absolute;left:14px;bottom:-26px;width:60px;height:60px;border-radius:50%;object-fit:cover;background:#fff;border:3px solid var(--tarjeta);box-shadow:var(--sombra)}
+.logo-c.g{width:76px;height:76px;bottom:-34px;left:16px}
+.in.cl{padding-top:34px}.in.cl.g{padding-top:44px}
 .suave{color:var(--suave);font-size:.85rem;font-weight:500}.precio{color:var(--verde);font-weight:700}
 .btn{background:var(--verde);color:var(--on-verde);border:0;border-radius:999px;padding:10px 16px;text-decoration:none;text-align:center;font-weight:600;font-size:.9rem;display:inline-block;transition:transform .12s,opacity .12s}
 .btn:hover{opacity:.92}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.55;cursor:default}
@@ -187,7 +191,7 @@ async function vistaPanel(){
 // ---- Panel de administración: SOLO el administrador edita ----
 let adm={tab:"anuncios",com:null};
 const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
-const CF_COM=[{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario"},{k:"emoji",l:"Emoji"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"link_pago",l:"Enlace de cobro Mercado Pago"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_COM=[{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario"},{k:"emoji",l:"Emoji"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"link_pago",l:"Enlace de cobro Mercado Pago"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
 const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"emoji",l:"Emoji"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
 const formHTML=(cs,v)=>cs.map(c=>c.t==="file"?`<label>${c.l}<input type="file" accept="image/*" data-f="${c.k}">${v[c.k]?`<img src="${esc(v[c.k])}" alt="" style="height:60px;border-radius:8px">`:""}</label>`
   :c.t==="check"?`<label><span><input type="checkbox" data-f="${c.k}" ${v[c.k]?"checked":""} style="width:auto"> ${c.l}</span></label>`
@@ -220,7 +224,7 @@ async function admTab(){
   }
   if(t==="comercios"){
     const L=(await db.from("comercios").select("*").order("nombre")).data||[];
-    box.innerHTML=`<button class="btn" data-cnew>+ Nuevo comercio</button><br><br>`+L.map(c=>`<div class="item"><div class="foto" ${foto({foto:c.foto_url})}>${c.foto_url?"":esc(c.emoji||"🏪")}</div><div class="in"><b>${esc(c.nombre)}</b>
+    box.innerHTML=`<button class="btn" data-cnew>+ Nuevo comercio</button><br><br>`+L.map(c=>`<div class="item"><div class="foto" ${foto({foto:c.foto_url})}>${c.foto_url?"":esc(c.emoji||"🏪")}</div><div class="in"><b>${c.logo_url?`<img src="${esc(c.logo_url)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px">`:""}${esc(c.nombre)}</b>
       <span class="suave">${esc(c.giro)} · ${c.activo?"Visible":"Oculto"}</span><button class="btn sec" data-ced="${c.id}">Editar</button></div></div>`).join("");
   }
   if(t==="menu"){
@@ -323,12 +327,13 @@ async function cargarDatos(){
   const an=await db.from("anuncios").select("*").eq("activo",true).order("orden").limit(5); if(an.data)ANUNCIOS=an.data;
   const {data,error}=await db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre");
   if(error||!data||!data.length)return;
-  COMERCIANTES=data.map(c=>({id:c.id,nombre:c.nombre,giro:c.giro||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",horario:c.horario||"",
+  COMERCIANTES=data.map(c=>({id:c.id,nombre:c.nombre,giro:c.giro||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",
     desc:c.descripcion||"",whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),linkPago:c.link_pago||"",clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
     menu:(c.menu_items||[]).filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
       desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}))}));
 }
 const tienda=id=>COMERCIANTES.find(t=>t.id===id);
+const logoHTML=(t,g)=>t.logo?`<img class="logo-c${g?" g":""}" src="${esc(t.logo)}" alt="Logotipo de ${esc(t.nombre)}" loading="lazy">`:"";
 
 // ---------- Vistas ----------
 function ruta(){
@@ -343,16 +348,16 @@ function ruta(){
 }
 function vistaInicio(){
   $("vista").innerHTML=adsHTML()+`<h2>Comercios cerca de ti</h2><div class="grid">`+COMERCIANTES.map(t=>`
-   <div class="card"><div class="foto" ${foto(t)}>${em(t)}</div><div class="in">
-   <b>${t.nombre}</b><span class="suave">${t.giro} · ${t.horario}</span>
+   <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
+   <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    <span class="suave">Envío ${din(t.envio)}</span>
    <a class="btn" href="#/t/${t.id}">Ver menú</a></div></div>`).join("")+`</div>`;iniAds();
 }
 function vistaTienda(id){
   const t=tienda(id); if(!t)return vistaInicio();
   const cats=["Todo",...new Set(t.menu.map(m=>m.cat))];
-  $("vista").innerHTML=`<div class="perfil"><div class="foto" ${foto(t)}>${em(t)}</div><div class="in">
-   <h2>${t.nombre}</h2><span>${t.desc}</span>
+  $("vista").innerHTML=`<div class="perfil"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t,1)}</div><div class="in${t.logo?" cl g":""}">
+   <h2>${esc(t.nombre)}</h2><span>${t.desc}</span>
    <span class="suave">${t.giro} · Abierto ${t.horario}</span>
    <span class="suave">Envío ${din(t.envio)} · Pedido mínimo ${din(t.minimo)}</span></div></div>
    <div class="cats">${cats.map(c=>`<button class="${c===cat?"on":""}" data-cat="${c}">${c}</button>`).join("")}</div>`+
