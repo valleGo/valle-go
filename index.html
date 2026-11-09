@@ -79,6 +79,9 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 #toast{display:none;position:fixed;top:68px;left:14px;right:14px;max-width:560px;margin:auto;background:var(--verde);color:var(--on-verde);border-radius:var(--radio);padding:14px;font-weight:700;z-index:20;text-align:center;box-shadow:var(--sombra)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .dias{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:6px}.dia{display:inline-flex;align-items:center;gap:4px;font-weight:500}
+.avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;background:var(--arena);display:block}
+.avatar.ini{display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800;color:var(--verde)}
+.hav{width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px}
 </style>
 </head>
 <body>
@@ -157,8 +160,8 @@ async function cargarRol(){
 }
 
 // ---- Subir foto comprimida (WebP, máx. 1000 px) ----
-async function subirFoto(archivo,carpeta){
-  const img=await createImageBitmap(archivo), esc2=Math.min(1,1000/img.width);
+async function subirFoto(archivo,carpeta,max=1000){
+  const img=await createImageBitmap(archivo), esc2=Math.min(1,max/Math.max(img.width,img.height));
   const c=document.createElement("canvas"); c.width=Math.round(img.width*esc2); c.height=Math.round(img.height*esc2);
   c.getContext("2d").drawImage(img,0,0,c.width,c.height);
   const blob=await new Promise(r=>c.toBlob(r,"image/webp",0.75));
@@ -213,7 +216,7 @@ async function vistaAdmin(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   if(!esAdmin)await cargarRol();
   if(!esAdmin){$("vista").innerHTML="<h2>Acceso restringido</h2><p>Esta sección es solo para el administrador.</p>";return}
-  const T={anuncios:"Publicidad",comercios:"Comercios",menu:"Menús",pedidos:"Pedidos"};
+  const T={anuncios:"Publicidad",comercios:"Comercios",menu:"Menús",pedidos:"Pedidos",perfil:"Mi perfil"};
   $("vista").innerHTML=`<h2>Administración</h2>${notifBtnHTML()}<div class="cats">${Object.keys(T).map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
   await admTab();
 }
@@ -244,6 +247,10 @@ async function admTab(){
      L.map(m=>`<div class="item"><div class="foto" ${foto({foto:m.foto_url})}>${m.foto_url?"":esc(m.emoji||"🍽️")}</div><div class="in"><b>${esc(m.nombre)}</b><span class="suave">${esc(m.categoria)} · ${din(Number(m.precio))} · ${m.disponible?"Disponible":"Oculto"}</span>
       <span><button class="btn sec" data-med="${m.id}">Editar</button> <button class="btn sec" data-mdel="${m.id}">Borrar</button></span></div></div>`).join("");
     $("selCom").onchange=e=>{adm.com=e.target.value;admTab()};
+  }
+  if(t==="perfil"){
+    box.innerHTML=`<p class="suave">${esc(sesion.email)} · Administrador</p>`+perfilHTML();
+    bindPerfil(admTab);
   }
   if(t==="pedidos"){
     const L=(await db.from("pedidos").select("*, comercios(nombre)").order("creado",{ascending:false}).limit(100)).data||[];
@@ -294,7 +301,14 @@ async function activarNotif(){
     if(!VAPID_PUBLIC)throw new Error("Falta VAPID_PUBLIC en config.js");
     if(await Notification.requestPermission()!=="granted")return alert("No se activaron. Permite las notificaciones en los ajustes del navegador.");
     const reg=await navigator.serviceWorker.ready;
-    const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUBLIC)});
+    const llave=b64u(VAPID_PUBLIC);
+    let sub=await reg.pushManager.getSubscription();
+    if(sub){ // si la suscripción se hizo con otra llave (por ejemplo, una anterior), se descarta y se crea una nueva
+      const k=sub.options&&sub.options.applicationServerKey?new Uint8Array(sub.options.applicationServerKey):null;
+      if(!k||k.length!==llave.length||k.some((v,i)=>v!==llave[i])){
+        try{await db.from("push_suscripciones").delete().eq("endpoint",sub.endpoint)}catch(e){}
+        await sub.unsubscribe();sub=null}}
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:llave});
     const j=sub.toJSON();
     const r=await db.from("push_suscripciones").upsert({user_id:sesion.id,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth},{onConflict:"endpoint"});
     if(r.error)throw r.error;
@@ -329,7 +343,12 @@ async function pagarPedido(id){
 }
 document.addEventListener("click",e=>{const g=e.target.dataset.pagar;if(g)pagarPedido(g)});
 
-const sesionDe=u=>({id:u.id,nombre:u.user_metadata.nombre||"",email:u.email,tel:u.user_metadata.tel||"",dir:u.user_metadata.dir||""});
+const sesionDe=u=>{const m=u.user_metadata||{};return {id:u.id,nombre:m.nombre||m.full_name||m.name||(u.email||"").split("@")[0],email:u.email,tel:m.tel||"",dir:m.dir||"",foto:m.foto||m.avatar_url||m.picture||""}};
+const avatarHTML=u=>u.foto?`<img class="avatar" src="${esc(u.foto)}" alt="Foto de perfil" referrerpolicy="no-referrer">`:`<div class="avatar ini">${esc((u.nombre||"?").trim().charAt(0).toUpperCase())}</div>`;
+let _gAct=null;
+async function googleActivo(){if(!db)return false;if(_gAct!==null)return _gAct;
+  try{const r=await fetch(SUPABASE_URL+"/auth/v1/settings",{headers:{apikey:SUPABASE_KEY}});const j=await r.json();_gAct=!!(j.external&&j.external.google)}catch(e){_gAct=false}return _gAct}
+async function entrarGoogle(){const r=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+"/"}});if(r.error)alert("No se pudo iniciar con Google: "+r.error.message)}
 async function cargarDatos(){
   if(!db)return;
   const an=await db.from("anuncios").select("*").eq("activo",true).order("orden").limit(5); if(an.data)ANUNCIOS=an.data;
@@ -378,13 +397,37 @@ function vistaTienda(id){
    <b>${m.nombre}</b><span class="suave">${m.desc}</span><span class="precio">${din(m.precio)}</span>
    <button class="btn" data-add="${t.id}|${m.id}">Agregar al carrito</button></div></div>`).join("");
 }
+function perfilHTML(){return `<div class="aviso" style="display:grid;gap:10px;max-width:360px;justify-items:start"><b>Mi perfil</b>${avatarHTML(sesion)}
+    <label style="width:100%">Foto de perfil<input type="file" accept="image/*" id="fPerfil"></label><span id="fMsg" class="suave"></span>
+    <label style="width:100%">Nombre<input id="dn" autocomplete="name" value="${esc(sesion.nombre)}"></label>
+    <label style="width:100%">Teléfono<input id="dt" type="tel" autocomplete="tel" value="${esc(sesion.tel)}"></label>
+    <label style="width:100%">Dirección de entrega<textarea id="dd" rows="2" autocomplete="street-address">${esc(sesion.dir)}</textarea></label>
+    <button class="btn" id="gDatos">Guardar mis datos</button></div>`}
+function bindPerfil(volver){
+if($("fPerfil"))$("fPerfil").onchange=async e=>{const f=e.target.files[0];if(!f)return;
+    $("fMsg").textContent="Subiendo foto...";
+    try{const url=await subirFoto(f,"perfiles/"+sesion.id,400);
+      const r=await db.auth.updateUser({data:{foto:url}});if(r.error)throw r.error;
+      sesion.foto=url;$s("sesion",sesion);pintaHeader();(volver||vistaCuenta)();}
+    catch(err){$("fMsg").textContent="";alert("No se pudo subir la foto: "+err.message)}};
+  if($("gDatos"))$("gDatos").onclick=async()=>{
+    const d={nombre:$("dn").value.trim(),tel:$("dt").value.trim(),dir:$("dd").value.trim()};
+    if(!d.nombre)return alert("Escribe tu nombre.");
+    const bt=$("gDatos");bt.disabled=true;bt.textContent="Guardando...";
+    const r=await db.auth.updateUser({data:d});
+    bt.disabled=false;bt.textContent="Guardar mis datos";
+    if(r.error)return alert("No se pudo guardar: "+r.error.message);
+    Object.assign(sesion,d);$s("sesion",sesion);pintaHeader();alert("Datos guardados.");(volver||vistaCuenta)();};
+}
 function vistaCuenta(){
   if(sesion){ $("vista").innerHTML=`<h2>Hola, ${esc(sesion.nombre)}</h2><p class="suave">${esc(sesion.email)}</p><br>
    <a class="btn" href="#/pedidos">Ver mis pedidos</a> <button class="btn sec" id="salir">Cerrar sesión</button>`+
+   (db&&sesion.id?"<br><br>"+perfilHTML():"")+
    (db&&sesion.id?`<br><br><div class="aviso" style="display:grid;gap:8px;max-width:360px"><b>Cambiar contraseña</b>
     <label>Nueva contraseña (mínimo 8)<input id="np1" type="password" autocomplete="new-password"></label>
     <label>Repite la nueva contraseña<input id="np2" type="password" autocomplete="new-password"></label>
     <button class="btn" id="cambiarPass">Guardar contraseña</button></div>`:"");
+   bindPerfil(vistaCuenta);
    if($("cambiarPass"))$("cambiarPass").onclick=async()=>{
      const a=$("np1").value,b=$("np2").value;
      if(a.length<8)return alert("La contraseña debe tener al menos 8 caracteres.");
@@ -396,16 +439,19 @@ function vistaCuenta(){
      $("np1").value="";$("np2").value="";alert("Contraseña actualizada. Úsala la próxima vez que entres.");
    };
    $("salir").onclick=async()=>{await cerrarAvisos();if(db)db.auth.signOut();esAdmin=false;misCom=[];sesion=null;$s("sesion",null);pintaHeader();location.hash="#/"};return;}
-  $("vista").innerHTML=`<h2>Crear cuenta de comprador</h2><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+  $("vista").innerHTML=`<h2>Crear cuenta de comprador</h2><div id="gBox"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
    <div class="caja" style="position:static;width:auto;padding:0">
-    <label>Nombre<input id="rn"></label><label>Correo<input id="re" type="email"></label>
-    <label>Teléfono<input id="rt" type="tel"></label><label>Dirección de entrega<textarea id="rd" rows="2"></textarea></label>
-    <label>Contraseña (mínimo 6)<input id="rp" type="password"></label>
+    <label>Nombre<input id="rn" autocomplete="name"></label><label>Correo<input id="re" type="email" autocomplete="email"></label>
+    <label>Teléfono<input id="rt" type="tel" autocomplete="tel"></label><label>Dirección de entrega<textarea id="rd" rows="2" autocomplete="street-address"></textarea></label>
+    <label>Contraseña (mínimo 6)<input id="rp" type="password" autocomplete="new-password"></label>
     <button class="btn" id="reg">Crear cuenta</button></div>
    <div class="caja" style="position:static;width:auto;padding:0">
-    <h2>Ya tengo cuenta</h2><label>Correo<input id="le" type="email"></label>
-    <label>Contraseña<input id="lp" type="password"></label><button class="btn sec" id="ent">Entrar</button></div></div>`;
+    <h2>Ya tengo cuenta</h2><label>Correo<input id="le" type="email" autocomplete="username"></label>
+    <label>Contraseña<input id="lp" type="password" autocomplete="current-password"></label><button class="btn sec" id="ent">Entrar</button></div></div>`;
   $("reg").onclick=registrar; $("ent").onclick=entrar;
+  googleActivo().then(ok=>{const b=$("gBox");if(!ok||!b)return;
+    b.innerHTML=`<button class="btn" id="gBtn" style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#1f1f1f;border:1px solid #dadce0"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continuar con Google</button><p class="suave">o usa tu correo:</p>`;
+    $("gBtn").onclick=entrarGoogle});
 }
 async function vistaPedidos(){
   if(!sesion){location.hash="#/cuenta";return}
@@ -442,8 +488,8 @@ async function entrar(){
   if(!u)return alert("Correo o contraseña incorrectos.");
   abrirSesion(u);
 }
-function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir};$s("sesion",sesion);pintaHeader();cargarRol();location.hash="#/"}
-function pintaHeader(){$("bCuenta").textContent=sesion?sesion.nombre.split(" ")[0]:"Entrar";$("bPanel").style.display=(esAdmin||misCom.length)?"":"none"}
+function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol();location.hash="#/"}
+function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";$("bPanel").style.display=(esAdmin||misCom.length)?"":"none"}
 
 // ---------- Carrito ----------
 function agregar(tid,mid){
@@ -534,7 +580,8 @@ $("instX").onclick=()=>{$s("instX",Date.now());$("inst").style.display="none"};
 if(/pago=ok/.test(location.search)){aviso("Gracias. Estamos confirmando tu pago; se actualizará en unos segundos.");history.replaceState(null,"",location.pathname+location.hash)}
 pintaHeader();pintaCarrito();ruta();
 (async()=>{
-  if(db){const {data}=await db.auth.getSession(); if(data.session){sesion=sesionDe(data.session.user);await cargarRol();}}
+  if(db){const {data}=await db.auth.getSession(); if(data.session){sesion=sesionDe(data.session.user);$s("sesion",sesion);await cargarRol();}
+    if(/access_token=|refresh_token=/.test(location.hash))history.replaceState(null,"",location.pathname+location.search);}
   await cargarDatos();
   if(carrito.tienda&&!tienda(carrito.tienda)){carrito={tienda:null,items:{}};gcar();}
   pintaHeader();pintaCarrito();ruta();
