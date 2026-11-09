@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Valle GO</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#FAF7F0" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1A1D15" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F1F5E4">
+<meta name="color-scheme" content="light">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -15,23 +15,21 @@
 <style>
 /* ===== Valle GO · estilo moderno y simple · Montserrat + paleta ===== */
 :root{
-  --fondo:#FAF7F0;--tarjeta:#FFFFFF;--texto:#2B2D22;--suave:#6F6A5A;--borde:#E9E3D3;--crema:#EFF2E4;
+  color-scheme:light;
+  --fondo:#FCFBF5;--tarjeta:#FFFFFF;--texto:#2B2D22;--suave:#6F6A5A;--borde:#E6E9D2;--crema:#F1F5E4;
   --verde:#5D774A;--on-verde:#FFFFFF;      /* oliva: color principal */
   --acento:#F6C335;--on-acento:#2B2D22;    /* amarillo */
   --coral:#E77154;--naranja:#EC9243;--salvia:#A5B574;--cielo:#8DCEE8;--arena:#A48857;
-  --sombra:0 1px 2px rgba(43,45,34,.06),0 6px 20px rgba(43,45,34,.06);
+  --claro-verde:#EEF3DF;--claro-amarillo:#FFF6D6;--claro-cielo:#E6F4FA;
+  --sombra:0 1px 2px rgba(93,119,74,.08),0 6px 20px rgba(93,119,74,.08);
   --radio:16px;
 }
-@media (prefers-color-scheme:dark){:root{
-  --fondo:#1A1D15;--tarjeta:#24281D;--texto:#F3F0E6;--suave:#A9A590;--borde:#343A29;--crema:#2D3323;
-  --verde:#A5B574;--on-verde:#1A1D15;--sombra:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
-}}
 *{box-sizing:border-box;margin:0}
 html{-webkit-text-size-adjust:100%}
-body{font-family:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-weight:500;line-height:1.45;background:var(--fondo);color:var(--texto);padding-bottom:84px}
+body{font-family:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-weight:500;line-height:1.45;background:linear-gradient(180deg,var(--claro-verde) 0,var(--fondo) 360px) var(--fondo) no-repeat;color:var(--texto);padding-bottom:84px}
 button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}
 :focus-visible{outline:3px solid var(--cielo);outline-offset:2px}
-header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--fondo) 88%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--texto);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--borde)}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--claro-verde) 92%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--texto);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--borde)}
 header a{color:var(--verde);text-decoration:none;font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
 .logo{display:flex;align-items:center;gap:10px}.logo img{width:40px;height:40px;flex:none;display:block}
 .hb{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
@@ -56,13 +54,13 @@ h2{margin:8px 0 14px;font-weight:700;letter-spacing:-.02em;font-size:1.35rem}
 .perfil{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden;margin-bottom:16px;box-shadow:var(--sombra)}
 .perfil .foto{height:180px}.perfil .in{padding:16px;display:grid;gap:6px}
 .cats{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}.cats::-webkit-scrollbar{display:none}
-.cats button{border:1px solid var(--borde);background:var(--tarjeta);color:var(--texto);border-radius:999px;padding:8px 16px;white-space:nowrap;font-weight:600;font-size:.85rem}
+.cats button{border:1px solid var(--borde);background:var(--claro-amarillo);color:var(--texto);border-radius:999px;padding:8px 16px;white-space:nowrap;font-weight:600;font-size:.85rem}
 .cats button.on{background:var(--verde);color:var(--on-verde);border-color:var(--verde)}
 .item{display:flex;gap:12px;background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);padding:12px;margin-bottom:12px;box-shadow:var(--sombra)}
 .item .foto{width:92px;height:92px;border-radius:12px;font-size:2.3rem;flex:none}
 .item .in{flex:1;display:grid;gap:4px;align-content:start}
-.panel{position:fixed;inset:0;background:rgba(26,29,21,.5);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);display:none;z-index:10}.panel.on{display:block}
-.caja{position:absolute;right:0;top:0;bottom:0;width:min(440px,100%);background:var(--fondo);padding:18px;display:grid;gap:12px;align-content:start;overflow:auto;box-shadow:-8px 0 30px rgba(0,0,0,.15)}
+.panel{position:fixed;inset:0;background:rgba(93,119,74,.28);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);display:none;z-index:10}.panel.on{display:block}
+.caja{position:absolute;right:0;top:0;bottom:0;width:min(440px,100%);background:var(--fondo);padding:18px;display:grid;gap:12px;align-content:start;overflow:auto;box-shadow:-8px 0 30px rgba(93,119,74,.18)}
 .linea{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--borde);padding:9px 0;gap:8px}
 .q button{width:30px;height:30px;border-radius:50%;border:1px solid var(--borde);background:var(--tarjeta);color:var(--texto);font-weight:700}
 input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta);color:var(--texto);font-weight:500}
@@ -150,7 +148,7 @@ function adsHTML(){
 function iniAds(){
   clearInterval(adT); const p=$("pista");
   if(!p||p.children.length<2||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-  adT=setInterval(()=>{const i=(Math.round(p.scrollLeft/p.clientWidth)+1)%p.children.length;p.scrollTo({left:i*p.clientWidth,behavior:"smooth"})},5000);
+  adT=setInterval(()=>{const i=(Math.round(p.scrollLeft/p.clientWidth)+1)%p.children.length;p.scrollTo({left:i*p.clientWidth,behavior:"smooth"})},4000);
 }
 
 // ---- Roles ----
@@ -370,7 +368,14 @@ async function pagarPedido(id){
 }
 document.addEventListener("click",e=>{const g=e.target.dataset.pagar;if(g)pagarPedido(g)});
 
-const sesionDe=u=>{const m=u.user_metadata||{};return {id:u.id,nombre:m.nombre||m.full_name||m.name||(u.email||"").split("@")[0],email:u.email,tel:m.tel||"",dir:m.dir||"",foto:m.foto||m.avatar_url||m.picture||""}};
+const sesionDe=u=>{const m=u.user_metadata||{};return {id:u.id,nombre:m.nombre||m.full_name||m.name||(u.email||"").split("@")[0],email:u.email,tel:m.tel||"",dir:m.dir||"",dir_calle:m.dir_calle||"",dir_num:m.dir_num||"",dir_col:m.dir_col||"",foto:m.foto||m.avatar_url||m.picture||""}};
+// Domicilio en partes: calle, número y colonia (cada uno en su propio campo)
+const dirTxt=(c,n,l)=>[(c||"")+(n?" #"+n:""),l?"Col. "+l:""].map(x=>x.trim()).filter(Boolean).join(", ");
+function dirCampos(p,s){const t=s&&(s.dir_calle||s.dir_num||s.dir_col)?s:{dir_calle:(s&&s.dir)||"",dir_num:"",dir_col:""};
+  return `<label>Calle<input id="${p}_c" autocomplete="address-line1" placeholder="Ej. Hidalgo" value="${esc(t.dir_calle||"")}"></label>
+  <label>Número<input id="${p}_n" autocomplete="off" placeholder="Ej. 123" value="${esc(t.dir_num||"")}"></label>
+  <label>Colonia<input id="${p}_l" autocomplete="address-line2" placeholder="Ej. Centro" value="${esc(t.dir_col||"")}"></label>`}
+const leeDir=p=>{const dir_calle=$(p+"_c").value.trim(),dir_num=$(p+"_n").value.trim(),dir_col=$(p+"_l").value.trim();return {dir_calle,dir_num,dir_col,dir:dirTxt(dir_calle,dir_num,dir_col)}};
 const avatarHTML=u=>u.foto?`<img class="avatar" src="${esc(u.foto)}" alt="Foto de perfil" referrerpolicy="no-referrer">`:`<div class="avatar ini">${esc((u.nombre||"?").trim().charAt(0).toUpperCase())}</div>`;
 let _gAct=null;
 async function googleActivo(){if(!db)return false;if(_gAct!==null)return _gAct;
@@ -401,7 +406,7 @@ function ruta(){
   vistaInicio();
 }
 function vistaInicio(){
-  $("vista").innerHTML=adsHTML()+`<h2>Comercios en el Valle</h2><div class="grid">`+COMERCIANTES.map(t=>`
+  $("vista").innerHTML=adsHTML()+`<h2>Comercios cerca de ti</h2><div class="grid">`+COMERCIANTES.map(t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
    <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
@@ -428,7 +433,7 @@ function perfilHTML(){return `<div class="aviso" style="display:grid;gap:10px;ma
     <label style="width:100%">Foto de perfil<input type="file" accept="image/*" id="fPerfil"></label><span id="fMsg" class="suave"></span>
     <label style="width:100%">Nombre<input id="dn" autocomplete="name" value="${esc(sesion.nombre)}"></label>
     <label style="width:100%">Teléfono<input id="dt" type="tel" autocomplete="tel" value="${esc(sesion.tel)}"></label>
-    <label style="width:100%">Dirección de entrega<textarea id="dd" rows="2" autocomplete="street-address">${esc(sesion.dir)}</textarea></label>
+    <b style="width:100%;font-size:.85rem">Dirección de entrega</b>${dirCampos("pf",sesion)}
     <button class="btn" id="gDatos">Guardar mis datos</button></div>`}
 function bindPerfil(volver){
 if($("fPerfil"))$("fPerfil").onchange=async e=>{const f=e.target.files[0];if(!f)return;
@@ -438,7 +443,7 @@ if($("fPerfil"))$("fPerfil").onchange=async e=>{const f=e.target.files[0];if(!f)
       sesion.foto=url;$s("sesion",sesion);pintaHeader();(volver||vistaCuenta)();}
     catch(err){$("fMsg").textContent="";alert("No se pudo subir la foto: "+err.message)}};
   if($("gDatos"))$("gDatos").onclick=async()=>{
-    const d={nombre:$("dn").value.trim(),tel:$("dt").value.trim(),dir:$("dd").value.trim()};
+    const d={nombre:$("dn").value.trim(),tel:$("dt").value.trim(),...leeDir("pf")};
     if(!d.nombre)return alert("Escribe tu nombre.");
     const bt=$("gDatos");bt.disabled=true;bt.textContent="Guardando...";
     const r=await db.auth.updateUser({data:d});
@@ -469,7 +474,7 @@ function vistaCuenta(){
   $("vista").innerHTML=`<h2>Crear cuenta de comprador</h2><div id="gBox"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
    <div class="caja" style="position:static;width:auto;padding:0">
     <label>Nombre<input id="rn" autocomplete="name"></label><label>Correo<input id="re" type="email" autocomplete="email"></label>
-    <label>Teléfono<input id="rt" type="tel" autocomplete="tel"></label><label>Dirección de entrega<textarea id="rd" rows="2" autocomplete="street-address"></textarea></label>
+    <label>Teléfono<input id="rt" type="tel" autocomplete="tel"></label><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("rg",null)}
     <label>Contraseña (mínimo 6)<input id="rp" type="password" autocomplete="new-password"></label>
     <button class="btn" id="reg">Crear cuenta</button></div>
    <div class="caja" style="position:static;width:auto;padding:0">
@@ -495,10 +500,10 @@ async function vistaPedidos(){
 // ---------- Cuentas (demo local) ----------
 async function hash(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
 async function registrar(){
-  const u={nombre:$("rn").value.trim(),email:$("re").value.trim().toLowerCase(),tel:$("rt").value.trim(),dir:$("rd").value.trim()};
+  const u={nombre:$("rn").value.trim(),email:$("re").value.trim().toLowerCase(),tel:$("rt").value.trim(),...leeDir("rg")};
   const p=$("rp").value;
   if(!u.nombre||!u.email.includes("@")||p.length<6)return alert("Completa nombre, correo válido y una contraseña de 6 o más caracteres.");
-  if(db){const {data,error}=await db.auth.signUp({email:u.email,password:p,options:{data:{nombre:u.nombre,tel:u.tel,dir:u.dir}}});
+  if(db){const {data,error}=await db.auth.signUp({email:u.email,password:p,options:{data:{nombre:u.nombre,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle,dir_num:u.dir_num,dir_col:u.dir_col}}});
     if(error)return alert(error.message);
     if(!data.session)return alert("Revisa tu correo para confirmar tu cuenta y luego inicia sesión.");
     return abrirSesion(sesionDe(data.user));}
@@ -515,7 +520,7 @@ async function entrar(){
   if(!u)return alert("Correo o contraseña incorrectos.");
   abrirSesion(u);
 }
-function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol();location.hash="#/"}
+function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle||"",dir_num:u.dir_num||"",dir_col:u.dir_col||"",foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol();location.hash="#/"}
 function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";$("bPanel").style.display=(esAdmin||misCom.length)?"":"none"}
 
 // ---------- Carrito ----------
@@ -535,12 +540,12 @@ function pintaCarrito(){
   $("n").textContent=Object.values(carrito.items).reduce((a,b)=>a+b,0);
   if(!t){$("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>Tu carrito</h2><p>Está vacío. Elige un comercio y agrega platillos.</p>`;return}
   const sub=subtotal(t), dom=t.domicilio&&($("entrega")?$("entrega").value==="domicilio":true), env=dom?t.envio:0;
-  const keep=["entrega","pago","dir","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});
+  const keep=["entrega","pago","ck_c","ck_n","ck_l","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});
   $("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>${t.nombre}</h2>`+
    ids.map(id=>{const m=t.menu.find(x=>x.id===id);return `<div class="linea"><span>${m.emoji} ${m.nombre}<br><small>${din(m.precio)}</small></span>
     <span class="q"><button data-menos="${id}">−</button> ${carrito.items[id]} <button data-mas="${id}">+</button></span></div>`}).join("")+
    `<label>¿Cómo lo quieres?<select id="entrega">${t.domicilio?`<option value="domicilio">Entrega a domicilio</option>`:""}<option value="recoger">Recoger en tienda</option></select></label>
-    <label>Dirección de entrega<input id="dir" placeholder="Calle, número, colonia"></label>
+    <div id="dirBox" style="display:grid;gap:12px"><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("ck",null)}</div>
     <label>¿Cómo pagas?<select id="pago"><option value="efectivo">Efectivo al recibir</option><option value="transferencia">Transferencia bancaria</option>${db?`<option value="en_linea">Pago en línea (Mercado Pago)</option>`:""}</select></label>
     <label>Notas<textarea id="notas" rows="2" placeholder="Sin cebolla, tocar el timbre..."></textarea></label>
     <div class="fila"><span>Subtotal</span><span>${din(sub)}</span></div>
@@ -548,16 +553,17 @@ function pintaCarrito(){
     <div class="fila tot"><span>Total</span><span id="tot">${din(sub+env)}</span></div>
     <button class="btn" id="pedir">Confirmar pedido</button>`;
   $("entrega").value=keep.entrega||(t.domicilio?"domicilio":"recoger");$("pago").value=keep.pago||"efectivo";
-  $("dir").value=keep.dir||(sesion?sesion.dir:"");$("notas").value=keep.notas;
-  $("entrega").onchange=()=>{$("dir").style.display=$("entrega").value==="domicilio"?"":"none";
+  const dd=sesion?((sesion.dir_calle||sesion.dir_num||sesion.dir_col)?sesion:{dir_calle:sesion.dir||"",dir_num:"",dir_col:""}):{};
+  $("ck_c").value=keep.ck_c||dd.dir_calle||"";$("ck_n").value=keep.ck_n||dd.dir_num||"";$("ck_l").value=keep.ck_l||dd.dir_col||"";$("notas").value=keep.notas;
+  $("entrega").onchange=()=>{$("dirBox").style.display=$("entrega").value==="domicilio"?"grid":"none";
     const e=$("entrega").value==="domicilio"?t.envio:0;$("env").textContent=din(e);$("tot").textContent=din(sub+e)};
   $("entrega").onchange(); $("pedir").onclick=()=>confirmar(t,sub);
 }
 async function confirmar(t,sub){
   if(!sesion){$("pCarrito").classList.remove("on");alert("Crea tu cuenta o inicia sesión para pedir.");location.hash="#/cuenta";return}
   if(sub<t.minimo)return alert("El pedido mínimo de este comercio es "+din(t.minimo)+".");
-  const dom=$("entrega").value==="domicilio", dir=$("dir").value.trim();
-  if(dom&&!dir)return alert("Escribe la dirección de entrega.");
+  const dom=$("entrega").value==="domicilio", D=dom?leeDir("ck"):null, dir=dom?D.dir:"";
+  if(dom&&!(D.dir_calle&&D.dir_num&&D.dir_col))return alert("Escribe tu calle, número y colonia para la entrega.");
   const env=dom?t.envio:0, total=sub+env, pago=$("pago").value;
   const lineas=Object.entries(carrito.items).map(([id,c])=>{const m=t.menu.find(x=>x.id===id);return `${c} x ${m.nombre} - ${din(m.precio*c)}`});
   const items=Object.entries(carrito.items).map(([id,cant])=>({id,cant}));
@@ -578,9 +584,7 @@ async function confirmar(t,sub){
   const ped={email:sesion.email,tienda:t.nombre,fecha:new Date().toLocaleString("es-MX"),lineas,total,entrega:fila.entrega,pago,estado:"Enviado al comercio",estado_pago:"Pendiente"};
   const ps=$$("pedidos",[]);ps.push(ped);$s("pedidos",ps);
   if(db&&sesion.id)db.from("pedidos").insert(fila).then(r=>{if(r.error)console.error(r.error)});
-  const msg=`Nuevo pedido de ${sesion.nombre} (${sesion.tel||"sin tel."})\n\n${lineas.map(l=>"• "+l).join("\n")}\n\nEnvío: ${din(env)}\nTotal: ${din(total)}\n${dom?"Entrega en: "+dir:"Pasa a recoger"}\nPago: ${NPAGO[pago]}\nNotas: ${$("notas").value}`;
-  if(pago==="transferencia")alert(t.clabe?`Transfiere ${din(total)} a:\n${t.titular||t.nombre}\n${t.banco||""}\nCLABE: ${t.clabe}\n\nDespués envía tu comprobante por WhatsApp.`:"El comercio te enviará sus datos bancarios por WhatsApp.");
-  window.open(`https://wa.me/${t.whatsapp}?text=${encodeURIComponent(msg)}`,"_blank");
+  if(pago==="transferencia")alert(t.clabe?`Transfiere ${din(total)} a:\n${t.titular||t.nombre}\n${t.banco||""}\nCLABE: ${t.clabe}\n\nDespués envía tu comprobante al WhatsApp del comercio${t.whatsapp?": +"+t.whatsapp:""}.`:"El comercio te enviará sus datos bancarios.");
   carrito={tienda:null,items:{}};gcar();pintaCarrito();$("pCarrito").classList.remove("on");location.hash="#/pedidos";
 }
 
