@@ -3,8 +3,8 @@
 // - Pedidos de pago en línea: se avisa cuando Stripe confirma el pago (así nadie prepara un pedido sin cobrar).
 const webpush = require("web-push");
 const SB = process.env.SUPABASE_URL;
-const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const cab = { apikey: KEY, Authorization: `Bearer ${KEY}` };
+const KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;   // llave secreta nueva (sb_secret_...) o la anterior
+const cab = KEY && KEY.startsWith("sb_") ? { apikey: KEY } : { apikey: KEY, Authorization: `Bearer ${KEY}` };  // llaves nuevas (sb_secret_...): solo "apikey"
 
 async function sb(ruta) {
   const r = await fetch(`${SB}/rest/v1/${ruta}`, { headers: cab });
