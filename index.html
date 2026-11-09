@@ -338,8 +338,22 @@ function vistaTienda(id){
    <button class="btn" data-add="${t.id}|${m.id}">Agregar al carrito</button></div></div>`).join("");
 }
 function vistaCuenta(){
-  if(sesion){ $("vista").innerHTML=`<h2>Hola, ${sesion.nombre}</h2><p class="suave">${sesion.email}</p><br>
-   <a class="btn" href="#/pedidos">Ver mis pedidos</a> <button class="btn sec" id="salir">Cerrar sesión</button>`;
+  if(sesion){ $("vista").innerHTML=`<h2>Hola, ${esc(sesion.nombre)}</h2><p class="suave">${esc(sesion.email)}</p><br>
+   <a class="btn" href="#/pedidos">Ver mis pedidos</a> <button class="btn sec" id="salir">Cerrar sesión</button>`+
+   (db&&sesion.id?`<br><br><div class="aviso" style="display:grid;gap:8px;max-width:360px"><b>Cambiar contraseña</b>
+    <label>Nueva contraseña (mínimo 8)<input id="np1" type="password" autocomplete="new-password"></label>
+    <label>Repite la nueva contraseña<input id="np2" type="password" autocomplete="new-password"></label>
+    <button class="btn" id="cambiarPass">Guardar contraseña</button></div>`:"");
+   if($("cambiarPass"))$("cambiarPass").onclick=async()=>{
+     const a=$("np1").value,b=$("np2").value;
+     if(a.length<8)return alert("La contraseña debe tener al menos 8 caracteres.");
+     if(a!==b)return alert("Las dos contraseñas no coinciden.");
+     const bt=$("cambiarPass");bt.disabled=true;bt.textContent="Guardando...";
+     const r=await db.auth.updateUser({password:a});
+     bt.disabled=false;bt.textContent="Guardar contraseña";
+     if(r.error)return alert("No se pudo cambiar: "+r.error.message);
+     $("np1").value="";$("np2").value="";alert("Contraseña actualizada. Úsala la próxima vez que entres.");
+   };
    $("salir").onclick=async()=>{await cerrarAvisos();if(db)db.auth.signOut();esAdmin=false;misCom=[];sesion=null;$s("sesion",null);pintaHeader();location.hash="#/"};return;}
   $("vista").innerHTML=`<h2>Crear cuenta de comprador</h2><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
    <div class="caja" style="position:static;width:auto;padding:0">
