@@ -176,7 +176,7 @@ async function subirFoto(archivo,carpeta,max=1000){
 const ped2html=(p,admin)=>`<div class="item"><div class="in"><b>${esc(p.comercios?p.comercios.nombre:"")}</b> <span class="suave">${new Date(p.creado).toLocaleString("es-MX")}</span>
  <span>${(p.lineas||[]).map(esc).join("<br>")}</span><span class="tot">${din(Number(p.total))}</span>
  <span class="suave">${esc(p.cliente_nombre)} · ${esc(p.cliente_tel)}<br>${p.entrega==="domicilio"?"A domicilio: "+esc(p.direccion):"Recoge en tienda"} · ${NPAGO[p.pago]||p.pago} · <b>${esc(p.estado_pago||"Pendiente")}</b>${p.notas?"<br>Notas: "+esc(p.notas):""}</span>
- ${admin===true?`<select data-pag="${p.id}">${["Pendiente","Pagado","Fallido","Expirado"].map(e=>`<option ${e===(p.estado_pago||"Pendiente")?"selected":""}>${e}</option>`).join("")}</select> <select data-est="${p.id}">${ESTADOS.map(e=>`<option ${e===p.estado?"selected":""}>${e}</option>`).join("")}</select>`
+ ${admin===true?`<select data-pag="${p.id}">${["Pendiente","Pagado","Fallido","Expirado"].map(e=>`<option ${e===(p.estado_pago||"Pendiente")?"selected":""}>${e}</option>`).join("")}</select> <select data-est="${p.id}">${ESTADOS.map(e=>`<option ${e===p.estado?"selected":""}>${e}</option>`).join("")}</select> <button class="btn sec" style="color:var(--coral);border-color:var(--coral)" data-pdel="${p.id}">🗑 Eliminar</button>`
   :admin==="com"?`${p.estado==="Enviado al comercio"?`<button class="btn" data-conf="${p.id}">✅ Confirmar pedido</button> `:""}${p.pago==="en_linea"?"":`<select data-pag="${p.id}" aria-label="Estado del pago">${["Pendiente","Pagado"].map(e=>`<option ${e===(p.estado_pago||"Pendiente")?"selected":""}>${e}</option>`).join("")}</select> `}<select data-est="${p.id}" aria-label="Estado del pedido">${ESTADOS.map(e=>`<option ${e===p.estado?"selected":""}>${e}</option>`).join("")}</select>`
   :`<span class="estado">${esc(p.estado)}</span>`}</div></div>`;
 
@@ -277,6 +277,10 @@ document.addEventListener("click",async e=>{
   if(d.tab){adm.tab=d.tab;return vistaAdmin()}
   if(d.aon){const[i,a]=d.aon.split("|");await db.from("anuncios").update({activo:a!=="true"}).eq("id",i);cargarDatos();return admTab()}
   if(d.adel&&confirm("¿Borrar este anuncio?")){await db.from("anuncios").delete().eq("id",d.adel);cargarDatos();return admTab()}
+  if(d.pdel){if(!confirm("¿Eliminar este pedido definitivamente?\nNo se puede deshacer."))return;
+    e.target.disabled=true;const r=await db.from("pedidos").delete().eq("id",d.pdel).select("id");
+    if(r.error||!(r.data&&r.data.length)){alert(r.error?r.error.message:"No se pudo eliminar el pedido.");e.target.disabled=false;return}
+    return admTab()}
   if(d.cnew!==undefined)return formAdm("comercios",CF_COM,{activo:true,envio:30,minimo:0,ofrece_domicilio:true,dias_abiertos:DIAS.join(",")});
   if(d.ced){const r=await db.from("comercios").select("*").eq("id",d.ced).single();return formAdm("comercios",CF_COM,r.data)}
   if(d.mnew!==undefined)return formAdm("menu_items",CF_MENU,{disponible:true,comercio_id:adm.com});
