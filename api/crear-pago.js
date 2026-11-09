@@ -1,8 +1,8 @@
 // Función de Vercel: crea la página de pago de Stripe (Checkout) para un pedido.
 // El total se toma de la base de datos (ya calculado con precios reales), nunca del celular.
 const SB = process.env.SUPABASE_URL;
-const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const cab = { apikey: KEY, Authorization: `Bearer ${KEY}` };
+const KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;   // llave secreta nueva (sb_secret_...) o la anterior
+const cab = KEY && KEY.startsWith("sb_") ? { apikey: KEY } : { apikey: KEY, Authorization: `Bearer ${KEY}` };  // llaves nuevas (sb_secret_...): solo "apikey"
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function sb(ruta, opciones = {}) {
