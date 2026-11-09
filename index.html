@@ -78,6 +78,7 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .sl{flex:0 0 100%;scroll-snap-align:start;aspect-ratio:16/7;background:var(--crema) center/cover;display:grid;place-items:center;font-size:1.3rem;font-weight:700;text-align:center;padding:10px;color:var(--texto);text-decoration:none}
 #toast{display:none;position:fixed;top:68px;left:14px;right:14px;max-width:560px;margin:auto;background:var(--verde);color:var(--on-verde);border-radius:var(--radio);padding:14px;font-weight:700;z-index:20;text-align:center;box-shadow:var(--sombra)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.dias{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:6px}.dia{display:inline-flex;align-items:center;gap:4px;font-weight:500}
 </style>
 </head>
 <body>
@@ -121,6 +122,10 @@ const $s=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const din=n=>n.toLocaleString("es-MX",{style:"currency",currency:MONEDA});
 const foto=o=>o.foto?`style="background-image:url('${o.foto}')"`:"";
 const em=o=>o.foto?"":o.emoji;
+function diasTxt(x){const a=(x||"").split(",").filter(Boolean).map(d=>DIAS.indexOf(d)).filter(i=>i>=0).sort((m,n)=>m-n);
+  if(!a.length)return"";if(a.length===7)return"Todos los días";const g=[];let i=0;
+  while(i<a.length){let j=i;while(j+1<a.length&&a[j+1]===a[j]+1)j++;g.push(j-i>=2?DIAS[a[i]]+" a "+DIAS[a[j]]:a.slice(i,j+1).map(k=>DIAS[k]).join(", "));i=j+1}
+  return g.join(", ")}
 let sesion=$$("sesion",null), carrito=$$("carrito",{tienda:null,items:{}}), cat="Todo";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let ANUNCIOS=[{titulo:"Anuncia tu negocio en Valle GO",imagen_url:"",enlace:""},{titulo:"Pide fácil, recibe rápido",imagen_url:"",enlace:""}];
@@ -191,14 +196,17 @@ async function vistaPanel(){
 // ---- Panel de administración: SOLO el administrador edita ----
 let adm={tab:"anuncios",com:null};
 const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
-const CF_COM=[{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario"},{k:"emoji",l:"Emoji"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"link_pago",l:"Enlace de cobro Mercado Pago"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
-const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"emoji",l:"Emoji"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
-const formHTML=(cs,v)=>cs.map(c=>c.t==="file"?`<label>${c.l}<input type="file" accept="image/*" data-f="${c.k}">${v[c.k]?`<img src="${esc(v[c.k])}" alt="" style="height:60px;border-radius:8px">`:""}</label>`
+const CF_COM=[{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"link_pago",l:"Enlace de cobro Mercado Pago"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
+const DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+const formHTML=(cs,v)=>cs.map(c=>c.t==="dias"?`<label>${c.l}<span class="dias">${DIAS.map(d=>`<span class="dia"><input type="checkbox" data-dia="${d}" ${(v[c.k]||"").split(",").includes(d)?"checked":""} style="width:auto"> ${d}</span>`).join("")}</span><input type="hidden" data-f="${c.k}"></label>`
+  :c.t==="file"?`<label>${c.l}<input type="file" accept="image/*" data-f="${c.k}">${v[c.k]?`<img src="${esc(v[c.k])}" alt="" style="height:60px;border-radius:8px">`:""}</label>`
   :c.t==="check"?`<label><span><input type="checkbox" data-f="${c.k}" ${v[c.k]?"checked":""} style="width:auto"> ${c.l}</span></label>`
   :`<label>${c.l}<input data-f="${c.k}" type="${c.t||"text"}" value="${esc(v[c.k]??"")}"></label>`).join("");
 async function leerForm(cs,raiz,v){const o={};
   for(const c of cs){const el=raiz.querySelector(`[data-f="${c.k}"]`);
-    if(c.t==="file")o[c.k]=el.files[0]?await subirFoto(el.files[0],c.carpeta):(v[c.k]||null);
+    if(c.t==="dias")o[c.k]=[...el.closest("label").querySelectorAll("[data-dia]")].filter(x=>x.checked).map(x=>x.dataset.dia).join(",");
+    else if(c.t==="file")o[c.k]=el.files[0]?await subirFoto(el.files[0],c.carpeta):(v[c.k]||null);
     else if(c.t==="check")o[c.k]=el.checked; else if(c.t==="number")o[c.k]=Number(el.value||0); else o[c.k]=el.value.trim();}
   return o;}
 async function vistaAdmin(){
@@ -259,7 +267,7 @@ document.addEventListener("click",async e=>{
   if(d.tab){adm.tab=d.tab;return vistaAdmin()}
   if(d.aon){const[i,a]=d.aon.split("|");await db.from("anuncios").update({activo:a!=="true"}).eq("id",i);cargarDatos();return admTab()}
   if(d.adel&&confirm("¿Borrar este anuncio?")){await db.from("anuncios").delete().eq("id",d.adel);cargarDatos();return admTab()}
-  if(d.cnew!==undefined)return formAdm("comercios",CF_COM,{activo:true,envio:30,minimo:0});
+  if(d.cnew!==undefined)return formAdm("comercios",CF_COM,{activo:true,envio:30,minimo:0,ofrece_domicilio:true,dias_abiertos:DIAS.join(",")});
   if(d.ced){const r=await db.from("comercios").select("*").eq("id",d.ced).single();return formAdm("comercios",CF_COM,r.data)}
   if(d.mnew!==undefined)return formAdm("menu_items",CF_MENU,{disponible:true,comercio_id:adm.com});
   if(d.med){const r=await db.from("menu_items").select("*").eq("id",d.med).single();return formAdm("menu_items",CF_MENU,r.data)}
@@ -327,7 +335,7 @@ async function cargarDatos(){
   const an=await db.from("anuncios").select("*").eq("activo",true).order("orden").limit(5); if(an.data)ANUNCIOS=an.data;
   const {data,error}=await db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre");
   if(error||!data||!data.length)return;
-  COMERCIANTES=data.map(c=>({id:c.id,nombre:c.nombre,giro:c.giro||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",
+  COMERCIANTES=data.map(c=>({id:c.id,nombre:c.nombre,giro:c.giro||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
     desc:c.descripcion||"",whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),linkPago:c.link_pago||"",clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
     menu:(c.menu_items||[]).filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
       desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}))}));
@@ -350,7 +358,9 @@ function vistaInicio(){
   $("vista").innerHTML=adsHTML()+`<h2>Comercios cerca de ti</h2><div class="grid">`+COMERCIANTES.map(t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
    <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
-   <span class="suave">Envío ${din(t.envio)}</span>
+   ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
+   ${t.dias?`<span class="suave">📅 ${diasTxt(t.dias)}</span>`:""}
+   <span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
    <a class="btn" href="#/t/${t.id}">Ver menú</a></div></div>`).join("")+`</div>`;iniAds();
 }
 function vistaTienda(id){
@@ -359,7 +369,9 @@ function vistaTienda(id){
   $("vista").innerHTML=`<div class="perfil"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t,1)}</div><div class="in${t.logo?" cl g":""}">
    <h2>${esc(t.nombre)}</h2><span>${t.desc}</span>
    <span class="suave">${t.giro} · Abierto ${t.horario}</span>
-   <span class="suave">Envío ${din(t.envio)} · Pedido mínimo ${din(t.minimo)}</span></div></div>
+   ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
+   ${t.dias?`<span class="suave">📅 Días: ${diasTxt(t.dias)}</span>`:""}
+   <span class="suave">${t.domicilio?"Envío "+din(t.envio)+" · ":"Solo recoger en tienda · "}Pedido mínimo ${din(t.minimo)}</span></div></div>
    <div class="cats">${cats.map(c=>`<button class="${c===cat?"on":""}" data-cat="${c}">${c}</button>`).join("")}</div>`+
    t.menu.filter(m=>cat==="Todo"||m.cat===cat).map(m=>`
    <div class="item"><div class="foto" ${foto(m)}>${em(m)}</div><div class="in">
@@ -449,12 +461,12 @@ function pintaCarrito(){
   const t=tienda(carrito.tienda), ids=Object.keys(carrito.items);
   $("n").textContent=Object.values(carrito.items).reduce((a,b)=>a+b,0);
   if(!t){$("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>Tu carrito</h2><p>Está vacío. Elige un comercio y agrega platillos.</p>`;return}
-  const sub=subtotal(t), dom=$("entrega")?$("entrega").value==="domicilio":true, env=dom?t.envio:0;
+  const sub=subtotal(t), dom=t.domicilio&&($("entrega")?$("entrega").value==="domicilio":true), env=dom?t.envio:0;
   const keep=["entrega","pago","dir","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});
   $("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>${t.nombre}</h2>`+
    ids.map(id=>{const m=t.menu.find(x=>x.id===id);return `<div class="linea"><span>${m.emoji} ${m.nombre}<br><small>${din(m.precio)}</small></span>
     <span class="q"><button data-menos="${id}">−</button> ${carrito.items[id]} <button data-mas="${id}">+</button></span></div>`}).join("")+
-   `<label>¿Cómo lo quieres?<select id="entrega"><option value="domicilio">Entrega a domicilio</option><option value="recoger">Recoger en tienda</option></select></label>
+   `<label>¿Cómo lo quieres?<select id="entrega">${t.domicilio?`<option value="domicilio">Entrega a domicilio</option>`:""}<option value="recoger">Recoger en tienda</option></select></label>
     <label>Dirección de entrega<input id="dir" placeholder="Calle, número, colonia"></label>
     <label>¿Cómo pagas?<select id="pago"><option value="efectivo">Efectivo al recibir</option><option value="transferencia">Transferencia bancaria</option>${db?`<option value="en_linea">Pago en línea (Mercado Pago)</option>`:""}</select></label>
     <label>Notas<textarea id="notas" rows="2" placeholder="Sin cebolla, tocar el timbre..."></textarea></label>
@@ -462,7 +474,7 @@ function pintaCarrito(){
     <div class="fila"><span>Envío</span><span id="env">${din(env)}</span></div>
     <div class="fila tot"><span>Total</span><span id="tot">${din(sub+env)}</span></div>
     <button class="btn" id="pedir">Confirmar pedido</button>`;
-  $("entrega").value=keep.entrega||"domicilio";$("pago").value=keep.pago||"efectivo";
+  $("entrega").value=keep.entrega||(t.domicilio?"domicilio":"recoger");$("pago").value=keep.pago||"efectivo";
   $("dir").value=keep.dir||(sesion?sesion.dir:"");$("notas").value=keep.notas;
   $("entrega").onchange=()=>{$("dir").style.display=$("entrega").value==="domicilio"?"":"none";
     const e=$("entrega").value==="domicilio"?t.envio:0;$("env").textContent=din(e);$("tot").textContent=din(sub+e)};
