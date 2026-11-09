@@ -1,8 +1,8 @@
 // Función de Vercel: Stripe la llama cuando cambia el estado de un pago.
 // No se confía en lo que llega: se vuelve a consultar la sesión directamente a Stripe con tu llave secreta.
 const SB = process.env.SUPABASE_URL;
-const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const cab = { apikey: KEY, Authorization: `Bearer ${KEY}` };
+const KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;   // llave secreta nueva (sb_secret_...) o la anterior
+const cab = KEY && KEY.startsWith("sb_") ? { apikey: KEY } : { apikey: KEY, Authorization: `Bearer ${KEY}` };  // llaves nuevas (sb_secret_...): solo "apikey"
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TIPOS = ["checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "checkout.session.expired"];
 
