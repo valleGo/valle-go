@@ -413,7 +413,7 @@ function pintaCarrito(){
     <span class="q"><button data-menos="${id}">−</button> ${carrito.items[id]} <button data-mas="${id}">+</button></span></div>`}).join("")+
    `<label>¿Cómo lo quieres?<select id="entrega"><option value="domicilio">Entrega a domicilio</option><option value="recoger">Recoger en tienda</option></select></label>
     <label>Dirección de entrega<input id="dir" placeholder="Calle, número, colonia"></label>
-    <label>¿Cómo pagas?<select id="pago"><option value="efectivo">Efectivo al recibir</option><option value="transferencia">Transferencia bancaria</option>${db?`<option value="en_linea">Pago en línea (tarjeta, OXXO o SPEI)</option>`:""}</select></label>
+    <label>¿Cómo pagas?<select id="pago"><option value="efectivo">Efectivo al recibir</option><option value="transferencia">Transferencia bancaria</option>${db?`<option value="en_linea">Pago en línea (Mercado Pago)</option>`:""}</select></label>
     <label>Notas<textarea id="notas" rows="2" placeholder="Sin cebolla, tocar el timbre..."></textarea></label>
     <div class="fila"><span>Subtotal</span><span>${din(sub)}</span></div>
     <div class="fila"><span>Envío</span><span id="env">${din(env)}</span></div>
