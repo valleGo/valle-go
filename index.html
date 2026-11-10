@@ -81,6 +81,7 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .avatar.ini{display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800;color:var(--verde)}
 .hav{width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px}
 #bnotif{position:fixed;bottom:14px;left:14px;right:14px;max-width:560px;margin:auto;background:var(--acento);color:var(--on-acento);border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:6;display:flex;align-items:center;gap:8px;font-size:.9rem;box-shadow:var(--sombra)}
+#bnuevo{position:fixed;top:68px;left:14px;right:14px;max-width:560px;margin:auto;background:#2B2D22;color:#fff;border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:7;display:flex;align-items:center;gap:8px;font-size:.9rem;box-shadow:0 8px 24px rgba(0,0,0,.25);animation:bnIn .4s ease both}#bnuevo span{flex:1}#bnuevo button{border:0;border-radius:999px;padding:8px 14px;background:var(--acento);color:var(--on-acento);font-weight:700}#bnuevo .x{background:none;color:#fff;font-size:1.3rem;padding:2px 8px}@keyframes bnIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
 #bnotif span{flex:1}#bnotif button{border:0;border-radius:999px;padding:8px 14px;background:#2B2D22;color:#fff;font-weight:600}#bnotif #bnotifX{background:none;color:var(--on-acento);font-size:1.3rem;padding:2px 8px}
 /* ===== Pantalla de arranque animada ===== */
 #splash{position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;clip-path:circle(150% at 50% 50%);will-change:clip-path}
@@ -457,7 +458,7 @@ function ruta(){
   vistaInicio();
 }
 function vistaInicio(){
-  $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2><div class="grid">`+COMERCIANTES.map(t=>`
+  $("vista").innerHTML=adsHTML()+`<h2>Comercios cerca de ti</h2><div class="grid">`+COMERCIANTES.map(t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
    <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
@@ -648,6 +649,21 @@ $("bCuenta").onclick=()=>location.hash="#/cuenta";
 $("bPanel").onclick=()=>location.hash=esAdmin?"#/admin":"#/panel";
 window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+// ---- Aviso de versión nueva: compara la página publicada con la que se cargó al abrir ----
+(function(){let base=null,avisado=false;
+  const huella=async()=>{const t=await (await fetch("index.html?v="+Date.now(),{cache:"no-store"})).text();let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return t.length+":"+h};
+  async function revisa(){if(avisado||!navigator.onLine)return;
+    try{const h=await huella();if(base===null){base=h;return}
+      if(h!==base){avisado=true;const b=document.createElement("div");b.id="bnuevo";b.setAttribute("role","status");
+        b.innerHTML='<span>✨ Hay una versión nueva de Valle GO</span><button id="bnuevoOk">Actualizar</button><button class="x" id="bnuevoX" aria-label="Cerrar">×</button>';
+        document.body.appendChild(b);
+        $("bnuevoOk").onclick=async()=>{try{const r=await navigator.serviceWorker.getRegistration();if(r)await r.update();const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}location.reload()};
+        $("bnuevoX").onclick=()=>b.remove()}
+    }catch(e){}}
+  revisa();
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")revisa()});
+  setInterval(revisa,5*60*1000);
+})();
 // ---- Instalar como app (acceso directo en la pantalla de inicio) ----
 let ev;
 const yaApp=matchMedia("(display-mode: standalone)").matches||navigator.standalone;
