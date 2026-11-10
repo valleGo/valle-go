@@ -82,9 +82,35 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .hav{width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px}
 #bnotif{position:fixed;bottom:14px;left:14px;right:14px;max-width:560px;margin:auto;background:var(--acento);color:var(--on-acento);border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:6;display:flex;align-items:center;gap:8px;font-size:.9rem;box-shadow:var(--sombra)}
 #bnotif span{flex:1}#bnotif button{border:0;border-radius:999px;padding:8px 14px;background:#2B2D22;color:#fff;font-weight:600}#bnotif #bnotifX{background:none;color:var(--on-acento);font-size:1.3rem;padding:2px 8px}
+/* ===== Pantalla de arranque animada ===== */
+#splash{position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;clip-path:circle(150% at 50% 50%);will-change:clip-path}
+#splash .lg{position:relative;width:112px;height:112px;display:grid;place-items:center;animation:spIn .9s cubic-bezier(.2,.9,.25,1.15) both}
+#splash .lg img{width:112px;height:112px;border-radius:26px;position:relative;z-index:2;box-shadow:0 10px 40px rgba(165,181,116,.35)}
+#splash .lg::before,#splash .lg::after{content:"";position:absolute;inset:-6px;border-radius:32px;border:2px solid #A5B574;opacity:0;animation:spRing 1.6s ease-out .5s infinite}
+#splash .lg::after{animation-delay:1.1s;border-color:#F6C335}
+#splash .tx{font:800 1.5rem Montserrat,system-ui,sans-serif;letter-spacing:.32em;color:#fff;padding-left:.32em;animation:spTx .8s ease-out .55s both}
+#splash .tx b{color:#F6C335;font-weight:800}
+#splash .bar{width:84px;height:3px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden;animation:spTx .6s ease-out .8s both}
+#splash .bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#A5B574,#F6C335);transform:translateX(-100%);animation:spBar 1.1s ease-in-out .8s forwards}
+#splash.fuera{animation:spOut .75s cubic-bezier(.7,0,.2,1) forwards;pointer-events:none}
+#splash.fuera .lg{animation:spLg .5s ease-in forwards}
+@keyframes spIn{from{opacity:0;transform:scale(.5) rotate(-8deg)}to{opacity:1;transform:none}}
+@keyframes spRing{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.7)}}
+@keyframes spTx{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes spBar{to{transform:translateX(0)}}
+@keyframes spOut{from{clip-path:circle(150% at 50% 50%)}to{clip-path:circle(0% at 50% 50%)}}
+@keyframes spLg{to{transform:scale(1.25);opacity:0}}
+@media (prefers-reduced-motion:reduce){#splash *{animation:none!important}#splash.fuera{animation:spFade .3s forwards}@keyframes spFade{to{opacity:0}}}
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true"><div class="lg"><img src="icon-192.png" alt="" width="112" height="112"></div><div class="tx">VALLE <b>GO</b></div><div class="bar"><i></i></div></div>
+<script>
+(function(){var s=document.getElementById("splash");try{if(sessionStorage.getItem("vgSplash")){s.remove();return}sessionStorage.setItem("vgSplash","1")}catch(e){}
+var t0=Date.now(),listo=false;function quitar(){if(listo)return;listo=true;s.classList.add("fuera");setTimeout(function(){s.remove()},900)}
+function intenta(){var w=Math.max(0,2000-(Date.now()-t0));setTimeout(quitar,w)}
+if(document.readyState==="complete")intenta();else window.addEventListener("load",intenta);setTimeout(quitar,4500)})();
+</script>
 <header>
   <a href="#/" class="logo"><img src="logo.png" alt="" width="40" height="40"><span>Valle GO</span></a>
   <div class="hb"><button id="bPanel" style="display:none">Panel</button><button id="bCuenta"></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div>
@@ -410,7 +436,7 @@ function ruta(){
   vistaInicio();
 }
 function vistaInicio(){
-  $("vista").innerHTML=adsHTML()+`<h2>Comercios en el Valle hoy:</h2><div class="grid">`+COMERCIANTES.map(t=>`
+  $("vista").innerHTML=adsHTML()+`<h2>Comercios cerca de ti</h2><div class="grid">`+COMERCIANTES.map(t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
    <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
