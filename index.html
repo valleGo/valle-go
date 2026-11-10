@@ -16,7 +16,7 @@
 /* ===== Valle GO · estilo moderno y simple · Montserrat + paleta ===== */
 :root{
   color-scheme:light;
-  --fondo:#9DC29D;--tarjeta:#FFFFFF;--texto:#2B2D22;--suave:#6F6A5A;--borde:#E6E9D2;--crema:#F1F5E4;
+  --fondo:#EBFFEB;--tarjeta:#FFFFFF;--texto:#2B2D22;--suave:#6F6A5A;--borde:#E6E9D2;--crema:#F1F5E4;
   --verde:#5D774A;--on-verde:#FFFFFF;      /* oliva: color principal */
   --acento:#F6C335;--on-acento:#2B2D22;    /* amarillo */
   --coral:#E77154;--naranja:#EC9243;--salvia:#A5B574;--cielo:#8DCEE8;--arena:#A48857;
@@ -436,7 +436,7 @@ function ruta(){
   vistaInicio();
 }
 function vistaInicio(){
-  $("vista").innerHTML=adsHTML()+`<h2>Comercios cerca de ti</h2><div class="grid">`+COMERCIANTES.map(t=>`
+  $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2><div class="grid">`+COMERCIANTES.map(t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
    <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
