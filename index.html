@@ -29,7 +29,7 @@ html{-webkit-text-size-adjust:100%}
 body{font-family:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-weight:500;line-height:1.45;background:var(--fondo);color:var(--texto);padding-bottom:84px}
 button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}
 :focus-visible{outline:3px solid var(--cielo);outline-offset:2px}
-header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--claro-verde) 50%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);color:var(--texto);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.35)}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--claro-verde) 45%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);color:var(--texto);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.35)}
 header a{color:var(--verde);text-decoration:none;font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
 .logo{display:flex;align-items:center;gap:10px}.logo img{width:40px;height:40px;flex:none;display:block}
 .hb{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
@@ -245,7 +245,7 @@ async function vistaAdmin(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   if(!esAdmin)await cargarRol();
   if(!esAdmin){$("vista").innerHTML="<h2>Acceso restringido</h2><p>Esta sección es solo para el administrador.</p>";return}
-  const T={anuncios:"Publicidad",comercios:"Comercios",menu:"Menús",pedidos:"Pedidos",perfil:"Mi perfil"};
+  const T={anuncios:"Publicidad",comercios:"Comercios",menu:"Menús",pedidos:"Pedidos",usuarios:"Usuarios",perfil:"Mi perfil"};
   $("vista").innerHTML=`<h2>Administración</h2>${notifBtnHTML()}<div class="cats">${Object.keys(T).map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
   await admTab();
 }
@@ -281,6 +281,20 @@ async function admTab(){
     box.innerHTML=`<p class="suave">${esc(sesion.email)} · Administrador</p>`+perfilHTML();
     bindPerfil(admTab);
   }
+  if(t==="usuarios"){
+    const fe=x=>x?new Date(x).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):"—";
+    if(adm.uh){
+      const U=adm.uh, L=(await db.from("pedidos").select("*, comercios(nombre)").eq("comprador_id",U.id).order("creado",{ascending:false})).data||[];
+      box.innerHTML=`<button class="btn sec" data-uback>← Volver a usuarios</button> <button class="btn sec" data-udel="${U.id}">Eliminar usuario</button><br><br><div class="aviso"><b>${esc(U.nombre)}</b><br>${esc(U.email)}${U.tel?` · ${esc(U.tel)}`:""}<br><span class="suave">Registrado: ${fe(U.registrado)} · Último acceso: ${fe(U.ultimo_acceso)}</span><br><span class="suave">${U.pedidos} pedido(s) · ${din(Number(U.gastado))}</span></div><h3>Historial de pedidos</h3>`+(L.map(p=>ped2html(p,true)).join("")||"<p>Este usuario aún no ha hecho pedidos.</p>");
+      return;
+    }
+    const r=await db.rpc("admin_usuarios"); if(r.error){box.innerHTML="<p>No se pudo cargar: "+esc(r.error.message)+"</p>";return}
+    adm.ul=r.data||[]; const q=(adm.uq||"").toLowerCase();
+    const V=adm.ul.filter(u=>!q||(u.nombre+" "+u.email+" "+u.tel).toLowerCase().includes(q));
+    box.innerHTML=`<p class="suave">${adm.ul.length} usuario(s) registrado(s).</p><label>Buscar<input id="uq" placeholder="Nombre, correo o teléfono" value="${esc(adm.uq||"")}"></label><br>`+
+      (V.map(u=>`<div class="item"><div class="in"><b>${esc(u.nombre)}</b><span class="suave">${esc(u.email)}${u.tel?` · ${esc(u.tel)}`:""}</span><span class="suave">Registrado: ${fe(u.registrado)} · ${u.pedidos} pedido(s) · ${din(Number(u.gastado))}</span><span><button class="btn sec" data-uh="${u.id}">Ver historial</button> <button class="btn sec" data-udel="${u.id}">Eliminar</button></span></div></div>`).join("")||"<p>Sin resultados.</p>");
+    $("uq").oninput=e=>{adm.uq=e.target.value;const pos=e.target.selectionStart;admTab().then(()=>{const i=$("uq");if(i){i.focus();i.setSelectionRange(pos,pos)}})};
+  }
   if(t==="pedidos"){
     const L=(await db.from("pedidos").select("*, comercios(nombre)").order("creado",{ascending:false}).limit(100)).data||[];
     box.innerHTML=L.map(p=>ped2html(p,true)).join("")||"<p>Aún no hay pedidos.</p>";
@@ -300,7 +314,14 @@ function formAdm(tabla,cs,v){
 }
 document.addEventListener("click",async e=>{
   const d=e.target.dataset; if(!esAdmin)return;
-  if(d.tab){adm.tab=d.tab;return vistaAdmin()}
+  if(d.tab){adm.tab=d.tab;adm.uh=null;return vistaAdmin()}
+  if(d.uh){adm.uh=(adm.ul||[]).find(u=>u.id===d.uh)||null;return admTab()}
+  if(d.uback!==undefined){adm.uh=null;return admTab()}
+  if(d.udel){const u=(adm.ul||[]).find(x=>x.id===d.udel)||adm.uh; const n=u?u.nombre+" ("+u.email+")":"este usuario";
+    if(!confirm("¿Eliminar a "+n+"?\n\nSe borra su cuenta y no podrá volver a entrar con ella. Sus pedidos se conservan para los comercios, pero sin su nombre, teléfono ni dirección.\nNo se puede deshacer."))return;
+    e.target.disabled=true;const r=await db.rpc("admin_eliminar_usuario",{uid:d.udel});
+    if(r.error){alert("No se pudo eliminar: "+r.error.message);e.target.disabled=false;return}
+    adm.uh=null;return admTab()}
   if(d.aon){const[i,a]=d.aon.split("|");await db.from("anuncios").update({activo:a!=="true"}).eq("id",i);cargarDatos();return admTab()}
   if(d.adel&&confirm("¿Borrar este anuncio?")){await db.from("anuncios").delete().eq("id",d.adel);cargarDatos();return admTab()}
   if(d.pdel){if(!confirm("¿Eliminar este pedido definitivamente?\nNo se puede deshacer."))return;
@@ -436,7 +457,7 @@ function ruta(){
   vistaInicio();
 }
 function vistaInicio(){
-  $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2><div class="grid">`+COMERCIANTES.map(t=>`
+  $("vista").innerHTML=adsHTML()+`<h2>Comercios cerca de ti</h2><div class="grid">`+COMERCIANTES.map(t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
    <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
