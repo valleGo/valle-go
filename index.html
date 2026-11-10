@@ -325,25 +325,26 @@ async function admTab(){
 function formAdm(tabla,cs,v){
   const extra=tabla==="comercios"?`<label>Correo del comerciante, para su panel de consulta (vacío = no cambiar)<input id="dueno" type="email"></label>`:"";
   $("adm").innerHTML=`<div class="aviso"><b>${v.id?"Editar":"Nuevo"}</b></div>`+formHTML(cs,v)+extra+`<br><button class="btn" id="gF">Guardar</button> <button class="btn sec" id="cF">Cancelar</button>`;
-  $("cF").onclick=admTab;
+  abreCapa(admTab);
+  $("cF").onclick=cierraCapa;
   $("gF").onclick=async()=>{$("gF").disabled=true;$("gF").textContent="Guardando...";
     try{const o=await leerForm(cs,$("adm"),v); if(!o.nombre)throw new Error("Falta el nombre.");
       if(tabla==="menu_items")o.comercio_id=v.comercio_id;
       if(tabla==="comercios"&&$("dueno").value.trim()){const r=await db.rpc("usuario_por_correo",{correo:$("dueno").value.trim()});if(!r.data)throw new Error("Ese correo no está registrado en la app.");o.dueno_id=r.data}
       const r=await (v.id?db.from(tabla).update(o).eq("id",v.id):db.from(tabla).insert(o)); if(r.error)throw r.error;
-      cargarDatos(); admTab();
+      cargarDatos(); cierraCapa();
     }catch(err){alert(err.message);$("gF").disabled=false;$("gF").textContent="Guardar"}};
 }
 document.addEventListener("click",async e=>{
   const d=e.target.dataset; if(!esAdmin)return;
-  if(d.tab){adm.tab=d.tab;adm.uh=null;return vistaAdmin()}
-  if(d.uh){adm.uh=(adm.ul||[]).find(u=>u.id===d.uh)||null;return admTab()}
-  if(d.uback!==undefined){adm.uh=null;return admTab()}
+  if(d.tab){adm.tab=d.tab;adm.uh=null;await cierraTodasCapas();return vistaAdmin()}
+  if(d.uh){adm.uh=(adm.ul||[]).find(u=>u.id===d.uh)||null;if(adm.uh)abreCapa(()=>{adm.uh=null;admTab()});return admTab()}
+  if(d.uback!==undefined){if(adm.uh&&capas.length)return cierraCapa();adm.uh=null;return admTab()}
   if(d.udel){const u=(adm.ul||[]).find(x=>x.id===d.udel)||adm.uh; const n=u?u.nombre+" ("+u.email+")":"este usuario";
     if(!confirm("¿Eliminar a "+n+"?\n\nSe borra su cuenta y no podrá volver a entrar con ella. Sus pedidos se conservan para los comercios, pero sin su nombre, teléfono ni dirección.\nNo se puede deshacer."))return;
     e.target.disabled=true;const r=await db.rpc("admin_eliminar_usuario",{uid:d.udel});
     if(r.error){alert("No se pudo eliminar: "+r.error.message);e.target.disabled=false;return}
-    adm.uh=null;return admTab()}
+    if(adm.uh&&capas.length){cierraCapa();return}adm.uh=null;return admTab()}
   if(d.aon){const[i,a]=d.aon.split("|");await db.from("anuncios").update({activo:a!=="true"}).eq("id",i);cargarDatos();return admTab()}
   if(d.adel&&confirm("¿Borrar este anuncio?")){await db.from("anuncios").delete().eq("id",d.adel);cargarDatos();return admTab()}
   if(d.pdel){if(!confirm("¿Eliminar este pedido definitivamente?\nNo se puede deshacer."))return;
@@ -654,7 +655,7 @@ function pintaCarrito(){
   $("entrega").onchange(); $("pedir").onclick=()=>confirmar(t,sub);
 }
 async function confirmar(t,sub){
-  if(!sesion){$("pCarrito").classList.remove("on");alert("Crea tu cuenta o inicia sesión para pedir.");location.hash="#/cuenta";return}
+  if(!sesion){await cierraTodasCapas();$("pCarrito").classList.remove("on");alert("Crea tu cuenta o inicia sesión para pedir.");location.hash="#/cuenta";return}
   if(sub<t.minimo)return alert("El pedido mínimo de este comercio es "+din(t.minimo)+".");
   const dom=$("entrega").value==="domicilio", D=dom?leeDir("ck"):null, dir=dom?D.dir:"";
   if(dom&&!(D.dir_calle&&D.dir_num&&D.dir_col))return alert("Escribe tu calle, número y colonia para la entrega.");
@@ -670,7 +671,7 @@ async function confirmar(t,sub){
     try{
       const r=await db.from("pedidos").insert(fila).select("id").single(); if(r.error)throw r.error;
       carrito={tienda:null,items:{}};gcar();
-      if(!(await pagarPedido(r.data.id))){$("pCarrito").classList.remove("on");location.hash="#/pedidos"}
+      if(!(await pagarPedido(r.data.id))){await cierraTodasCapas();$("pCarrito").classList.remove("on");location.hash="#/pedidos"}
     }catch(err){alert("No se pudo iniciar el pago: "+err.message);b.disabled=false;b.textContent="Confirmar pedido"}
     return;
   }
@@ -679,24 +680,30 @@ async function confirmar(t,sub){
   const ps=$$("pedidos",[]);ps.push(ped);$s("pedidos",ps);
   if(db&&sesion.id)db.from("pedidos").insert(fila).then(r=>{if(r.error)console.error(r.error)});
   if(pago==="transferencia")alert(t.clabe?`Transfiere ${din(total)} a:\n${t.titular||t.nombre}\n${t.banco||""}\nCLABE: ${t.clabe}\n\nDespués envía tu comprobante al WhatsApp del comercio${t.whatsapp?": +"+t.whatsapp:""}.`:"El comercio te enviará sus datos bancarios.");
-  carrito={tienda:null,items:{}};gcar();pintaCarrito();$("pCarrito").classList.remove("on");location.hash="#/pedidos";
+  carrito={tienda:null,items:{}};gcar();pintaCarrito();await cierraTodasCapas();$("pCarrito").classList.remove("on");location.hash="#/pedidos";
 }
+
+// ---------- "Atrás" cierra paneles y formularios (Android, iPhone, PC) ----------
+// Cada panel/formulario que se abre agrega una entrada al historial; al tocar Atrás se cierra solo esa capa y no se sale de la página.
+const capas=[];
+function abreCapa(cierra){capas.push(cierra);history.pushState({capa:capas.length},"")}
+function cierraCapa(){if(capas.length)history.back()}
+async function cierraTodasCapas(){while(capas.length){await new Promise(r=>{window.addEventListener("popstate",r,{once:true});history.back()})}}
+window.addEventListener("popstate",()=>{const f=capas.pop();if(f)f()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&capas.length)cierraCapa()});
 
 // ---------- Ver foto del producto ----------
 function quitaVisor(){const v=$("visor");if(v)v.remove()}
-// "Atrás" (Android, iPhone, PC) cierra la foto: al abrirla se agrega una entrada al historial y al cerrarla se retira
-function cierraFoto(){if(!$("visor"))return;if(history.state&&history.state.visor)history.back();else quitaVisor()}
-window.addEventListener("popstate",quitaVisor);
 function abreFoto(url,nombre){if($("visor"))return;const v=document.createElement("div");v.id="visor";v.setAttribute("role","dialog");v.setAttribute("aria-label","Foto del producto");
   v.innerHTML=`<button aria-label="Cerrar">×</button><img alt="${nombre}" src="${url}"><p>${nombre}</p>`;
-  v.onclick=cierraFoto;document.body.appendChild(v);history.pushState({visor:1},"");v.querySelector("button").focus()}
-document.addEventListener("keydown",e=>{if(e.key==="Escape")cierraFoto();if((e.key==="Enter"||e.key===" ")&&e.target.dataset&&e.target.dataset.ver){e.preventDefault();abreFoto(e.target.dataset.ver,e.target.dataset.nom||"")}});
+  v.onclick=cierraCapa;document.body.appendChild(v);abreCapa(quitaVisor);v.querySelector("button").focus()}
+document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.dataset&&e.target.dataset.ver){e.preventDefault();abreFoto(e.target.dataset.ver,e.target.dataset.nom||"")}});
 
 // ---------- Eventos ----------
 document.addEventListener("click",e=>{const d=e.target.dataset;
   if(d.ver){abreFoto(d.ver,d.nom||"");return} if(d.ccat){catCom=d.ccat;vistaInicio();return} if(d.cat){cat=d.cat;ruta()} if(d.add){const[a,b]=d.add.split("|");agregar(a,b)}
-  if(d.mas)cambia(d.mas,1); if(d.menos)cambia(d.menos,-1); if(d.cerrar!==undefined)$("pCarrito").classList.remove("on")});
-$("bCarrito").onclick=()=>{pintaCarrito();$("pCarrito").classList.add("on")};
+  if(d.mas)cambia(d.mas,1); if(d.menos)cambia(d.menos,-1); if(d.cerrar!==undefined){if(capas.length)cierraCapa();else $("pCarrito").classList.remove("on")}});
+$("bCarrito").onclick=()=>{pintaCarrito();const p=$("pCarrito");if(!p.classList.contains("on")){p.classList.add("on");abreCapa(()=>p.classList.remove("on"))}};
 $("bCuenta").onclick=()=>location.hash="#/cuenta";
 $("bPanel").onclick=()=>location.hash=esAdmin?"#/admin":"#/panel";
 window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
