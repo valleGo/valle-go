@@ -33,6 +33,7 @@ header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--claro-
 header a{color:var(--verde);text-decoration:none;font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
 .logo{display:flex;align-items:center;gap:10px}.logo img{width:40px;height:40px;flex:none;display:block}
 .hb{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+header .logo,header .hb{flex-shrink:0}header{flex-wrap:wrap;row-gap:4px}.marca{flex:0 0 100%;order:3;display:flex;justify-content:center;align-items:center}.marca img{display:block;max-width:100%;width:auto;height:auto;max-height:26px;object-fit:contain}
 .hb button{background:var(--tarjeta);color:var(--texto);border:1px solid var(--borde);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.85rem}
 .hb #bCarrito{background:var(--acento);color:var(--on-acento);border-color:var(--acento);font-weight:700}
 .hb #bPanel{background:var(--verde);color:var(--on-verde);border-color:var(--verde)}
@@ -114,6 +115,7 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
 </script>
 <header>
   <a href="#/" class="logo"><img src="logo.png" alt="" width="40" height="40"><span>Valle GO</span></a>
+  <div class="marca" aria-hidden="true"><img src="marca.png" alt="" width="450" height="92"></div>
   <div class="hb"><button id="bPanel" style="display:none">Panel</button><button id="bCuenta"></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div>
 </header>
 <main id="vista"></main>
@@ -127,7 +129,7 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
 let COMERCIANTES = [
  { id:"tacos", nombre:"Tacos Doña Lupe", giro:"Taquería", emoji:"🌮", foto:"", horario:"1:00 pm - 10:00 pm",
    desc:"Tacos al pastor y de guisado hechos al momento, receta de la familia.", whatsapp:"5213300000001",
-   envio:30, minimo:80, linkPago:"", // linkPago: enlace de cobro de Mercado Pago (ver instrucciones)
+   envio:30, minimo:80,
    menu:[
     {id:"t1",cat:"Tacos",nombre:"Taco al pastor",desc:"Con piña y cilantro",precio:22,emoji:"🌮",foto:""},
     {id:"t2",cat:"Tacos",nombre:"Taco de bistec",desc:"Con cebolla asada",precio:25,emoji:"🥩",foto:""},
@@ -135,7 +137,7 @@ let COMERCIANTES = [
     {id:"t4",cat:"Bebidas",nombre:"Agua de horchata 1L",desc:"Hecha en casa",precio:40,emoji:"🥛",foto:""}]},
  { id:"panaderia", nombre:"Panadería La Espiga", giro:"Panadería", emoji:"🥐", foto:"", horario:"7:00 am - 8:00 pm",
    desc:"Pan dulce y de sal recién horneado todos los días.", whatsapp:"5213300000002",
-   envio:25, minimo:60, linkPago:"",
+   envio:25, minimo:60,
    menu:[
     {id:"p1",cat:"Pan dulce",nombre:"Concha",desc:"Vainilla o chocolate",precio:12,emoji:"🥯",foto:""},
     {id:"p2",cat:"Pan dulce",nombre:"Caja de 12 piezas",desc:"Surtido del día",precio:130,emoji:"🥐",foto:""},
@@ -229,7 +231,7 @@ async function vistaPanel(){
 // ---- Panel de administración: SOLO el administrador edita ----
 let adm={tab:"anuncios",com:null};
 const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
-const CF_COM=[{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"link_pago",l:"Enlace de cobro Mercado Pago"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_COM=[{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
 const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
 const DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
 const formHTML=(cs,v)=>cs.map(c=>c.t==="dias"?`<label>${c.l}<span class="dias">${DIAS.map(d=>`<span class="dia"><input type="checkbox" data-dia="${d}" ${(v[c.k]||"").split(",").includes(d)?"checked":""} style="width:auto"> ${d}</span>`).join("")}</span><input type="hidden" data-f="${c.k}"></label>`
@@ -408,7 +410,7 @@ async function cerrarAvisos(){
 }
 document.addEventListener("click",e=>{if(e.target.id==="bNotif")activarNotif()});
 
-// ---- Pago en línea (Stripe): abre la página segura de pago ----
+// ---- Pago en línea (Mercado Pago): abre la página segura de pago ----
 async function pagarPedido(id){
   try{
     const {data}=await db.auth.getSession();
@@ -439,7 +441,7 @@ async function cargarDatos(){
   const {data,error}=await db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre");
   if(error||!data||!data.length)return;
   COMERCIANTES=data.map(c=>({id:c.id,nombre:c.nombre,giro:c.giro||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
-    desc:c.descripcion||"",whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),linkPago:c.link_pago||"",clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
+    desc:c.descripcion||"",whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
     menu:(c.menu_items||[]).filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
       desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}))}));
 }
@@ -458,7 +460,7 @@ function ruta(){
   vistaInicio();
 }
 function vistaInicio(){
-  $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2><div class="grid">`+COMERCIANTES.map(t=>`
+  $("vista").innerHTML=adsHTML()+`<h2>Comercios cerca de ti</h2><div class="grid">`+COMERCIANTES.map(t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
    <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
@@ -622,7 +624,7 @@ async function confirmar(t,sub){
   // Nota: la base de datos recalcula total y detalle con los precios reales del menú.
   const fila={comprador_id:sesion.id,cliente_nombre:sesion.nombre,cliente_tel:sesion.tel,comercio_id:t.id,lineas,items,total,entrega:dom?"domicilio":"recoger",pago,direccion:dir,notas:$("notas").value,estado:"Enviado al comercio"};
 
-  if(pago==="en_linea"){   // Pago con Stripe: se guarda el pedido y se abre la página de pago
+  if(pago==="en_linea"){   // Pago con Mercado Pago: se guarda el pedido y se abre la página de pago
     if(!db||!sesion.id)return alert("El pago en línea requiere la base de datos conectada.");
     const b=$("pedir");b.disabled=true;b.textContent="Preparando pago...";
     try{
