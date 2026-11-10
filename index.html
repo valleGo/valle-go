@@ -228,7 +228,7 @@ const ped2html=(p,admin)=>`<div class="item"><div class="in"><b>${esc(p.comercio
 
 // ---- Panel del comerciante: confirma y actualiza sus pedidos; el menú y las fotos solo los edita el administrador ----
 const cobroHTML=()=>`<div class="aviso" style="display:grid;gap:8px"><b>💳 Cobros en línea</b>
-  <span class="suave">Conecta tu cuenta de Mercado Pago para que el dinero de los pedidos pagados en línea llegue directo a tu cuenta. Mercado Pago solo descuenta su comisión por procesar el pago; Valle GO no cobra comisión por tus ventas. Tu tarjeta de débito o tu cuenta bancaria se agregan dentro de tu cuenta de Mercado Pago, para retirar tu dinero cuando quieras.</span>
+  <span class="suave">Conecta tu cuenta de Mercado Pago para que el dinero de los pedidos pagados en línea llegue directo a tu cuenta. Se descuentan la comisión de Mercado Pago por procesar el pago y 1% de Valle GO por el uso de la app, solo en pagos en línea. Tu tarjeta de débito o tu cuenta bancaria se agregan dentro de tu cuenta de Mercado Pago, para retirar tu dinero cuando quieras.</span>
   ${misCom.map(c=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span><b>${esc(c.nombre)}</b>: ${c.mp_conectado?"✅ cuenta conectada":"sin conectar"}</span>
    ${c.mp_conectado?`<button class="btn sec" data-mpd="${c.id}">Desconectar</button>`:`<button class="btn" data-mpc="${c.id}">Conectar mi Mercado Pago</button>`}</div>`).join("")}</div>`;
 async function llamaMp(cuerpo){const {data}=await db.auth.getSession();
