@@ -44,7 +44,7 @@ h2{margin:8px 0 14px;font-weight:700;letter-spacing:-.02em;font-size:1.35rem}
 @media (min-width:768px){.sl{aspect-ratio:auto;height:300px}main:has(.gcom){max-width:1100px}.gcom{grid-template-columns:repeat(3,1fr);gap:20px}}
 @media (min-width:1100px){main:has(.gcom){max-width:1180px}.pista{max-width:720px;margin-left:auto;margin-right:auto}.sl{aspect-ratio:16/7;height:auto}
 main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .cats{justify-content:center}
-.gcom{grid-template-columns:repeat(auto-fit,minmax(260px,300px));justify-content:center}}
+.gcom{grid-template-columns:repeat(3,minmax(0,300px));justify-content:center}}
 .card{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sombra)}
 .foto{height:140px;background:var(--crema) center/cover;display:grid;place-items:center;font-size:3.2rem}
 .card .in{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
@@ -531,6 +531,8 @@ function vistaTienda(id){
 }
 function perfilHTML(){return `<div class="aviso" style="display:grid;gap:10px;max-width:360px;justify-items:start"><b>Mi perfil</b>${avatarHTML(sesion)}
     <label style="width:100%">Foto de perfil<input type="file" accept="image/*" id="fPerfil"></label><span id="fMsg" class="suave"></span>
+    <label style="width:100%">Correo<input id="dc" type="email" autocomplete="email" value="${esc(sesion.email)}"></label>
+    <button class="btn sec" id="gCorreo" type="button">Cambiar correo</button><span id="cMsg" class="suave"></span>
     <label style="width:100%">Nombre<input id="dn" autocomplete="name" value="${esc(sesion.nombre)}"></label>
     <label style="width:100%">Teléfono<input id="dt" type="tel" autocomplete="tel" value="${esc(sesion.tel)}"></label>
     <b style="width:100%;font-size:.85rem">Dirección de entrega</b>${dirCampos("pf",sesion)}
@@ -542,6 +544,15 @@ if($("fPerfil"))$("fPerfil").onchange=async e=>{const f=e.target.files[0];if(!f)
       const r=await db.auth.updateUser({data:{foto:url}});if(r.error)throw r.error;
       sesion.foto=url;$s("sesion",sesion);pintaHeader();(volver||vistaCuenta)();}
     catch(err){$("fMsg").textContent="";alert("No se pudo subir la foto: "+err.message)}};
+  if($("gCorreo"))$("gCorreo").onclick=async()=>{
+    const nuevo=$("dc").value.trim().toLowerCase();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(nuevo))return alert("Escribe un correo válido.");
+    if(nuevo===(sesion.email||"").toLowerCase())return alert("Ese ya es tu correo actual.");
+    const bt=$("gCorreo");bt.disabled=true;bt.textContent="Enviando...";
+    const r=await db.auth.updateUser({email:nuevo},{emailRedirectTo:location.origin+"/"});
+    bt.disabled=false;bt.textContent="Cambiar correo";
+    if(r.error)return alert("No se pudo cambiar el correo: "+r.error.message);
+    $("cMsg").textContent="Te enviamos un enlace de confirmación a "+nuevo+". El cambio se aplica al abrirlo (si también te llega al correo anterior, confírmalo allí). Mientras tanto sigue valiendo tu correo actual.";};
   if($("gDatos"))$("gDatos").onclick=async()=>{
     const d={nombre:$("dn").value.trim(),tel:$("dt").value.trim(),...leeDir("pf")};
     if(!d.nombre)return alert("Escribe tu nombre.");
