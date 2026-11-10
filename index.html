@@ -84,6 +84,7 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 #bnotif{position:fixed;bottom:14px;left:14px;right:14px;max-width:560px;margin:auto;background:var(--acento);color:var(--on-acento);border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:6;display:flex;align-items:center;gap:8px;font-size:.9rem;box-shadow:var(--sombra)}
 header::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:var(--acento);pointer-events:none}
 footer a{color:#7C9564}
+.seccat{margin:18px 0 6px;font-size:1.05rem}
 .foto.zoom{cursor:zoom-in}
 #visor{position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;animation:vIn .2s ease both}
 #visor{cursor:zoom-out}#visor img{max-width:100%;max-height:78vh;border-radius:14px;object-fit:contain;box-shadow:0 10px 40px rgba(0,0,0,.5)}
@@ -169,6 +170,7 @@ function diasTxt(x){const a=(x||"").split(",").filter(Boolean).map(d=>DIAS.index
   return g.join(", ")}
 let sesion=$$("sesion",null), carrito=$$("carrito",{tienda:null,items:{}}), cat="Todo";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let CATEGORIAS=[],catCom="Todos";
 let ANUNCIOS=[{titulo:"Anuncia tu negocio en Valle GO",imagen_url:"",enlace:""},{titulo:"Pide fácil, recibe rápido",imagen_url:"",enlace:""}];
 let adT,esAdmin=false,misCom=[];
 const ESTADOS=["Enviado al comercio","Preparando","En camino","Entregado","Cancelado"];
@@ -239,24 +241,26 @@ async function vistaPanel(){
 // ---- Panel de administración: SOLO el administrador edita ----
 let adm={tab:"anuncios",com:null};
 const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
-const CF_COM=[{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_COM=[{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_CAT=[{k:"nombre",l:"Nombre de la categoría (Comida, Cafeterías, Servicios...)"},{k:"emoji",l:"Emoji (opcional)"},{k:"orden",l:"Orden de aparición (1, 2, 3...)",t:"number"}];
 const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
 const DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
 const formHTML=(cs,v)=>cs.map(c=>c.t==="dias"?`<label>${c.l}<span class="dias">${DIAS.map(d=>`<span class="dia"><input type="checkbox" data-dia="${d}" ${(v[c.k]||"").split(",").includes(d)?"checked":""} style="width:auto"> ${d}</span>`).join("")}</span><input type="hidden" data-f="${c.k}"></label>`
   :c.t==="file"?`<label>${c.l}<input type="file" accept="image/*" data-f="${c.k}">${v[c.k]?`<img src="${esc(v[c.k])}" alt="" style="height:60px;border-radius:8px">`:""}</label>`
   :c.t==="check"?`<label><span><input type="checkbox" data-f="${c.k}" ${v[c.k]?"checked":""} style="width:auto"> ${c.l}</span></label>`
+  :c.t==="select"?`<label>${c.l}<select data-f="${c.k}"><option value="">Sin categoría</option>${CATEGORIAS.map(k=>`<option value="${k.id}" ${v[c.k]===k.id?"selected":""}>${esc((k.emoji?k.emoji+" ":"")+k.nombre)}</option>`).join("")}</select></label>`
   :`<label>${c.l}<input data-f="${c.k}" type="${c.t||"text"}" value="${esc(v[c.k]??"")}"></label>`).join("");
 async function leerForm(cs,raiz,v){const o={};
   for(const c of cs){const el=raiz.querySelector(`[data-f="${c.k}"]`);
     if(c.t==="dias")o[c.k]=[...el.closest("label").querySelectorAll("[data-dia]")].filter(x=>x.checked).map(x=>x.dataset.dia).join(",");
     else if(c.t==="file")o[c.k]=el.files[0]?await subirFoto(el.files[0],c.carpeta):(v[c.k]||null);
-    else if(c.t==="check")o[c.k]=el.checked; else if(c.t==="number")o[c.k]=Number(el.value||0); else o[c.k]=el.value.trim();}
+    else if(c.t==="select")o[c.k]=el.value||null; else if(c.t==="check")o[c.k]=el.checked; else if(c.t==="number")o[c.k]=Number(el.value||0); else o[c.k]=el.value.trim();}
   return o;}
 async function vistaAdmin(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   if(!esAdmin)await cargarRol();
   if(!esAdmin){$("vista").innerHTML="<h2>Acceso restringido</h2><p>Esta sección es solo para el administrador.</p>";return}
-  const T={anuncios:"Publicidad",comercios:"Comercios",menu:"Menús",pedidos:"Pedidos",usuarios:"Usuarios",perfil:"Mi perfil"};
+  const T={anuncios:"Publicidad",comercios:"Comercios",categorias:"Categorías",menu:"Menús",pedidos:"Pedidos",usuarios:"Usuarios",perfil:"Mi perfil"};
   $("vista").innerHTML=`<h2>Administración</h2>${notifBtnHTML()}<div class="cats">${Object.keys(T).map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
   await admTab();
 }
@@ -273,10 +277,17 @@ async function admTab(){
         const x=await db.from("anuncios").insert(o);if(x.error)throw x.error;cargarDatos();admTab();}
       catch(err){alert(err.message);$("gAd").disabled=false}};
   }
+  if(t==="categorias"){
+    const L=(await db.from("categorias").select("*").order("orden").order("nombre")).data||[];CATEGORIAS=L;
+    const cm=(await db.from("comercios").select("categoria_id")).data||[];
+    box.innerHTML=`<p class="suave">Crea las categorías y luego asigna cada comercio en <b>Comercios → Editar</b>. Los clientes verán los comercios organizados por categoría.</p><button class="btn" data-canew>+ Nueva categoría</button><br><br>`+
+      (L.map(k=>`<div class="item"><div class="in"><b>${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}</b><span class="suave">Orden ${k.orden} · ${cm.filter(c=>c.categoria_id===k.id).length} comercio(s)</span><span><button class="btn sec" data-caed="${k.id}">Editar</button> <button class="btn sec" data-cadel="${k.id}">Borrar</button></span></div></div>`).join("")||"<p>Aún no hay categorías.</p>");
+  }
   if(t==="comercios"){
+    if(!CATEGORIAS.length){const ct=await db.from("categorias").select("*").order("orden").order("nombre");if(ct.data)CATEGORIAS=ct.data}
     const L=(await db.from("comercios").select("*").order("nombre")).data||[];
     box.innerHTML=`<button class="btn" data-cnew>+ Nuevo comercio</button><br><br>`+L.map(c=>`<div class="item"><div class="foto" ${foto({foto:c.foto_url})}>${c.foto_url?"":esc(c.emoji||"🏪")}</div><div class="in"><b>${c.logo_url?`<img src="${esc(c.logo_url)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px">`:""}${esc(c.nombre)}</b>
-      <span class="suave">${esc(c.giro)} · ${c.activo?"Visible":"Oculto"}</span><button class="btn sec" data-ced="${c.id}">Editar</button></div></div>`).join("");
+      <span class="suave">${esc(c.giro)} · ${esc((CATEGORIAS.find(k=>k.id===c.categoria_id)||{nombre:"Sin categoría"}).nombre)} · ${c.activo?"Visible":"Oculto"}</span><button class="btn sec" data-ced="${c.id}">Editar</button></div></div>`).join("");
   }
   if(t==="menu"){
     const cs=(await db.from("comercios").select("id,nombre").order("nombre")).data||[];
@@ -341,6 +352,9 @@ document.addEventListener("click",async e=>{
     return admTab()}
   if(d.cnew!==undefined)return formAdm("comercios",CF_COM,{activo:true,envio:30,minimo:0,ofrece_domicilio:true,dias_abiertos:DIAS.join(",")});
   if(d.ced){const r=await db.from("comercios").select("*").eq("id",d.ced).single();return formAdm("comercios",CF_COM,r.data)}
+  if(d.canew!==undefined)return formAdm("categorias",CF_CAT,{orden:CATEGORIAS.length+1});
+  if(d.caed){const r=await db.from("categorias").select("*").eq("id",d.caed).single();return formAdm("categorias",CF_CAT,r.data)}
+  if(d.cadel&&confirm("¿Borrar esta categoría?\nLos comercios que la tengan quedarán sin categoría.")){const r=await db.from("categorias").delete().eq("id",d.cadel);if(r.error){alert(r.error.message);return}cargarDatos();return admTab()}
   if(d.mnew!==undefined)return formAdm("menu_items",CF_MENU,{disponible:true,comercio_id:adm.com});
   if(d.med){const r=await db.from("menu_items").select("*").eq("id",d.med).single();return formAdm("menu_items",CF_MENU,r.data)}
   if(d.mdel&&confirm("¿Borrar este platillo?")){await db.from("menu_items").delete().eq("id",d.mdel);cargarDatos();return admTab()}
@@ -446,9 +460,10 @@ async function entrarGoogle(){const r=await db.auth.signInWithOAuth({provider:"g
 async function cargarDatos(){
   if(!db)return;
   const an=await db.from("anuncios").select("*").eq("activo",true).order("orden").limit(5); if(an.data)ANUNCIOS=an.data;
+  const ct=await db.from("categorias").select("*").order("orden").order("nombre"); if(ct.data)CATEGORIAS=ct.data;
   const {data,error}=await db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre");
   if(error||!data||!data.length)return;
-  COMERCIANTES=data.map(c=>({id:c.id,nombre:c.nombre,giro:c.giro||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
+  COMERCIANTES=data.map(c=>({id:c.id,nombre:c.nombre,giro:c.giro||"",cat:c.categoria_id||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
     desc:c.descripcion||"",whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
     menu:(c.menu_items||[]).filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
       desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}))}));
@@ -467,14 +482,31 @@ function ruta(){
   if(r==="pedidos")return vistaPedidos();
   vistaInicio();
 }
-function vistaInicio(){
-  $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2><div class="grid">`+COMERCIANTES.map(t=>`
+const tarjetaCom=t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
    <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
    ${t.dias?`<span class="suave">📅 ${diasTxt(t.dias)}</span>`:""}
    <span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
-   <a class="btn" href="#/t/${t.id}">Ver menú</a></div></div>`).join("")+`</div>`;iniAds();
+   <a class="btn" href="#/t/${t.id}">Ver menú</a></div></div>`;
+function vistaInicio(){
+  const usadas=CATEGORIAS.filter(k=>COMERCIANTES.some(t=>t.cat===k.id));
+  const sinCat=COMERCIANTES.filter(t=>!usadas.some(k=>k.id===t.cat));
+  const grid=L=>`<div class="grid">${L.map(tarjetaCom).join("")}</div>`;
+  let cuerpo;
+  if(!usadas.length)cuerpo=grid(COMERCIANTES);
+  else{
+    if(catCom!=="Todos"&&catCom!=="otros"&&!usadas.some(k=>k.id===catCom))catCom="Todos";
+    if(catCom==="otros"&&!sinCat.length)catCom="Todos";
+    const chip=(id,txt)=>`<button class="${catCom===id?"on":""}" data-ccat="${id}">${txt}</button>`;
+    const sec=(titulo,L)=>L.length?`<h3 class="seccat">${titulo}</h3>${grid(L)}`:"";
+    const nom=k=>`${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}`;
+    cuerpo=`<div class="cats">${chip("Todos","Todos")}${usadas.map(k=>chip(k.id,nom(k))).join("")}${sinCat.length?chip("otros","Otros"):""}</div>`+
+      (catCom==="Todos"?usadas.map(k=>sec(nom(k),COMERCIANTES.filter(t=>t.cat===k.id))).join("")+sec("Otros",sinCat)
+       :catCom==="otros"?sec("Otros",sinCat)
+       :(k=>sec(nom(k),COMERCIANTES.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
+  }
+  $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2>`+cuerpo;iniAds();
 }
 function vistaTienda(id){
   const t=tienda(id); if(!t)return vistaInicio();
@@ -662,7 +694,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")cierraFoto();if((e.k
 
 // ---------- Eventos ----------
 document.addEventListener("click",e=>{const d=e.target.dataset;
-  if(d.ver){abreFoto(d.ver,d.nom||"");return} if(d.cat){cat=d.cat;ruta()} if(d.add){const[a,b]=d.add.split("|");agregar(a,b)}
+  if(d.ver){abreFoto(d.ver,d.nom||"");return} if(d.ccat){catCom=d.ccat;vistaInicio();return} if(d.cat){cat=d.cat;ruta()} if(d.add){const[a,b]=d.add.split("|");agregar(a,b)}
   if(d.mas)cambia(d.mas,1); if(d.menos)cambia(d.menos,-1); if(d.cerrar!==undefined)$("pCarrito").classList.remove("on")});
 $("bCarrito").onclick=()=>{pintaCarrito();$("pCarrito").classList.add("on")};
 $("bCuenta").onclick=()=>location.hash="#/cuenta";
