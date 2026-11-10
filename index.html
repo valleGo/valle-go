@@ -202,7 +202,7 @@ async function cargarRol(){
   esAdmin=false;misCom=[];
   if(!db||!sesion||!sesion.id){pintaHeader();return}
   const a=await db.from("admins").select("user_id").eq("user_id",sesion.id); esAdmin=!!(a.data&&a.data.length);
-  const c=await db.from("comercios").select("id,nombre,mp_conectado").eq("dueno_id",sesion.id); misCom=c.data||[];
+  const c=await db.from("comercios").select("id,nombre,mp_conectado,plan").eq("dueno_id",sesion.id); misCom=c.data||[];
   pintaHeader();escucharPedidos();notifAuto();
 }
 
@@ -239,6 +239,7 @@ async function vistaPanel(){
   $("vista").innerHTML="<p>Cargando...</p>"; await cargarRol();
   if(!misCom.length&&esAdmin){location.hash="#/admin";return}
   if(!misCom.length){$("vista").innerHTML=`<h2>Panel de comerciante</h2><p>Esta cuenta aún no está vinculada a un comercio. Pide al administrador de Valle GO que la vincule con tu correo.</p>`;return}
+  if(misCom.every(c=>c.plan==="simple")){$("vista").innerHTML=`<h2>Mi panel</h2><div class="aviso"><b>Plan Simple</b><br>Tu comercio tiene un perfil de presentación en Valle GO: logo, portada, nombre, domicilio, horarios, días disponibles y teléfono. Este plan no incluye menú ni pedidos. Para cambiar tus datos o pasar al plan Básico, contacta al administrador de Valle GO.</div>`;return}
   const ids=misCom.map(c=>c.id);
   const [pe,me]=await Promise.all([
     db.from("pedidos").select("*, comercios(nombre)").in("comercio_id",ids).order("creado",{ascending:false}).limit(100),
@@ -255,13 +256,14 @@ async function vistaPanel(){
 // ---- Panel de administración: SOLO el administrador edita ----
 let adm={tab:"anuncios",com:null};
 const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
-const CF_COM=[{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Plan del comercio",t:"plan"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
 const CF_CAT=[{k:"nombre",l:"Nombre de la categoría (Comida, Cafeterías, Servicios...)"},{k:"emoji",l:"Emoji (opcional)"},{k:"orden",l:"Orden de aparición (1, 2, 3...)",t:"number"}];
 const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
 const DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
 const formHTML=(cs,v)=>cs.map(c=>c.t==="dias"?`<label>${c.l}<span class="dias">${DIAS.map(d=>`<span class="dia"><input type="checkbox" data-dia="${d}" ${(v[c.k]||"").split(",").includes(d)?"checked":""} style="width:auto"> ${d}</span>`).join("")}</span><input type="hidden" data-f="${c.k}"></label>`
   :c.t==="file"?`<label>${c.l}<input type="file" accept="image/*" data-f="${c.k}">${v[c.k]?`<img src="${esc(v[c.k])}" alt="" style="height:60px;border-radius:8px">`:""}</label>`
   :c.t==="check"?`<label><span><input type="checkbox" data-f="${c.k}" ${v[c.k]?"checked":""} style="width:auto"> ${c.l}</span></label>`
+  :c.t==="plan"?`<label>${c.l}<select data-f="${c.k}"><option value="basico" ${(v[c.k]||"basico")==="basico"?"selected":""}>Básico: menú y pedidos ($599 + IVA al mes)</option><option value="simple" ${v[c.k]==="simple"?"selected":""}>Simple: solo perfil de presentación ($299 + IVA al mes)</option></select></label>`
   :c.t==="select"?`<label>${c.l}<select data-f="${c.k}"><option value="">Sin categoría</option>${CATEGORIAS.map(k=>`<option value="${k.id}" ${v[c.k]===k.id?"selected":""}>${esc((k.emoji?k.emoji+" ":"")+k.nombre)}</option>`).join("")}</select></label>`
   :`<label>${c.l}<input data-f="${c.k}" type="${c.t||"text"}" value="${esc(v[c.k]??"")}"></label>`).join("");
 async function leerForm(cs,raiz,v){const o={};
@@ -301,7 +303,7 @@ async function admTab(){
     if(!CATEGORIAS.length){const ct=await db.from("categorias").select("*").order("orden").order("nombre");if(ct.data)CATEGORIAS=ct.data}
     const L=(await db.from("comercios").select("*").order("nombre")).data||[];
     box.innerHTML=`<button class="btn" data-cnew>+ Nuevo comercio</button><br><br>`+L.map(c=>`<div class="item"><div class="foto" ${foto({foto:c.foto_url})}>${c.foto_url?"":esc(c.emoji||"🏪")}</div><div class="in"><b>${c.logo_url?`<img src="${esc(c.logo_url)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px">`:""}${esc(c.nombre)}</b>
-      <span class="suave">${esc(c.giro)} · ${esc((CATEGORIAS.find(k=>k.id===c.categoria_id)||{nombre:"Sin categoría"}).nombre)} · ${c.activo?"Visible":"Oculto"}</span><button class="btn sec" data-ced="${c.id}">Editar</button></div></div>`).join("");
+      <span class="suave">${esc(c.giro)} · ${esc((CATEGORIAS.find(k=>k.id===c.categoria_id)||{nombre:"Sin categoría"}).nombre)} · ${c.activo?"Visible":"Oculto"} · Plan ${c.plan==="simple"?"Simple":"Básico"}</span><button class="btn sec" data-ced="${c.id}">Editar</button></div></div>`).join("");
   }
   if(t==="menu"){
     const cs=(await db.from("comercios").select("id,nombre").order("nombre")).data||[];
@@ -334,12 +336,12 @@ async function admTab(){
   if(t==="cobros"){
     const hoy=new Date(); if(!adm.mes)adm.mes=hoy.getFullYear()+"-"+String(hoy.getMonth()+1).padStart(2,"0");
     const [Y,M]=adm.mes.split("-").map(Number), d0=new Date(Y,M-1,1).toISOString(), d1=new Date(Y,M,1).toISOString();
-    const cs=(await db.from("comercios").select("id,nombre,activo").order("nombre")).data||[];
+    const cs=(await db.from("comercios").select("id,nombre,activo,plan").order("nombre")).data||[];
     let P=[],desde=0,err=null;
     for(;;){const r=await db.from("pedidos").select("comercio_id,total,pago,estado,estado_pago").gte("creado",d0).lt("creado",d1).order("creado").range(desde,desde+999);
       if(r.error){err=r.error;break}P=P.concat(r.data||[]);if((r.data||[]).length<1000)break;desde+=1000}
     if(err){box.innerHTML="<p>No se pudo cargar el reporte: "+esc(err.message)+"</p>";return}
-    const PCT=0.01, MEM=699, IVA=0.16, memIva=Math.round(MEM*(1+IVA)*100)/100, r2=x=>Math.round(x*100)/100, mx=x=>"$"+x.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const PCT=0.01, MEMS={simple:299,basico:599}, IVA=0.16, memDe=pl=>Math.round(MEMS[pl==="simple"?"simple":"basico"]*(1+IVA)*100)/100, memIva=memDe("basico"), r2=x=>Math.round(x*100)/100, mx=x=>"$"+x.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
     const rp=await db.from("cobros_pagos").select("*").eq("mes",adm.mes).order("pagado_en");
     const PG=rp.error?[]:(rp.data||[]), pgErr=rp.error?rp.error.message:"", nomC={};cs.forEach(c=>nomC[c.id]=c.nombre);
     const ag={}; let excl=0;
@@ -349,22 +351,22 @@ async function admTab(){
       const a=ag[p.comercio_id]||(ag[p.comercio_id]={n:0,linea:0,otro:0});
       const v=Number(p.total)||0;a.n++;if(p.pago==="en_linea"||p.pago==="tarjeta")a.linea+=v;else a.otro+=v});
     const F=cs.filter(c=>c.activo!==false||ag[c.id]).map(c=>{const a=ag[c.id]||{n:0,linea:0,otro:0},tot=a.linea+a.otro,com=r2(tot*PCT);
-      const pag=r2(PG.filter(x=>x.comercio_id===c.id).reduce((t,x)=>t+Number(x.monto),0));
-      return{id:c.id,pag,saldo:r2(com+memIva-pag),nombre:c.nombre,n:a.n,linea:a.linea,otro:a.otro,tot,com,mem:memIva,pagar:r2(com+memIva)}});
+      const mi=memDe(c.plan),pag=r2(PG.filter(x=>x.comercio_id===c.id).reduce((t,x)=>t+Number(x.monto),0));
+      return{id:c.id,pag,saldo:r2(com+mi-pag),plan:c.plan==="simple"?"Simple":"Básico",nombre:c.nombre,n:a.n,linea:a.linea,otro:a.otro,tot,com,mem:mi,pagar:r2(com+mi)}});
     const S=F.reduce((x,f)=>({pag:x.pag+f.pag,saldo:x.saldo+f.saldo,n:x.n+f.n,linea:x.linea+f.linea,otro:x.otro+f.otro,tot:x.tot+f.tot,com:x.com+f.com,mem:x.mem+f.mem,pagar:x.pagar+f.pagar}),{pag:0,saldo:0,n:0,linea:0,otro:0,tot:0,com:0,mem:0,pagar:0});
-    const fila=f=>`<tr><td>${esc(f.nombre)}</td><td>${f.n}</td><td>${mx(f.linea)}</td><td>${mx(f.otro)}</td><td>${mx(f.tot)}</td><td><b>${mx(f.com)}</b></td><td>${mx(f.mem)}</td><td><b>${mx(f.pagar)}</b></td><td>${mx(f.pag)}</td><td>${f.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':'<b>'+mx(f.saldo)+'</b>'+(f.pag>0?' (parcial)':'')}</td><td>${f.saldo>0.004?`<button class="btn sec" data-cpg="${f.id}|${f.saldo}">Registrar pago</button>`:""}</td></tr>`;
-    box.innerHTML=`<div class="aviso"><b>Cobros del mes</b><br>Valle GO cobra <b>1% del total de todos los pedidos</b> (en línea, transferencia, depósito o efectivo) más la membresía Básica (${mx(MEM)} + IVA = ${mx(memIva)}). Se revisa este reporte y se cobra al final del mes.</div>
+    const fila=f=>`<tr><td>${esc(f.nombre)}</td><td>${f.plan}</td><td>${f.n}</td><td>${mx(f.linea)}</td><td>${mx(f.otro)}</td><td>${mx(f.tot)}</td><td><b>${mx(f.com)}</b></td><td>${mx(f.mem)}</td><td><b>${mx(f.pagar)}</b></td><td>${mx(f.pag)}</td><td>${f.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':'<b>'+mx(f.saldo)+'</b>'+(f.pag>0?' (parcial)':'')}</td><td>${f.saldo>0.004?`<button class="btn sec" data-cpg="${f.id}|${f.saldo}">Registrar pago</button>`:""}</td></tr>`;
+    box.innerHTML=`<div class="aviso"><b>Cobros del mes</b><br>Valle GO cobra <b>1% del total de todos los pedidos</b> (en línea, transferencia, depósito o efectivo) más la membresía según su plan: Simple $299 + IVA = ${mx(memDe("simple"))}; Básico $599 + IVA = ${mx(memDe("basico"))}. Se revisa este reporte y se cobra al final del mes.</div>
     <label>Mes<input type="month" id="cMes" value="${adm.mes}"></label>
     <div style="overflow-x:auto;margin:10px 0"><table style="border-collapse:collapse;width:100%;font-size:.85rem;white-space:nowrap" id="tCob">
-    <thead><tr style="text-align:left"><th>Comercio</th><th>Pedidos</th><th>Pagos en línea</th><th>Transf./efectivo</th><th>Total vendido</th><th>1% Valle GO</th><th>Membresía c/IVA</th><th>Total a cobrar</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead>
-    <tbody>${F.map(fila).join("")||'<tr><td colspan="11">No hay comercios.</td></tr>'}</tbody>
-    <tfoot><tr style="border-top:2px solid var(--borde)"><td><b>Total</b></td><td><b>${S.n}</b></td><td><b>${mx(S.linea)}</b></td><td><b>${mx(S.otro)}</b></td><td><b>${mx(S.tot)}</b></td><td><b>${mx(S.com)}</b></td><td><b>${mx(S.mem)}</b></td><td><b>${mx(S.pagar)}</b></td><td><b>${mx(S.pag)}</b></td><td><b>${mx(S.saldo)}</b></td><td></td></tr></tfoot></table></div>
+    <thead><tr style="text-align:left"><th>Comercio</th><th>Plan</th><th>Pedidos</th><th>Pagos en línea</th><th>Transf./efectivo</th><th>Total vendido</th><th>1% Valle GO</th><th>Membresía c/IVA</th><th>Total a cobrar</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead>
+    <tbody>${F.map(fila).join("")||'<tr><td colspan="12">No hay comercios.</td></tr>'}</tbody>
+    <tfoot><tr style="border-top:2px solid var(--borde)"><td><b>Total</b></td><td></td><td><b>${S.n}</b></td><td><b>${mx(S.linea)}</b></td><td><b>${mx(S.otro)}</b></td><td><b>${mx(S.tot)}</b></td><td><b>${mx(S.com)}</b></td><td><b>${mx(S.mem)}</b></td><td><b>${mx(S.pagar)}</b></td><td><b>${mx(S.pag)}</b></td><td><b>${mx(S.saldo)}</b></td><td></td></tr></tfoot></table></div>
     <p class="suave">Cuentan los pedidos del mes que no están cancelados; los pagos en línea solo si están marcados como Pagado. Los de transferencia y efectivo cuentan aunque se cobren fuera de la app: revisa que estén registrados. ${excl?excl+" pedido(s) no se cuentan (cancelados o pago en línea sin pagar). ":""}El IVA de la comisión se confirma con tu contador.</p>
     <h3>Pagos registrados del mes</h3>${pgErr?'<p class="suave">No se pudo cargar el registro de pagos: '+esc(pgErr)+'</p>':""}
     ${PG.length?PG.map(x=>`<div class="aviso" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span><b>${esc(nomC[x.comercio_id]||"Comercio")}</b> · ${mx(Number(x.monto))}<br><span class="suave">${new Date(x.pagado_en).toLocaleDateString("es-MX")}${x.metodo?" · "+esc(x.metodo):""}${x.nota?" · "+esc(x.nota):""}</span></span><button class="btn sec" data-cpdel="${x.id}">Quitar</button></div>`).join(""):'<p class="suave">Aún no hay pagos registrados este mes.</p>'}
     <button class="btn" id="cCsv">Descargar CSV</button>`;
     $("cMes").onchange=e=>{if(e.target.value){adm.mes=e.target.value;admTab()}};
-    $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Pedidos","Pagos en linea","Transferencia/efectivo","Total vendido","1% Valle GO","Membresia con IVA","Total a cobrar","Pagado","Saldo"]].concat(F.map(f=>[f.nombre,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.mem.toFixed(2),f.pagar.toFixed(2),f.pag.toFixed(2),f.saldo.toFixed(2)])).concat([["Total",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.mem.toFixed(2),S.pagar.toFixed(2),S.pag.toFixed(2),S.saldo.toFixed(2)]]);
+    $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Plan","Pedidos","Pagos en linea","Transferencia/efectivo","Total vendido","1% Valle GO","Membresia con IVA","Total a cobrar","Pagado","Saldo"]].concat(F.map(f=>[f.nombre,f.plan,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.mem.toFixed(2),f.pagar.toFixed(2),f.pag.toFixed(2),f.saldo.toFixed(2)])).concat([["Total","",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.mem.toFixed(2),S.pagar.toFixed(2),S.pag.toFixed(2),S.saldo.toFixed(2)]]);
       const b=new Blob(["﻿"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="valle-go-cobros-"+adm.mes+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
   }
   if(t==="pedidos"){
@@ -407,7 +409,7 @@ document.addEventListener("click",async e=>{
     e.target.disabled=true;const r=await db.from("pedidos").delete().eq("id",d.pdel).select("id");
     if(r.error||!(r.data&&r.data.length)){alert(r.error?r.error.message:"No se pudo eliminar el pedido.");e.target.disabled=false;return}
     return admTab()}
-  if(d.cnew!==undefined)return formAdm("comercios",CF_COM,{activo:true,envio:30,minimo:0,ofrece_domicilio:true,dias_abiertos:DIAS.join(",")});
+  if(d.cnew!==undefined)return formAdm("comercios",CF_COM,{activo:true,plan:"basico",envio:30,minimo:0,ofrece_domicilio:true,dias_abiertos:DIAS.join(",")});
   if(d.ced){const r=await db.from("comercios").select("*").eq("id",d.ced).single();return formAdm("comercios",CF_COM,r.data)}
   if(d.canew!==undefined)return formAdm("categorias",CF_CAT,{orden:CATEGORIAS.length+1});
   if(d.caed){const r=await db.from("categorias").select("*").eq("id",d.caed).single();return formAdm("categorias",CF_CAT,r.data)}
@@ -525,7 +527,7 @@ async function cargarDatos(){
   const ct=await db.from("categorias").select("*").order("orden").order("nombre"); if(ct.data)CATEGORIAS=ct.data;
   const {data,error}=await db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre");
   if(error||!data||!data.length)return;
-  COMERCIANTES=data.map(c=>({id:c.id,nombre:c.nombre,giro:c.giro||"",cat:c.categoria_id||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
+  COMERCIANTES=data.map(c=>({id:c.id,plan:c.plan==="simple"?"simple":"basico",nombre:c.nombre,giro:c.giro||"",cat:c.categoria_id||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
     desc:c.descripcion||"",whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
     menu:(c.menu_items||[]).filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
       desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}))}));
@@ -549,8 +551,8 @@ const tarjetaCom=t=>`
    ${(k=>k?`<span class="ctag">${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}</span>`:"")(CATEGORIAS.find(k=>k.id===t.cat))}<b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
    ${t.dias?`<span class="suave">📅 ${diasTxt(t.dias)}</span>`:""}
-   <span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
-   <a class="btn" href="#/t/${t.id}">Ver menú</a></div></div>`;
+   ${t.plan==="simple"?`${t.whatsapp?`<span class="suave">📞 ${esc(t.whatsapp)}</span>`:""}<a class="btn" href="#/t/${t.id}">Ver perfil</a>`:`<span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
+   <a class="btn" href="#/t/${t.id}">Ver menú</a>`}</div></div>`;
 function vistaInicio(){
   const usadas=CATEGORIAS.filter(k=>COMERCIANTES.some(t=>t.cat===k.id));
   const sinCat=COMERCIANTES.filter(t=>!usadas.some(k=>k.id===t.cat));
@@ -572,6 +574,16 @@ function vistaInicio(){
 }
 function vistaTienda(id){
   const t=tienda(id); if(!t)return vistaInicio();
+  if(t.plan==="simple"){
+    const tel=String(t.whatsapp||"").replace(/\D/g,"");
+    $("vista").innerHTML=`<div class="perfil"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t,1)}</div><div class="in${t.logo?" cl g":""}">
+     <h2>${esc(t.nombre)}</h2>${t.desc?`<span>${esc(t.desc)}</span>`:""}
+     ${t.giro?`<span class="suave">${esc(t.giro)}</span>`:""}
+     ${t.horario?`<span class="suave">🕒 Horario: ${esc(t.horario)}</span>`:""}
+     ${t.dias?`<span class="suave">📅 Días: ${diasTxt(t.dias)}</span>`:""}
+     ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
+     ${tel?`<span class="suave">📞 <a href="tel:+${tel}">${esc(t.whatsapp)}</a></span>`:""}</div></div>`;
+    return}
   const cats=["Todo",...new Set(t.menu.map(m=>m.cat))];
   $("vista").innerHTML=`<div class="perfil"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t,1)}</div><div class="in${t.logo?" cl g":""}">
    <h2>${esc(t.nombre)}</h2><span>${t.desc}</span>
