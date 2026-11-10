@@ -340,6 +340,8 @@ async function admTab(){
       if(r.error){err=r.error;break}P=P.concat(r.data||[]);if((r.data||[]).length<1000)break;desde+=1000}
     if(err){box.innerHTML="<p>No se pudo cargar el reporte: "+esc(err.message)+"</p>";return}
     const PCT=0.01, MEM=699, IVA=0.16, memIva=Math.round(MEM*(1+IVA)*100)/100, r2=x=>Math.round(x*100)/100, mx=x=>"$"+x.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const rp=await db.from("cobros_pagos").select("*").eq("mes",adm.mes).order("pagado_en");
+    const PG=rp.error?[]:(rp.data||[]), pgErr=rp.error?rp.error.message:"", nomC={};cs.forEach(c=>nomC[c.id]=c.nombre);
     const ag={}; let excl=0;
     P.forEach(p=>{
       const cuenta=p.estado!=="Cancelado"&&!(p.pago==="en_linea"||p.pago==="tarjeta")||(p.estado!=="Cancelado"&&p.estado_pago==="Pagado");
@@ -347,19 +349,22 @@ async function admTab(){
       const a=ag[p.comercio_id]||(ag[p.comercio_id]={n:0,linea:0,otro:0});
       const v=Number(p.total)||0;a.n++;if(p.pago==="en_linea"||p.pago==="tarjeta")a.linea+=v;else a.otro+=v});
     const F=cs.filter(c=>c.activo!==false||ag[c.id]).map(c=>{const a=ag[c.id]||{n:0,linea:0,otro:0},tot=a.linea+a.otro,com=r2(tot*PCT);
-      return{nombre:c.nombre,n:a.n,linea:a.linea,otro:a.otro,tot,com,mem:memIva,pagar:r2(com+memIva)}});
-    const S=F.reduce((x,f)=>({n:x.n+f.n,linea:x.linea+f.linea,otro:x.otro+f.otro,tot:x.tot+f.tot,com:x.com+f.com,mem:x.mem+f.mem,pagar:x.pagar+f.pagar}),{n:0,linea:0,otro:0,tot:0,com:0,mem:0,pagar:0});
-    const fila=f=>`<tr><td>${esc(f.nombre)}</td><td>${f.n}</td><td>${mx(f.linea)}</td><td>${mx(f.otro)}</td><td>${mx(f.tot)}</td><td><b>${mx(f.com)}</b></td><td>${mx(f.mem)}</td><td><b>${mx(f.pagar)}</b></td></tr>`;
+      const pag=r2(PG.filter(x=>x.comercio_id===c.id).reduce((t,x)=>t+Number(x.monto),0));
+      return{id:c.id,pag,saldo:r2(com+memIva-pag),nombre:c.nombre,n:a.n,linea:a.linea,otro:a.otro,tot,com,mem:memIva,pagar:r2(com+memIva)}});
+    const S=F.reduce((x,f)=>({pag:x.pag+f.pag,saldo:x.saldo+f.saldo,n:x.n+f.n,linea:x.linea+f.linea,otro:x.otro+f.otro,tot:x.tot+f.tot,com:x.com+f.com,mem:x.mem+f.mem,pagar:x.pagar+f.pagar}),{pag:0,saldo:0,n:0,linea:0,otro:0,tot:0,com:0,mem:0,pagar:0});
+    const fila=f=>`<tr><td>${esc(f.nombre)}</td><td>${f.n}</td><td>${mx(f.linea)}</td><td>${mx(f.otro)}</td><td>${mx(f.tot)}</td><td><b>${mx(f.com)}</b></td><td>${mx(f.mem)}</td><td><b>${mx(f.pagar)}</b></td><td>${mx(f.pag)}</td><td>${f.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':'<b>'+mx(f.saldo)+'</b>'+(f.pag>0?' (parcial)':'')}</td><td>${f.saldo>0.004?`<button class="btn sec" data-cpg="${f.id}|${f.saldo}">Registrar pago</button>`:""}</td></tr>`;
     box.innerHTML=`<div class="aviso"><b>Cobros del mes</b><br>Valle GO cobra <b>1% del total de todos los pedidos</b> (en línea, transferencia, depósito o efectivo) más la membresía Básica (${mx(MEM)} + IVA = ${mx(memIva)}). Se revisa este reporte y se cobra al final del mes.</div>
     <label>Mes<input type="month" id="cMes" value="${adm.mes}"></label>
     <div style="overflow-x:auto;margin:10px 0"><table style="border-collapse:collapse;width:100%;font-size:.85rem;white-space:nowrap" id="tCob">
-    <thead><tr style="text-align:left"><th>Comercio</th><th>Pedidos</th><th>Pagos en línea</th><th>Transf./efectivo</th><th>Total vendido</th><th>1% Valle GO</th><th>Membresía c/IVA</th><th>Total a cobrar</th></tr></thead>
-    <tbody>${F.map(fila).join("")||'<tr><td colspan="8">No hay comercios.</td></tr>'}</tbody>
-    <tfoot><tr style="border-top:2px solid var(--borde)"><td><b>Total</b></td><td><b>${S.n}</b></td><td><b>${mx(S.linea)}</b></td><td><b>${mx(S.otro)}</b></td><td><b>${mx(S.tot)}</b></td><td><b>${mx(S.com)}</b></td><td><b>${mx(S.mem)}</b></td><td><b>${mx(S.pagar)}</b></td></tr></tfoot></table></div>
+    <thead><tr style="text-align:left"><th>Comercio</th><th>Pedidos</th><th>Pagos en línea</th><th>Transf./efectivo</th><th>Total vendido</th><th>1% Valle GO</th><th>Membresía c/IVA</th><th>Total a cobrar</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead>
+    <tbody>${F.map(fila).join("")||'<tr><td colspan="11">No hay comercios.</td></tr>'}</tbody>
+    <tfoot><tr style="border-top:2px solid var(--borde)"><td><b>Total</b></td><td><b>${S.n}</b></td><td><b>${mx(S.linea)}</b></td><td><b>${mx(S.otro)}</b></td><td><b>${mx(S.tot)}</b></td><td><b>${mx(S.com)}</b></td><td><b>${mx(S.mem)}</b></td><td><b>${mx(S.pagar)}</b></td><td><b>${mx(S.pag)}</b></td><td><b>${mx(S.saldo)}</b></td><td></td></tr></tfoot></table></div>
     <p class="suave">Cuentan los pedidos del mes que no están cancelados; los pagos en línea solo si están marcados como Pagado. Los de transferencia y efectivo cuentan aunque se cobren fuera de la app: revisa que estén registrados. ${excl?excl+" pedido(s) no se cuentan (cancelados o pago en línea sin pagar). ":""}El IVA de la comisión se confirma con tu contador.</p>
+    <h3>Pagos registrados del mes</h3>${pgErr?'<p class="suave">No se pudo cargar el registro de pagos: '+esc(pgErr)+'</p>':""}
+    ${PG.length?PG.map(x=>`<div class="aviso" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span><b>${esc(nomC[x.comercio_id]||"Comercio")}</b> · ${mx(Number(x.monto))}<br><span class="suave">${new Date(x.pagado_en).toLocaleDateString("es-MX")}${x.metodo?" · "+esc(x.metodo):""}${x.nota?" · "+esc(x.nota):""}</span></span><button class="btn sec" data-cpdel="${x.id}">Quitar</button></div>`).join(""):'<p class="suave">Aún no hay pagos registrados este mes.</p>'}
     <button class="btn" id="cCsv">Descargar CSV</button>`;
     $("cMes").onchange=e=>{if(e.target.value){adm.mes=e.target.value;admTab()}};
-    $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Pedidos","Pagos en linea","Transferencia/efectivo","Total vendido","1% Valle GO","Membresia con IVA","Total a cobrar"]].concat(F.map(f=>[f.nombre,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.mem.toFixed(2),f.pagar.toFixed(2)])).concat([["Total",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.mem.toFixed(2),S.pagar.toFixed(2)]]);
+    $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Pedidos","Pagos en linea","Transferencia/efectivo","Total vendido","1% Valle GO","Membresia con IVA","Total a cobrar","Pagado","Saldo"]].concat(F.map(f=>[f.nombre,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.mem.toFixed(2),f.pagar.toFixed(2),f.pag.toFixed(2),f.saldo.toFixed(2)])).concat([["Total",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.mem.toFixed(2),S.pagar.toFixed(2),S.pag.toFixed(2),S.saldo.toFixed(2)]]);
       const b=new Blob(["﻿"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="valle-go-cobros-"+adm.mes+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
   }
   if(t==="pedidos"){
@@ -390,6 +395,12 @@ document.addEventListener("click",async e=>{
     e.target.disabled=true;const r=await db.rpc("admin_eliminar_usuario",{uid:d.udel});
     if(r.error){alert("No se pudo eliminar: "+r.error.message);e.target.disabled=false;return}
     if(adm.uh&&capas.length){cierraCapa();return}adm.uh=null;return admTab()}
+  if(d.cpg){const[cid,sal]=d.cpg.split("|");const m=prompt("Monto recibido (MXN):",Number(sal).toFixed(2));if(m===null)return;const monto=Math.round(parseFloat(String(m).replace(/[$,\s]/g,""))*100)/100;
+    if(!(monto>0)){alert("Escribe un monto válido.");return}
+    const met=prompt("Cómo pagó (transferencia, efectivo, depósito…):","Transferencia");if(met===null)return;const nota=prompt("Nota (opcional):","");
+    e.target.disabled=true;const r=await db.from("cobros_pagos").insert({comercio_id:cid,mes:adm.mes,monto,metodo:(met||"").trim()||null,nota:((nota||"").trim())||null});
+    if(r.error){alert("No se pudo guardar: "+r.error.message);e.target.disabled=false;return}return admTab()}
+  if(d.cpdel&&confirm("¿Quitar este pago registrado?")){const r=await db.from("cobros_pagos").delete().eq("id",d.cpdel);if(r.error){alert(r.error.message);return}return admTab()}
   if(d.aon){const[i,a]=d.aon.split("|");await db.from("anuncios").update({activo:a!=="true"}).eq("id",i);cargarDatos();return admTab()}
   if(d.adel&&confirm("¿Borrar este anuncio?")){await db.from("anuncios").delete().eq("id",d.adel);cargarDatos();return admTab()}
   if(d.pdel){if(!confirm("¿Eliminar este pedido definitivamente?\nNo se puede deshacer."))return;
