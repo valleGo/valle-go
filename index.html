@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Valle GO</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#CFCFCF">
+<meta name="theme-color" content="#E6E6E6">
 <meta name="color-scheme" content="light">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
 /* ===== Valle GO · estilo moderno y simple · Montserrat + paleta ===== */
 :root{
   color-scheme:light;
-  --fondo:#EBFFEB;--tarjeta:#FFFFFF;--texto:#2B2D22;--suave:#6F6A5A;--borde:#E6E9D2;--crema:#F1F5E4;
+  --fondo:#E6E6E6;--tarjeta:#FFFFFF;--texto:#2B2D22;--suave:#6F6A5A;--borde:#E6E9D2;--crema:#F1F5E4;
   --verde:#5D774A;--on-verde:#FFFFFF;      /* oliva: color principal */
   --acento:#F6C335;--on-acento:#2B2D22;    /* amarillo */
   --coral:#E77154;--naranja:#EC9243;--salvia:#A5B574;--cielo:#8DCEE8;--arena:#A48857;
@@ -29,7 +29,7 @@ html{-webkit-text-size-adjust:100%}
 body{font-family:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-weight:500;line-height:1.45;background:var(--fondo);color:var(--texto);padding-bottom:84px}
 button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}
 :focus-visible{outline:3px solid var(--cielo);outline-offset:2px}
-header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--claro-verde) 92%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--texto);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--borde)}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--claro-verde) 45%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);color:var(--texto);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.35)}
 header a{color:var(--verde);text-decoration:none;font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
 .logo{display:flex;align-items:center;gap:10px}.logo img{width:40px;height:40px;flex:none;display:block}
 .hb{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
@@ -436,7 +436,7 @@ function ruta(){
   vistaInicio();
 }
 function vistaInicio(){
-  $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2><div class="grid">`+COMERCIANTES.map(t=>`
+  $("vista").innerHTML=adsHTML()+`<h2>Comercios cerca de ti</h2><div class="grid">`+COMERCIANTES.map(t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
    <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
