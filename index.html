@@ -31,7 +31,7 @@ button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}
 :focus-visible{outline:3px solid var(--cielo);outline-offset:2px}
 header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--claro-verde) 20%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);color:var(--texto);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.35)}
 header a{color:var(--verde);text-decoration:none;font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
-.logo{display:flex;align-items:center;gap:10px}.logo img{width:56px;height:56px;flex:none;display:block}
+.logo{display:flex;align-items:center;gap:10px}.logo img{width:66px;height:66px;flex:none;display:block}
 .hb{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 header .logo{flex-shrink:0}header .hb{margin-left:auto;flex:0 1 auto;min-width:0}header{flex-wrap:wrap;row-gap:4px}.marca{flex:0 0 100%;order:3;display:flex;justify-content:center;align-items:center}.marca img{display:block;max-width:100%;width:auto;height:auto;max-height:26px;object-fit:contain}
 .hb button{background:var(--tarjeta);color:var(--texto);border:1px solid var(--borde);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.85rem}
@@ -114,7 +114,7 @@ function intenta(){var w=Math.max(0,2000-(Date.now()-t0));setTimeout(quitar,w)}
 if(document.readyState==="complete")intenta();else window.addEventListener("load",intenta);setTimeout(quitar,4500)})();
 </script>
 <header>
-  <a href="#/" class="logo" aria-label="Valle GO"><img src="logo.png" alt="Valle GO" width="56" height="56"></a>
+  <a href="#/" class="logo" aria-label="Valle GO"><img src="logo.png" alt="Valle GO" width="66" height="66"></a>
   <div class="marca" aria-hidden="true"><img src="marca.png" alt="" width="450" height="92"></div>
   <div class="hb"><button id="bPanel" style="display:none">Panel</button><button id="bCuenta"></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div>
 </header>
