@@ -52,7 +52,9 @@ module.exports = async (req, res) => {
     // 4. Si el comercio conectó su cuenta de Mercado Pago, el dinero le llega directo a él
     //    y la comisión de Valle GO (marketplace_fee) se descuenta sola. Si no, se cobra como antes.
     const tokenVend = await tokenComercio(ped.comercio_id);
-    const comision = tokenVend ? comisionPlataforma(Number(ped.total)) : 0;
+    // La comisión de Valle GO se calcula solo sobre los productos: el envío lo cobra el propio comercio.
+    const productos = lineas.filter(l => l.id !== "envio").reduce((a, l) => a + Math.round(l.unit_price * 100) * l.quantity, 0) / 100;
+    const comision = tokenVend ? comisionPlataforma(productos) : 0;
 
     // 5. Crear la preferencia de pago en Mercado Pago
     const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
