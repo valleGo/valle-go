@@ -274,7 +274,7 @@ async function vistaAdmin(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   if(!esAdmin)await cargarRol();
   if(!esAdmin){$("vista").innerHTML="<h2>Acceso restringido</h2><p>Esta sección es solo para el administrador.</p>";return}
-  const T={anuncios:"Publicidad",comercios:"Comercios",categorias:"Categorías",menu:"Menús",pedidos:"Pedidos",usuarios:"Usuarios",perfil:"Mi perfil"};
+  const T={anuncios:"Publicidad",comercios:"Comercios",categorias:"Categorías",menu:"Menús",cobros:"Cobros 1%",pedidos:"Pedidos",usuarios:"Usuarios",perfil:"Mi perfil"};
   $("vista").innerHTML=`<h2>Administración</h2>${notifBtnHTML()}<div class="cats">${Object.keys(T).map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
   await admTab();
 }
@@ -330,6 +330,37 @@ async function admTab(){
     box.innerHTML=`<p class="suave">${adm.ul.length} usuario(s) registrado(s).</p><label>Buscar<input id="uq" placeholder="Nombre, correo o teléfono" value="${esc(adm.uq||"")}"></label><br>`+
       (V.map(u=>`<div class="item"><div class="in"><b>${esc(u.nombre)}</b><span class="suave">${esc(u.email)}${u.tel?` · ${esc(u.tel)}`:""}</span><span class="suave">Registrado: ${fe(u.registrado)} · ${u.pedidos} pedido(s) · ${din(Number(u.gastado))}</span><span><button class="btn sec" data-uh="${u.id}">Ver historial</button> <button class="btn sec" data-udel="${u.id}">Eliminar</button></span></div></div>`).join("")||"<p>Sin resultados.</p>");
     $("uq").oninput=e=>{adm.uq=e.target.value;const pos=e.target.selectionStart;admTab().then(()=>{const i=$("uq");if(i){i.focus();i.setSelectionRange(pos,pos)}})};
+  }
+  if(t==="cobros"){
+    const hoy=new Date(); if(!adm.mes)adm.mes=hoy.getFullYear()+"-"+String(hoy.getMonth()+1).padStart(2,"0");
+    const [Y,M]=adm.mes.split("-").map(Number), d0=new Date(Y,M-1,1).toISOString(), d1=new Date(Y,M,1).toISOString();
+    const cs=(await db.from("comercios").select("id,nombre,activo").order("nombre")).data||[];
+    let P=[],desde=0,err=null;
+    for(;;){const r=await db.from("pedidos").select("comercio_id,total,pago,estado,estado_pago").gte("creado",d0).lt("creado",d1).order("creado").range(desde,desde+999);
+      if(r.error){err=r.error;break}P=P.concat(r.data||[]);if((r.data||[]).length<1000)break;desde+=1000}
+    if(err){box.innerHTML="<p>No se pudo cargar el reporte: "+esc(err.message)+"</p>";return}
+    const PCT=0.01, MEM=699, IVA=0.16, memIva=Math.round(MEM*(1+IVA)*100)/100, r2=x=>Math.round(x*100)/100, mx=x=>"$"+x.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const ag={}; let excl=0;
+    P.forEach(p=>{
+      const cuenta=p.estado!=="Cancelado"&&!(p.pago==="en_linea"||p.pago==="tarjeta")||(p.estado!=="Cancelado"&&p.estado_pago==="Pagado");
+      if(!cuenta){excl++;return}
+      const a=ag[p.comercio_id]||(ag[p.comercio_id]={n:0,linea:0,otro:0});
+      const v=Number(p.total)||0;a.n++;if(p.pago==="en_linea"||p.pago==="tarjeta")a.linea+=v;else a.otro+=v});
+    const F=cs.filter(c=>c.activo!==false||ag[c.id]).map(c=>{const a=ag[c.id]||{n:0,linea:0,otro:0},tot=a.linea+a.otro,com=r2(tot*PCT);
+      return{nombre:c.nombre,n:a.n,linea:a.linea,otro:a.otro,tot,com,mem:memIva,pagar:r2(com+memIva)}});
+    const S=F.reduce((x,f)=>({n:x.n+f.n,linea:x.linea+f.linea,otro:x.otro+f.otro,tot:x.tot+f.tot,com:x.com+f.com,mem:x.mem+f.mem,pagar:x.pagar+f.pagar}),{n:0,linea:0,otro:0,tot:0,com:0,mem:0,pagar:0});
+    const fila=f=>`<tr><td>${esc(f.nombre)}</td><td>${f.n}</td><td>${mx(f.linea)}</td><td>${mx(f.otro)}</td><td>${mx(f.tot)}</td><td><b>${mx(f.com)}</b></td><td>${mx(f.mem)}</td><td><b>${mx(f.pagar)}</b></td></tr>`;
+    box.innerHTML=`<div class="aviso"><b>Cobros del mes</b><br>Valle GO cobra <b>1% del total de todos los pedidos</b> (en línea, transferencia, depósito o efectivo) más la membresía Básica (${mx(MEM)} + IVA = ${mx(memIva)}). Se revisa este reporte y se cobra al final del mes.</div>
+    <label>Mes<input type="month" id="cMes" value="${adm.mes}"></label>
+    <div style="overflow-x:auto;margin:10px 0"><table style="border-collapse:collapse;width:100%;font-size:.85rem;white-space:nowrap" id="tCob">
+    <thead><tr style="text-align:left"><th>Comercio</th><th>Pedidos</th><th>Pagos en línea</th><th>Transf./efectivo</th><th>Total vendido</th><th>1% Valle GO</th><th>Membresía c/IVA</th><th>Total a cobrar</th></tr></thead>
+    <tbody>${F.map(fila).join("")||'<tr><td colspan="8">No hay comercios.</td></tr>'}</tbody>
+    <tfoot><tr style="border-top:2px solid var(--borde)"><td><b>Total</b></td><td><b>${S.n}</b></td><td><b>${mx(S.linea)}</b></td><td><b>${mx(S.otro)}</b></td><td><b>${mx(S.tot)}</b></td><td><b>${mx(S.com)}</b></td><td><b>${mx(S.mem)}</b></td><td><b>${mx(S.pagar)}</b></td></tr></tfoot></table></div>
+    <p class="suave">Cuentan los pedidos del mes que no están cancelados; los pagos en línea solo si están marcados como Pagado. Los de transferencia y efectivo cuentan aunque se cobren fuera de la app: revisa que estén registrados. ${excl?excl+" pedido(s) no se cuentan (cancelados o pago en línea sin pagar). ":""}El IVA de la comisión se confirma con tu contador.</p>
+    <button class="btn" id="cCsv">Descargar CSV</button>`;
+    $("cMes").onchange=e=>{if(e.target.value){adm.mes=e.target.value;admTab()}};
+    $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Pedidos","Pagos en linea","Transferencia/efectivo","Total vendido","1% Valle GO","Membresia con IVA","Total a cobrar"]].concat(F.map(f=>[f.nombre,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.mem.toFixed(2),f.pagar.toFixed(2)])).concat([["Total",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.mem.toFixed(2),S.pagar.toFixed(2)]]);
+      const b=new Blob(["﻿"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="valle-go-cobros-"+adm.mes+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
   }
   if(t==="pedidos"){
     const L=(await db.from("pedidos").select("*, comercios(nombre)").order("creado",{ascending:false}).limit(100)).data||[];
