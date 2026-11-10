@@ -42,8 +42,9 @@ h2{margin:8px 0 14px;font-weight:700;letter-spacing:-.02em;font-size:1.35rem}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
 /* Tablet y PC: cuadrícula de comercios más ancha (el celular no cambia) */
 @media (min-width:768px){.sl{aspect-ratio:auto;height:300px}main:has(.gcom){max-width:1100px}.gcom{grid-template-columns:repeat(3,1fr);gap:20px}}
-@media (min-width:1100px){.sl{height:340px}main:has(.gcom){max-width:1360px}.gcom{grid-template-columns:repeat(4,1fr)}}
-@media (min-width:1500px){main:has(.gcom){max-width:1560px}.gcom{grid-template-columns:repeat(5,1fr)}}
+@media (min-width:1100px){main:has(.gcom){max-width:1180px}.pista{max-width:720px;margin-left:auto;margin-right:auto}.sl{aspect-ratio:16/7;height:auto}
+main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .cats{justify-content:center}
+.gcom{grid-template-columns:repeat(auto-fit,minmax(260px,300px));justify-content:center}}
 .card{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sombra)}
 .foto{height:140px;background:var(--crema) center/cover;display:grid;place-items:center;font-size:3.2rem}
 .card .in{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
