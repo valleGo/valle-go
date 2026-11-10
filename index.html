@@ -649,10 +649,13 @@ async function confirmar(t,sub){
 }
 
 // ---------- Ver foto del producto ----------
-function cierraFoto(){const v=$("visor");if(v)v.remove()}
-function abreFoto(url,nombre){cierraFoto();const v=document.createElement("div");v.id="visor";v.setAttribute("role","dialog");v.setAttribute("aria-label","Foto del producto");
+function quitaVisor(){const v=$("visor");if(v)v.remove()}
+// "Atrás" (Android, iPhone, PC) cierra la foto: al abrirla se agrega una entrada al historial y al cerrarla se retira
+function cierraFoto(){if(!$("visor"))return;if(history.state&&history.state.visor)history.back();else quitaVisor()}
+window.addEventListener("popstate",quitaVisor);
+function abreFoto(url,nombre){if($("visor"))return;const v=document.createElement("div");v.id="visor";v.setAttribute("role","dialog");v.setAttribute("aria-label","Foto del producto");
   v.innerHTML=`<button aria-label="Cerrar">×</button><img alt="${nombre}" src="${url}"><p>${nombre}</p>`;
-  v.onclick=cierraFoto;document.body.appendChild(v);v.querySelector("button").focus()}
+  v.onclick=cierraFoto;document.body.appendChild(v);history.pushState({visor:1},"");v.querySelector("button").focus()}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")cierraFoto();if((e.key==="Enter"||e.key===" ")&&e.target.dataset&&e.target.dataset.ver){e.preventDefault();abreFoto(e.target.dataset.ver,e.target.dataset.nom||"")}});
 
 // ---------- Eventos ----------
