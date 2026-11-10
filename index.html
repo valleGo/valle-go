@@ -202,7 +202,7 @@ async function cargarRol(){
   esAdmin=false;misCom=[];
   if(!db||!sesion||!sesion.id){pintaHeader();return}
   const a=await db.from("admins").select("user_id").eq("user_id",sesion.id); esAdmin=!!(a.data&&a.data.length);
-  const c=await db.from("comercios").select("id,nombre").eq("dueno_id",sesion.id); misCom=c.data||[];
+  const c=await db.from("comercios").select("id,nombre,mp_conectado").eq("dueno_id",sesion.id); misCom=c.data||[];
   pintaHeader();escucharPedidos();notifAuto();
 }
 
@@ -227,6 +227,13 @@ const ped2html=(p,admin)=>`<div class="item"><div class="in"><b>${esc(p.comercio
   :`<span class="estado">${esc(p.estado)}</span>`}</div></div>`;
 
 // ---- Panel del comerciante: confirma y actualiza sus pedidos; el menú y las fotos solo los edita el administrador ----
+const cobroHTML=()=>`<div class="aviso" style="display:grid;gap:8px"><b>💳 Cobros en línea</b>
+  <span class="suave">Conecta tu cuenta de Mercado Pago para que el dinero de los pedidos pagados en línea llegue directo a tu cuenta. Valle GO solo descuenta su comisión. Tu tarjeta de débito o tu cuenta bancaria se agregan dentro de tu cuenta de Mercado Pago, para retirar tu dinero cuando quieras.</span>
+  ${misCom.map(c=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span><b>${esc(c.nombre)}</b>: ${c.mp_conectado?"✅ cuenta conectada":"sin conectar"}</span>
+   ${c.mp_conectado?`<button class="btn sec" data-mpd="${c.id}">Desconectar</button>`:`<button class="btn" data-mpc="${c.id}">Conectar mi Mercado Pago</button>`}</div>`).join("")}</div>`;
+async function llamaMp(cuerpo){const {data}=await db.auth.getSession();
+  const r=await fetch("/api/mp-conectar",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+data.session.access_token},body:JSON.stringify(cuerpo)});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||"No se pudo completar.");return j}
 async function vistaPanel(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   $("vista").innerHTML="<p>Cargando...</p>"; await cargarRol();
@@ -239,7 +246,7 @@ async function vistaPanel(){
   const P=pe.data||[], M=me.data||[];
   const ventas=P.filter(p=>p.estado!=="Cancelado").reduce((a,p)=>a+Number(p.total),0);
   $("vista").innerHTML=`<h2>Mi panel</h2><p class="suave">Aquí confirmas y actualizas el estado de tus pedidos. Para cambiar fotos, precios o platillos, contacta al administrador de Valle GO.</p>
-   ${notifBtnHTML()}<div class="aviso">${P.length} pedidos recientes · ${din(ventas)} en ventas</div><h2>Historial de pedidos</h2>`+
+   ${notifBtnHTML()}${cobroHTML()}<div class="aviso">${P.length} pedidos recientes · ${din(ventas)} en ventas</div><h2>Historial de pedidos</h2>`+
    (P.map(p=>ped2html(p,"com")).join("")||"<p>Aún no hay pedidos.</p>")+`<h2>Mi menú completo</h2>`+
    (M.map(m=>`<div class="item"><div class="foto" ${foto({foto:m.foto_url})}>${m.foto_url?"":esc(m.emoji||"🍽️")}</div><div class="in"><b>${esc(m.nombre)}</b>
     <span class="suave">${esc(m.categoria)} · ${m.disponible?"Disponible":"No disponible"}</span><span class="precio">${din(Number(m.precio))}</span></div></div>`).join("")||"<p>Sin platillos.</p>");
@@ -451,6 +458,11 @@ async function pagarPedido(id){
   }catch(err){alert(err.message);return false}
 }
 document.addEventListener("click",e=>{const g=e.target.dataset.pagar;if(g)pagarPedido(g)});
+document.addEventListener("click",async e=>{const d=e.target.dataset;
+  if(d.mpc){try{const j=await llamaMp({comercio_id:d.mpc});location.href=j.url}catch(err){alert(err.message)}return}
+  if(d.mpd){if(confirm("¿Desconectar tu cuenta de Mercado Pago?\nLos pagos en línea de este comercio volverán a recibirse en la cuenta de Valle GO."))try{await llamaMp({comercio_id:d.mpd,desconectar:true});vistaPanel()}catch(err){alert(err.message)}return}
+});
+
 
 const sesionDe=u=>{const m=u.user_metadata||{};return {id:u.id,nombre:m.nombre||m.full_name||m.name||(u.email||"").split("@")[0],email:u.email,tel:m.tel||"",dir:m.dir||"",dir_calle:m.dir_calle||"",dir_num:m.dir_num||"",dir_col:m.dir_col||"",foto:m.foto||m.avatar_url||m.picture||""}};
 // Domicilio en partes: calle, número y colonia (cada uno en su propio campo)
@@ -752,6 +764,8 @@ window.addEventListener("appinstalled",()=>{$("inst").style.display="none"});
 if(esIOS&&!yaApp)setTimeout(()=>banner("Para instalar: toca Compartir y luego «Agregar a inicio».",false),2500);
 $("instB").onclick=async()=>{if(!ev)return;ev.prompt();await ev.userChoice;$("inst").style.display="none"};
 $("instX").onclick=()=>{$s("instX",Date.now());$("inst").style.display="none"};
+if(/[?&]mp=(ok|error)/.test(location.search)){const bien=/mp=ok/.test(location.search);history.replaceState(null,"",location.pathname+location.hash);
+  setTimeout(()=>alert(bien?"Listo: tu cuenta de Mercado Pago quedó conectada. Los pagos en línea llegarán directo a tu cuenta.":"No se pudo conectar tu cuenta de Mercado Pago. Intenta de nuevo."),600)}
 if(/pago=ok/.test(location.search)){aviso("Gracias. Estamos confirmando tu pago; se actualizará en unos segundos.");history.replaceState(null,"",location.pathname+location.hash)}
 pintaHeader();pintaCarrito();ruta();
 (async()=>{

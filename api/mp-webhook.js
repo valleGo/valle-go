@@ -5,6 +5,7 @@ const SB = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 const cab = KEY && KEY.startsWith("sb_") ? { apikey: KEY } : { apikey: KEY, Authorization: `Bearer ${KEY}` };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const { tokenComercio } = require("./_mp");
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).end();
@@ -27,15 +28,20 @@ module.exports = async (req, res) => {
     }
 
     // La verdad viene de Mercado Pago, no del mensaje recibido
-    const rp = await fetch(`https://api.mercadopago.com/v1/payments/${pid}`, { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } });
+    // Pagos de comercios con cuenta propia: se consultan con el token de ese comercio (?c=...)
+    const comercioMP = UUID.test(q.c || "") ? q.c : null;
+    const tokenConsulta = (comercioMP && await tokenComercio(comercioMP)) || process.env.MP_ACCESS_TOKEN;
+    const rp = await fetch(`https://api.mercadopago.com/v1/payments/${pid}`, { headers: { Authorization: `Bearer ${tokenConsulta}` } });
     if (!rp.ok) throw new Error(await rp.text());
     const pago = await rp.json();
     const id = pago.external_reference;
     if (!UUID.test(id || "")) return res.status(200).json({ ok: true, sin_pedido: true });
 
-    const rd = await fetch(`${SB}/rest/v1/pedidos?id=eq.${id}&select=total,estado_pago,pago`, { headers: cab });
+    const rd = await fetch(`${SB}/rest/v1/pedidos?id=eq.${id}&select=total,estado_pago,pago,comercio_id`, { headers: cab });
     const [ped] = await rd.json();
     if (!ped || ped.pago !== "en_linea") return res.status(200).json({ ok: true, sin_pedido: true });
+    // Un pago de la cuenta de un comercio solo puede liquidar pedidos de ESE comercio
+    if (comercioMP && ped.comercio_id !== comercioMP) return res.status(200).json({ ok: true, otro_comercio: true });
 
     let estado = null;
     if (pago.status === "approved") {

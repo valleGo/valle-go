@@ -4,6 +4,7 @@ const SB = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 const cab = KEY && KEY.startsWith("sb_") ? { apikey: KEY } : { apikey: KEY, Authorization: `Bearer ${KEY}` };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const { tokenComercio, comisionPlataforma } = require("./_mp");
 
 async function sb(ruta, opciones = {}) {
   const r = await fetch(`${SB}/rest/v1/${ruta}`, { ...opciones, headers: { ...cab, ...(opciones.headers || {}) } });
@@ -48,15 +49,21 @@ module.exports = async (req, res) => {
     const suma = lineas.reduce((a, l) => a + Math.round(l.unit_price * 100) * l.quantity, 0);
     if (suma !== Math.round(Number(ped.total) * 100)) return res.status(409).json({ error: "El total del pedido no coincide." });
 
-    // 4. Crear la preferencia de pago en Mercado Pago
+    // 4. Si el comercio conectó su cuenta de Mercado Pago, el dinero le llega directo a él
+    //    y la comisión de Valle GO (marketplace_fee) se descuenta sola. Si no, se cobra como antes.
+    const tokenVend = await tokenComercio(ped.comercio_id);
+    const comision = tokenVend ? comisionPlataforma(Number(ped.total)) : 0;
+
+    // 5. Crear la preferencia de pago en Mercado Pago
     const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
-      headers: { Authorization: `Bearer ${MP}`, "Content-Type": "application/json", "X-Idempotency-Key": ped.id + "-" + Date.now() },
+      headers: { Authorization: `Bearer ${tokenVend || MP}`, "Content-Type": "application/json", "X-Idempotency-Key": ped.id + "-" + Date.now() },
       body: JSON.stringify({
         items: lineas,
         payer: { email: user.email },
         external_reference: ped.id,
-        notification_url: `${APP}/api/mp-webhook`,
+        notification_url: `${APP}/api/mp-webhook${tokenVend ? "?c=" + ped.comercio_id : ""}`,
+        ...(comision > 0 ? { marketplace_fee: comision } : {}),
         back_urls: { success: `${APP}/?pago=ok#/pedidos`, pending: `${APP}/?pago=ok#/pedidos`, failure: `${APP}/#/pedidos` },
         auto_return: "approved",
         statement_descriptor: "VALLE GO"
