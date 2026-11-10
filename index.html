@@ -29,7 +29,7 @@ html{-webkit-text-size-adjust:100%}
 body{font-family:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-weight:500;line-height:1.45;background:var(--fondo);color:var(--texto);padding-bottom:84px}
 button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}
 :focus-visible{outline:3px solid var(--cielo);outline-offset:2px}
-header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--claro-verde) 45%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);color:var(--texto);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.35)}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--claro-verde) 20%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);color:var(--texto);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.35)}
 header a{color:var(--verde);text-decoration:none;font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
 .logo{display:flex;align-items:center;gap:10px}.logo img{width:40px;height:40px;flex:none;display:block}
 .hb{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
@@ -85,10 +85,10 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 #bnotif span{flex:1}#bnotif button{border:0;border-radius:999px;padding:8px 14px;background:#2B2D22;color:#fff;font-weight:600}#bnotif #bnotifX{background:none;color:var(--on-acento);font-size:1.3rem;padding:2px 8px}
 /* ===== Pantalla de arranque animada ===== */
 #splash{position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;clip-path:circle(150% at 50% 50%);will-change:clip-path}
-#splash .lg{position:relative;width:112px;height:112px;display:grid;place-items:center;animation:spIn .9s cubic-bezier(.2,.9,.25,1.15) both}
+#splash .lg{position:relative;width:112px;height:112px;display:grid;place-items:center;}
 #splash .lg img{width:112px;height:112px;border-radius:26px;position:relative;z-index:2;box-shadow:0 10px 40px rgba(165,181,116,.35)}
-#splash .lg::before,#splash .lg::after{content:"";position:absolute;inset:-6px;border-radius:32px;border:2px solid #A5B574;opacity:0;animation:spRing 1.6s ease-out .5s infinite}
-#splash .lg::after{animation-delay:1.1s;border-color:#F6C335}
+#splash .lg::before,#splash .lg::after{content:"";position:absolute;inset:-6px;border-radius:32px;border:2px solid #A5B574;opacity:0;animation:spRing 1.6s ease-out .15s infinite}
+#splash .lg::after{animation-delay:.75s;border-color:#F6C335}
 #splash .tx{font:800 1.5rem Montserrat,system-ui,sans-serif;letter-spacing:.32em;color:#fff;padding-left:.32em;animation:spTx .8s ease-out .55s both}
 #splash .tx b{color:#F6C335;font-weight:800}
 #splash .bar{width:84px;height:3px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden;animation:spTx .6s ease-out .8s both}
@@ -175,7 +175,7 @@ function adsHTML(){
 function iniAds(){
   clearInterval(adT); const p=$("pista");
   if(!p||p.children.length<2||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-  adT=setInterval(()=>{const i=(Math.round(p.scrollLeft/p.clientWidth)+1)%p.children.length;p.scrollTo({left:i*p.clientWidth,behavior:"smooth"})},4000);
+  adT=setInterval(()=>{const i=(Math.round(p.scrollLeft/p.clientWidth)+1)%p.children.length;p.scrollTo({left:i*p.clientWidth,behavior:"smooth"})},2500);
 }
 
 // ---- Roles ----
