@@ -82,6 +82,12 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .avatar.ini{display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800;color:var(--verde)}
 .hav{width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px}
 #bnotif{position:fixed;bottom:14px;left:14px;right:14px;max-width:560px;margin:auto;background:var(--acento);color:var(--on-acento);border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:6;display:flex;align-items:center;gap:8px;font-size:.9rem;box-shadow:var(--sombra)}
+.foto.zoom{cursor:zoom-in}
+#visor{position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;animation:vIn .2s ease both}
+#visor{cursor:zoom-out}#visor img{max-width:100%;max-height:78vh;border-radius:14px;object-fit:contain;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#visor p{margin:0;color:#fff;font-weight:700;text-align:center}
+#visor button{position:absolute;top:14px;right:14px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:1.6rem;line-height:1}
+@keyframes vIn{from{opacity:0}to{opacity:1}}
 #bnuevo{position:fixed;top:68px;left:14px;right:14px;max-width:560px;margin:auto;background:#2B2D22;color:#fff;border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:7;display:flex;align-items:center;gap:8px;font-size:.9rem;box-shadow:0 8px 24px rgba(0,0,0,.25);animation:bnIn .4s ease both}#bnuevo span{flex:1}#bnuevo button{border:0;border-radius:999px;padding:8px 14px;background:var(--acento);color:var(--on-acento);font-weight:700}#bnuevo .x{background:none;color:#fff;font-size:1.3rem;padding:2px 8px}@keyframes bnIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
 #bnotif span{flex:1}#bnotif button{border:0;border-radius:999px;padding:8px 14px;background:#2B2D22;color:#fff;font-weight:600}#bnotif #bnotifX{background:none;color:var(--on-acento);font-size:1.3rem;padding:2px 8px}
 /* ===== Pantalla de arranque animada ===== */
@@ -479,7 +485,7 @@ function vistaTienda(id){
    <span class="suave">${t.domicilio?"Envío "+din(t.envio)+" · ":"Solo recoger en tienda · "}Pedido mínimo ${din(t.minimo)}</span></div></div>
    <div class="cats">${cats.map(c=>`<button class="${c===cat?"on":""}" data-cat="${c}">${c}</button>`).join("")}</div>`+
    t.menu.filter(m=>cat==="Todo"||m.cat===cat).map(m=>`
-   <div class="item"><div class="foto" ${foto(m)}>${em(m)}</div><div class="in">
+   <div class="item"><div class="foto${m.foto?" zoom":""}" ${foto(m)}${m.foto?` data-ver="${esc(m.foto)}" data-nom="${esc(m.nombre)}" role="button" tabindex="0" aria-label="Ver foto de ${esc(m.nombre)}"`:""}>${em(m)}</div><div class="in">
    <b>${m.nombre}</b><span class="suave">${m.desc}</span><span class="precio">${din(m.precio)}</span>
    <button class="btn" data-add="${t.id}|${m.id}">Agregar al carrito</button></div></div>`).join("");
 }
@@ -642,9 +648,16 @@ async function confirmar(t,sub){
   carrito={tienda:null,items:{}};gcar();pintaCarrito();$("pCarrito").classList.remove("on");location.hash="#/pedidos";
 }
 
+// ---------- Ver foto del producto ----------
+function cierraFoto(){const v=$("visor");if(v)v.remove()}
+function abreFoto(url,nombre){cierraFoto();const v=document.createElement("div");v.id="visor";v.setAttribute("role","dialog");v.setAttribute("aria-label","Foto del producto");
+  v.innerHTML=`<button aria-label="Cerrar">×</button><img alt="${nombre}" src="${url}"><p>${nombre}</p>`;
+  v.onclick=cierraFoto;document.body.appendChild(v);v.querySelector("button").focus()}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")cierraFoto();if((e.key==="Enter"||e.key===" ")&&e.target.dataset&&e.target.dataset.ver){e.preventDefault();abreFoto(e.target.dataset.ver,e.target.dataset.nom||"")}});
+
 // ---------- Eventos ----------
 document.addEventListener("click",e=>{const d=e.target.dataset;
-  if(d.cat){cat=d.cat;ruta()} if(d.add){const[a,b]=d.add.split("|");agregar(a,b)}
+  if(d.ver){abreFoto(d.ver,d.nom||"");return} if(d.cat){cat=d.cat;ruta()} if(d.add){const[a,b]=d.add.split("|");agregar(a,b)}
   if(d.mas)cambia(d.mas,1); if(d.menos)cambia(d.menos,-1); if(d.cerrar!==undefined)$("pCarrito").classList.remove("on")});
 $("bCarrito").onclick=()=>{pintaCarrito();$("pCarrito").classList.add("on")};
 $("bCuenta").onclick=()=>location.hash="#/cuenta";
