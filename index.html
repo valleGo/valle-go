@@ -44,7 +44,9 @@ h2{margin:8px 0 14px;font-weight:700;letter-spacing:-.02em;font-size:1.35rem}
 @media (min-width:768px){.sl{aspect-ratio:auto;height:300px}main:has(.gcom){max-width:1100px}.gcom{grid-template-columns:repeat(3,1fr);gap:20px}}
 @media (min-width:1100px){main:has(.gcom){max-width:1180px}.pista{max-width:720px;margin-left:auto;margin-right:auto}.sl{aspect-ratio:16/7;height:auto}
 main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .cats{justify-content:center}
-.gcom{grid-template-columns:repeat(3,minmax(0,300px));justify-content:center}}
+.gcom,.todos{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.todos{display:grid}.todos>.seccat{display:none}.todos>.gcom{display:contents}.todos .ctag{display:inline-block}}
+.ctag{display:none;align-self:flex-start;background:var(--crema);border-radius:999px;padding:2px 10px;font-size:.75rem;font-weight:600}
 .card{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sombra)}
 .foto{height:140px;background:var(--crema) center/cover;display:grid;place-items:center;font-size:3.2rem}
 .card .in{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
@@ -490,7 +492,7 @@ function ruta(){
 }
 const tarjetaCom=t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
-   <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
+   ${(k=>k?`<span class="ctag">${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}</span>`:"")(CATEGORIAS.find(k=>k.id===t.cat))}<b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
    ${t.dias?`<span class="suave">📅 ${diasTxt(t.dias)}</span>`:""}
    <span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
@@ -508,7 +510,7 @@ function vistaInicio(){
     const sec=(titulo,L)=>L.length?`<h3 class="seccat">${titulo}</h3>${grid(L)}`:"";
     const nom=k=>`${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}`;
     cuerpo=`<div class="cats">${chip("Todos","Todos")}${usadas.map(k=>chip(k.id,nom(k))).join("")}${sinCat.length?chip("otros","Otros"):""}</div>`+
-      (catCom==="Todos"?usadas.map(k=>sec(nom(k),COMERCIANTES.filter(t=>t.cat===k.id))).join("")+sec("Otros",sinCat)
+      (catCom==="Todos"?`<div class="todos">`+usadas.map(k=>sec(nom(k),COMERCIANTES.filter(t=>t.cat===k.id))).join("")+sec("Otros",sinCat)+`</div>`
        :catCom==="otros"?sec("Otros",sinCat)
        :(k=>sec(nom(k),COMERCIANTES.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
   }
