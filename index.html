@@ -531,7 +531,7 @@ function vistaCuenta(){
      $("np1").value="";$("np2").value="";alert("Contraseña actualizada. Úsala la próxima vez que entres.");
    };
    $("salir").onclick=async()=>{await cerrarAvisos();if(db)db.auth.signOut();esAdmin=false;misCom=[];sesion=null;$s("sesion",null);pintaHeader();location.hash="#/"};return;}
-  $("vista").innerHTML=`<h2>Crear cuenta de comprador</h2><div id="gBox"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+  $("vista").innerHTML=`<h2>Crea tu cuenta Valle GO:</h2><div id="gBox"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
    <div class="caja" style="position:static;width:auto;padding:0">
     <label>Nombre<input id="rn" autocomplete="name"></label><label>Correo<input id="re" type="email" autocomplete="email"></label>
     <label>Teléfono<input id="rt" type="tel" autocomplete="tel"></label><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("rg",null)}
