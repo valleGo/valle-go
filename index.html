@@ -466,7 +466,7 @@ function ruta(){
   vistaInicio();
 }
 function vistaInicio(){
-  $("vista").innerHTML=adsHTML()+`<h2>Comercios cerca de ti</h2><div class="grid">`+COMERCIANTES.map(t=>`
+  $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2><div class="grid">`+COMERCIANTES.map(t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
    <b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
