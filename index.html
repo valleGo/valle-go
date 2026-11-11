@@ -375,6 +375,52 @@ function svgInformeComercio(D,id){
   g+=`<text x="24" y="504" font-size="10" fill="#888">1% de uso y mantenimiento de la app sobre el total de tus pedidos, más membresía. Pagado este mes: ${esc(mxn(R.pag))}.</text>`;
   return svgWrap(W,520,g)}
 function svgAPng(svg,w,h){return new Promise((ok,no)=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");c.width=w*2;c.height=h*2;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):no(new Error("No se pudo crear la imagen")),"image/png")};img.onerror=()=>no(new Error("No se pudo crear la imagen"));img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)})}
+
+// ---- Generador mínimo de PDF (tamaño Carta, vertical) para el reporte de membresías ----
+function pdfSimple(paginas){   // paginas: arreglo de arreglos de operaciones de dibujo
+  const W=612,H=792,enc=t=>String(t).replace(/[^\x20-\x7e\xa1-\xff]/g,"?").replace(/[\\()]/g,"\\$&");
+  const o=[];o[1]="<< /Type /Catalog /Pages 2 0 R >>";
+  const kids=paginas.map((_,i)=>(6+i*2)+" 0 R").join(" ");o[2]=`<< /Type /Pages /Kids [${kids}] /Count ${paginas.length} >>`;
+  o[3]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";o[4]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";o[5]="";
+  paginas.forEach((ops,i)=>{let c="";
+    ops.forEach(p=>{
+      if(p.t==="r"){c+=`${p.c[0]} ${p.c[1]} ${p.c[2]} rg ${p.x} ${H-p.y-p.h} ${p.w} ${p.h} re f\n`}
+      else if(p.t==="l"){c+=`${p.c[0]} ${p.c[1]} ${p.c[2]} RG 0.6 w ${p.x1} ${H-p.y} m ${p.x2} ${H-p.y} l S\n`}
+      else{c+=`BT /${p.b?"F2":"F1"} ${p.s} Tf ${p.c[0]} ${p.c[1]} ${p.c[2]} rg ${p.x} ${H-p.y} Td (${enc(p.v)}) Tj ET\n`}});
+    o[6+i*2]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${7+i*2} 0 R >>`;
+    o[7+i*2]=`<< /Length ${c.length} >>\nstream\n${c}endstream`});
+  let out="%PDF-1.4\n",off=[];for(let i=1;i<o.length;i++){if(i===5)continue;off[i]=out.length;out+=`${i} 0 obj\n${o[i]}\nendobj\n`}
+  const xr=out.length;out+=`xref\n0 ${o.length}\n0000000000 65535 f \n`;
+  for(let i=1;i<o.length;i++)out+=i===5?"0000000000 65535 f \n":String(off[i]).padStart(10,"0")+" 00000 n \n";
+  out+=`trailer\n<< /Size ${o.length} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF`;
+  const u=new Uint8Array(out.length);for(let i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;return new Blob([u],{type:"application/pdf"})}
+function pdfMembresias(mes,F,S,PGM,nomC){
+  const mx=x=>"$"+x.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2}),NEG=[.17,.17,.13],GRIS=[.4,.42,.35],VERDE=[.36,.46,.28],CLARO=[.93,.95,.89],BLANCO=[1,1,1];
+  const wd=t=>[...String(t)].reduce((a,ch)=>a+(/[0-9$]/.test(ch)?.556:/[.,]/.test(ch)?.278:.5),0);
+  const cols=[{n:"Comercio",x:40},{n:"Plan",x:190},{n:"Sin IVA",x:296,d:1},{n:"IVA",x:358,d:1},{n:"Total c/IVA",x:434,d:1},{n:"Pagado",x:502,d:1},{n:"Saldo",x:574,d:1}];
+  const pags=[];let ops,y;
+  const nueva=()=>{ops=[];pags.push(ops);y=40;
+    ops.push({t:"r",x:0,y:0,w:612,h:78,c:VERDE});
+    ops.push({t:"x",x:40,y:38,v:"Valle GO",s:22,b:1,c:BLANCO});ops.push({t:"x",x:40,y:58,v:"Reporte de membresías · "+nomMes(mes),s:12,c:BLANCO});
+    ops.push({t:"x",x:612-40-100,y:38,v:"Va, llegó",s:12,b:1,c:BLANCO});y=104};
+  const enc=()=>{ops.push({t:"r",x:36,y:y-14,w:540,h:22,c:CLARO});cols.forEach(c=>ops.push({t:"x",x:c.d?c.x-wd(c.n)*9:c.x,y,v:c.n,s:9,b:1,c:NEG}));y+=20};
+  const celda=(c,v,b)=>ops.push({t:"x",x:c.d?c.x-wd(v)*9:c.x,y,v,s:9,b,c:NEG});
+  nueva();
+  ops.push({t:"x",x:40,y,v:"Plan Simple: $12 al día = $360 al mes · Plan Básico: $24 al día = $720 al mes · IVA incluido (16%).",s:8.5,c:GRIS});y+=24;enc();
+  F.forEach(f=>{if(y>730){nueva();enc()}
+    celda(cols[0],f.nombre.length>26?f.nombre.slice(0,24)+"...":f.nombre);celda(cols[1],f.plan);celda(cols[2],mx(f.base));celda(cols[3],mx(f.iva));celda(cols[4],mx(f.tot),1);celda(cols[5],mx(f.pag));
+    celda(cols[6],f.saldo<=0.004?"Pagada":mx(f.saldo),1);y+=6;ops.push({t:"l",x1:36,x2:576,y,c:[.85,.87,.8]});y+=16});
+  if(y>700){nueva();y=104}
+  ops.push({t:"r",x:36,y:y-14,w:540,h:22,c:CLARO});celda(cols[0],"Total",1);celda(cols[2],mx(S.base),1);celda(cols[3],mx(S.iva),1);celda(cols[4],mx(S.tot),1);celda(cols[5],mx(S.pag),1);celda(cols[6],mx(S.saldo),1);y+=34;
+  if(y>690){nueva();y=104}
+  ops.push({t:"x",x:40,y,v:"Pagos de membresía registrados en el mes",s:11,b:1,c:NEG});y+=18;
+  if(!PGM.length){ops.push({t:"x",x:40,y,v:"Aún no hay pagos de membresía registrados este mes.",s:9,c:GRIS});y+=16}
+  PGM.forEach(x=>{if(y>740){nueva();y=104}
+    const det=new Date(x.pagado_en).toLocaleDateString("es-MX")+(x.metodo?" · "+x.metodo:"")+(x.nota?" · "+x.nota:"");
+    ops.push({t:"x",x:40,y,v:(nomC[x.comercio_id]||"Comercio").slice(0,28),s:9,b:1,c:NEG});ops.push({t:"x",x:196,y,v:det.slice(0,60),s:9,c:GRIS});
+    ops.push({t:"x",x:574-wd(mx(Number(x.monto)))*9,y,v:mx(Number(x.monto)),s:9,b:1,c:NEG});y+=16});
+  pags.forEach((p,i)=>p.push({t:"x",x:40,y:772,v:"Generado el "+new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})+" · Valle GO · Página "+(i+1)+" de "+pags.length,s:8,c:GRIS}));
+  return pdfSimple(pags)}
 function bajarBlob(blob,nombre){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000)}
 async function compartirInforme(blob,nombre,texto,tel){
   const f=new File([blob],nombre,{type:"image/png"});
@@ -539,7 +585,8 @@ async function admTab(){
     <tfoot><tr style="border-top:2px solid var(--borde)"><td><b>Total</b></td><td></td><td><b>${mx(S.base)}</b></td><td><b>${mx(S.iva)}</b></td><td><b>${mx(S.tot)}</b></td><td><b>${mx(S.pag)}</b></td><td><b>${mx(S.saldo)}</b></td><td></td></tr></tfoot></table></div>
     <h3>Pagos de membresía registrados del mes</h3>${pgErr?'<p class="suave">No se pudo cargar el registro: '+esc(pgErr)+'</p>':""}
     ${PGM.length?PGM.map(x=>`<div class="aviso" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span><b>${esc(nomC[x.comercio_id]||"Comercio")}</b> · ${mx(Number(x.monto))}<br><span class="suave">${new Date(x.pagado_en).toLocaleDateString("es-MX")}${x.metodo?" · "+esc(x.metodo):""}${x.nota?" · "+esc(x.nota):""}</span></span><button class="btn sec" data-cpdel="${x.id}">Quitar</button></div>`).join(""):'<p class="suave">Aún no hay pagos de membresía registrados este mes.</p>'}
-    <button class="btn" id="mbCsv">Descargar CSV</button>`;
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="mbPdf">Descargar PDF</button><button class="btn sec" id="mbCsv">Descargar CSV</button></div>`;
+    $("mbPdf").onclick=()=>bajarBlob(pdfMembresias(adm.mes,F,S,PGM,nomC),"valle-go-membresias-"+adm.mes+".pdf");
     $("mbMes").onchange=e=>{if(e.target.value){adm.mes=e.target.value;admTab()}};
     $("mbCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Plan","Precio sin IVA","IVA","Total con IVA","Pagado","Saldo"]].concat(F.map(f=>[f.nombre,f.plan,f.base.toFixed(2),f.iva.toFixed(2),f.tot.toFixed(2),f.pag.toFixed(2),f.saldo.toFixed(2)])).concat([["Total","",S.base.toFixed(2),S.iva.toFixed(2),S.tot.toFixed(2),S.pag.toFixed(2),S.saldo.toFixed(2)]]);
       const b=new Blob(["\ufeff"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="valle-go-membresias-"+adm.mes+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
@@ -1136,7 +1183,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#bCont");if(b){e
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v83";
+const BUILD="valle-go-v84";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
