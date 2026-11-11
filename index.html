@@ -97,6 +97,11 @@ main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .ca
 .cats{display:flex;flex-wrap:wrap;gap:8px;overflow:visible;padding:2px 0 12px}   /* las categorías bajan a nuevas filas: nada queda oculto ni hay que desplazar de lado */
 .cats button{border:1px solid var(--borde);background:var(--claro-amarillo);color:var(--texto);border-radius:999px;padding:8px 14px;line-height:1.35;min-height:38px;white-space:nowrap;font-weight:600;font-size:.85rem;flex:0 0 auto;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .cats button.on{background:var(--verde);color:var(--on-verde);border-color:var(--verde)}
+.catmenu{position:relative;flex:0 0 auto}
+.catpop{display:none;position:absolute;left:0;top:calc(100% + 4px);z-index:40;min-width:210px;max-width:calc(100vw - 32px);max-height:55vh;overflow-y:auto;overscroll-behavior:contain;background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;box-shadow:0 8px 26px rgba(0,0,0,.18);padding:6px;flex-direction:column;gap:2px}
+.catmenu.open .catpop{display:flex}
+.cats .catpop button{border:0;background:transparent;border-radius:10px;width:100%;text-align:left;justify-content:flex-start;min-height:40px;padding:8px 12px;white-space:normal}
+.cats .catpop button.on{background:var(--verde);color:var(--on-verde)}
 .item{display:flex;gap:12px;background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);padding:12px;margin-bottom:12px;box-shadow:var(--sombra)}
 .item .foto{width:92px;height:92px;border-radius:12px;font-size:2.3rem;flex:none}
 .item .in{flex:1;display:grid;gap:4px;align-content:start}
@@ -1275,7 +1280,10 @@ function vistaInicio(){
     const chip=(id,txt)=>`<button class="${catCom===id?"on":""}" data-ccat="${id}">${txt}</button>`;
     const sec=(titulo,L)=>L.length?`<h3 class="seccat">${titulo}</h3>${grid(L)}`:"";
     const nom=k=>`${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}`;
-    cuerpo=`<div class="cats">${chip("Todos","Todos")}${usadas.map(k=>chip(k.id,nom(k))).join("")}${sinCat.length?chip("otros","Otros"):""}</div>`+
+    const orden=[...usadas].sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),"es",{sensitivity:"base"}));
+    const selK=orden.find(k=>k.id===catCom),selTxt=catCom==="otros"?"Otros":selK?nom(selK):"";
+    cuerpo=`<div class="cats">${chip("Todos","Todos")}<span class="catmenu"><button class="${selTxt?"on":""}" data-catmenu aria-haspopup="true" aria-expanded="false">${selTxt?selTxt:"Categorías"} ▾</button>
+      <div class="catpop" role="menu">${orden.map(k=>chip(k.id,nom(k))).join("")}${sinCat.length?chip("otros","Otros"):""}</div></span></div>`+
       (catCom==="Todos"?`<div class="todos">`+usadas.map(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id))).join("")+sec("Otros",sinCat)+`</div>`
        :catCom==="otros"?sec("Otros",sinCat)
        :(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
@@ -1577,7 +1585,7 @@ document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.tar
 
 // ---------- Eventos ----------
 document.addEventListener("click",e=>{const d=e.target.dataset;
-  if(d.ver){abreFoto(d.ver,d.nom||"");return} if(d.ccat){catCom=d.ccat;vistaInicio();return} if(d.cat){cat=d.cat;ruta()} if(d.add){const[a,b]=d.add.split("|");agregar(a,b)}
+  if(d.ver){abreFoto(d.ver,d.nom||"");return} if(d.catmenu!==undefined){const m=e.target.closest(".catmenu");if(m){const a=m.classList.toggle("open");e.target.closest("[data-catmenu]").setAttribute("aria-expanded",String(a))}return} if(d.ccat){catCom=d.ccat;vistaInicio();return} if(d.cat){cat=d.cat;ruta()} if(d.add){const[a,b]=d.add.split("|");agregar(a,b)}
   if(d.mas)cambia(d.mas,1); if(d.menos)cambia(d.menos,-1); if(d.cerrar!==undefined){if(capas.length)cierraCapa();else $("pCarrito").classList.remove("on")}});
 $("bCarrito").onclick=()=>{if(!sesion)return pideRegistro();pintaCarrito();const p=$("pCarrito");if(!p.classList.contains("on")){p.classList.add("on");abreCapa(()=>p.classList.remove("on"))}};
 $("bCuenta").onclick=()=>location.hash="#/cuenta";
@@ -1609,6 +1617,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("#bCont");if(b){e
   if($("contPanel")&&!e.target.closest("#contPanel")&&e.target.isConnected)cierraCapa()});
 
 // ---- Efecto de onda al tocar botones y rebote del carrito ----
+document.addEventListener("click",e=>{const o=document.querySelector(".catmenu.open");if(o&&!e.target.closest(".catmenu"))o.classList.remove("open")});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){const o=document.querySelector(".catmenu.open");if(o)o.classList.remove("open")}});
 document.addEventListener("pointerdown",e=>{const b=e.target.closest&&e.target.closest(".btn,.hb button,.monbtn,.admcats button,.cats button");if(!b||b.disabled)return;
   const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*2,x=e.clientX-r.left-d/2,y=e.clientY-r.top-d/2,el=document.createElement("span");
   el.className="rip";el.style.cssText=`width:${d}px;height:${d}px;left:${x}px;top:${y}px`;b.appendChild(el);setTimeout(()=>el.remove(),650)},{passive:true});
@@ -1636,7 +1646,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v122";
+const BUILD="valle-go-v123";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
