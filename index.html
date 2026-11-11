@@ -354,7 +354,7 @@ let adm={tab:"anuncios",com:null};
 try{const g=JSON.parse(localStorage.getItem("valle_adm")||"null");if(g&&typeof g.tab==="string")Object.assign(adm,{tab:g.tab,mes:g.mes,mesM:g.mesM})}catch(e){}   // recuerda la pestaña del panel de administración al recargar
 
 const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
-const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Plan del comercio",t:"plan"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario",t:"horario"},{k:"direccion",l:"Domicilio del comercio",t:"direccion"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"ofrece_citas",l:"Ofrece agenda de servicios (solo plan Básico)",t:"check"},{k:"ofrece_consulta",l:"Ofrece consulta de stock con foto y texto (solo plan Básico)",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Plan del comercio",t:"plan"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario",t:"horario"},{k:"direccion",l:"Domicilio del comercio",t:"direccion"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"ofrece_citas",l:"Ofrece agenda de servicios (solo plan Básico)",t:"check"},{k:"ofrece_consulta",l:"Ofrece consulta de stock con foto y texto (solo plan Básico)",t:"check"},{k:"whatsapp",l:"WhatsApp o teléfono (52...) — se muestra en el perfil"},{k:"correo_publico",l:"Correo para mostrar en el perfil (opcional)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
 const CF_CAT=[{k:"nombre",l:"Nombre de la categoría (Comida, Cafeterías, Servicios...)"},{k:"emoji",l:"Emoji (opcional)"},{k:"orden",l:"Orden de aparición (1, 2, 3...)",t:"number"}];
 const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
 const DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
@@ -981,7 +981,7 @@ async function cargarDatos(){
   const {data,error}=await db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre");
   if(error||!data||!data.length)return;
   COMERCIANTES=data.map(c=>({id:c.id,plan:c.plan==="simple"?"simple":"basico",nombre:c.nombre,giro:c.giro||"",cat:c.categoria_id||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
-    desc:c.descripcion||"",citas:c.plan!=="simple"&&!!c.ofrece_citas,consulta:c.plan!=="simple"&&!!c.ofrece_consulta,whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
+    desc:c.descripcion||"",citas:c.plan!=="simple"&&!!c.ofrece_citas,consulta:c.plan!=="simple"&&!!c.ofrece_consulta,whatsapp:c.whatsapp,correo:c.correo_publico||"",envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
     menu:(c.menu_items||[]).filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
       desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}))}));
 }
@@ -1007,7 +1007,7 @@ const adaptaCom=(t,tipo="agenda")=>({id:t.id,tipo,nombre:t.nombre,giro:t.giro,ho
 const svCard=p=>`<div class="card"><div class="foto-w"><div class="foto" ${p.foto_url?`style="background-image:url('${esc(p.foto_url)}')"`:""}>${p.foto_url?"":SV[p.tipo].e}</div>${p.logo_url?`<img class="logo-c" src="${esc(p.logo_url)}" alt="" loading="lazy">`:""}</div><div class="in${p.logo_url?" cl":""}">
   <b>${esc(p.nombre)}</b><span class="suave">${esc(p.giro||"")}${p.horario?" · "+esc(p.horario):""}</span>
   ${p.zona?`<span class="suave">📍 ${esc(p.zona)}</span>`:""}${p.tipo==="transporte"&&p.vehiculo?`<span class="suave">🚗 ${esc(p.vehiculo)}</span>`:""}${p.dias_abiertos?`<span class="suave">📅 ${diasTxt(p.dias_abiertos)}</span>`:""}
-  ${p.tipo==="transporte"?`<span class="svbtns">${(p.telefono||p.whatsapp)?`<a class="btn mini" href="${telUrl(p.telefono||p.whatsapp)}">📞 Llamar</a>`:""}${p.whatsapp?`<a class="btn mini" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:""}</span><button class="btn" data-svopen="${p.id}" data-svt="transporte">🚕 Cotizar / Agendar viaje</button>`
+  ${p.tipo==="transporte"?`<button class="btn" data-svopen="${p.id}" data-svt="transporte">🚕 Cotizar / Agendar viaje</button>`
    :`<button class="btn" data-svopen="${p.id}" data-svt="${p.tipo}">${p.tipo==="agenda"?"Agendar cita":"Consultar disponibilidad"}</button>`}</div></div>`;
 const cierraAg=()=>{const d=$("agPanel");if(d)d.remove();agSel=null;const b=$("bAg");if(b){b.classList.remove("on");b.setAttribute("aria-expanded","false")}};
 const cierraCq=()=>{const d=$("cqPanel");if(d)d.remove();cqSel=null;const b=$("bCq");if(b){b.classList.remove("on");b.setAttribute("aria-expanded","false")}};
@@ -1057,7 +1057,7 @@ async function svDetalle(root,id,volver,cod){
    <div class="perfil" style="margin-top:10px"><div class="foto" ${p.foto_url?`style="background-image:url('${esc(p.foto_url)}')"`:""}>${p.foto_url?"":SV[p.tipo].e}</div><div class="in"><h2 style="margin:0">${esc(p.nombre)}</h2>
    <span class="suave">${esc(p.giro||"")}${p.horario?" · "+esc(p.horario):""}</span>${p.dias_abiertos?`<span class="suave">📅 ${diasTxt(p.dias_abiertos)}</span>`:""}${p.zona?`<span class="suave">📍 ${esc(p.zona)}</span>`:""}
    ${p.descripcion?`<p style="margin:4px 0 0">${esc(p.descripcion)}</p>`:""}
-   <span class="svbtns">${(p.telefono||p.whatsapp)?`<a class="btn mini" href="${telUrl(p.telefono||p.whatsapp)}">📞 Llamar</a>`:""}${p.whatsapp?`<a class="btn mini" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:""}</span></div></div>`;
+</div></div>`;
   let cuerpo;
   if(p.tipo==="agenda"){
     cuerpo=(items.length?`<h3>Servicios</h3>`+items.map(i=>`<div class="linea"><span><b>${esc(i.nombre)}</b>${i.descripcion?`<br><small>${esc(i.descripcion)}</small>`:""}</span><span style="text-align:right">${Number(i.precio)>0?din(Number(i.precio)):"A consultar"}${i.duracion_min?`<br><small>${i.duracion_min} min</small>`:""}</span></div>`).join(""):"")+
@@ -1135,7 +1135,7 @@ async function vistaMisServicios(){
     db.from("consultas_stock").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50),
     db.from("viajes").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50)]);
   const C=c.data||[],Q=q.data||[],V=vj.data||[];
-  const wa=p=>p&&p.whatsapp?` <a class="btn mini sec" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:"";
+  const wa=()=>"";
   $("vista").innerHTML=`<p><a href="#/">← Inicio</a></p><h2>Mis solicitudes</h2><p class="suave"><button class="btn sec mini" data-svref>🔄 Actualizar</button> En tiempo real</p>${notifBtnHTML()}
    <h3>Citas</h3>`+(C.map(x=>`<div class="item"><div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
     ${x.estado==="Reprogramada"?`<span class="aviso" style="padding:8px">🔁 El prestador propone esta nueva fecha y hora.</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
@@ -1265,7 +1265,7 @@ const tarjetaCom=t=>`
    ${(k=>k?`<span class="ctag">${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}</span>`:"")(CATEGORIAS.find(k=>k.id===t.cat))}<b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
    ${t.dias?`<span class="suave">📅 ${diasTxt(t.dias)}</span>`:""}
-   ${t.plan==="simple"?`${t.whatsapp?`<span class="suave">📞 ${esc(t.whatsapp)}</span>`:""}<a class="btn" href="#/t/${t.id}">Ver perfil</a>`:`<span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
+   ${t.plan==="simple"?`${t.whatsapp?`<span class="suave">📞 ${esc(t.whatsapp)}</span>`:""}${t.correo?`<span class="suave">✉️ ${esc(t.correo)}</span>`:""}<a class="btn" href="#/t/${t.id}">Ver perfil</a>`:`<span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
    <a class="btn" href="#/t/${t.id}">Ver menú</a>`}</div></div>`;
 function vistaInicio(){
   const PRINC=COMERCIANTES.filter(t=>t.plan!=="simple");
@@ -1320,7 +1320,7 @@ function vistaTienda(id){
      ${t.horario?`<span class="suave">🕒 Horario: ${esc(t.horario)}</span>`:""}
      ${t.dias?`<span class="suave">📅 Días: ${diasTxt(t.dias)}</span>`:""}
      ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
-     ${tel?`<span class="suave">📞 <a href="tel:+${tel}">${esc(t.whatsapp)}</a></span>`:""}</div></div>`;
+     ${tel?`<span class="suave">📞 <a href="tel:+${tel}">${esc(t.whatsapp)}</a></span>`:""}${t.correo?`<span class="suave">✉️ <a href="mailto:${esc(t.correo)}">${esc(t.correo)}</a></span>`:""}</div></div>`;
     return}
   const cats=["Todo",...new Set(t.menu.map(m=>m.cat))];
   $("vista").innerHTML=`<div class="perfil"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t,1)}</div><div class="in${t.logo?" cl g":""}">
@@ -1646,7 +1646,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v123";
+const BUILD="valle-go-v124";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
