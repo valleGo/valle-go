@@ -48,7 +48,9 @@ header .logo{flex-shrink:0}header .hb{margin-left:auto;flex:0 1 auto;min-width:0
 .dirbar a.on{background:#da9c48!important;color:#2a1a05!important;border-color:#c0802f!important;background:var(--acento);color:var(--on-acento);border-color:var(--acento)}
 .hb button{background:var(--tarjeta);color:var(--texto);border:1px solid var(--borde);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.85rem}
 .hb #bCarrito{background:var(--acento);color:var(--on-acento);border-color:var(--acento);font-weight:700}
-.hb #bPanel{background:var(--verde);color:var(--on-verde);border-color:var(--verde)}
+.hb #bPanel{display:inline-flex;align-items:center;gap:6px;background:#da9c48;color:#2a1a05;border:1px solid #c0802f;font-weight:800;box-shadow:0 4px 12px rgba(192,128,47,.42),0 1px 3px rgba(0,0,0,.2);transition:transform .15s,box-shadow .15s,background .15s,border-color .15s}
+.hb #bPanel *{pointer-events:none}.hb #bPanel:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(192,128,47,.5)}.hb #bPanel:active{transform:scale(.95)}
+.hb #bPanel.on{background:#a2cce5;border-color:#7fb3d6;color:#1f2a33;box-shadow:0 4px 12px rgba(111,168,214,.45),0 1px 3px rgba(0,0,0,.2)}
 main{max-width:920px;margin:auto;padding:18px 16px}
 h2{margin:8px 0 14px;font-weight:700;letter-spacing:-.02em;font-size:1.35rem}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
@@ -100,9 +102,9 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 #bCont{position:absolute;right:10px;top:3px;z-index:2;display:flex;align-items:center;gap:6px;background:none;border:0;padding:0;cursor:pointer;color:inherit;-webkit-tap-highlight-color:transparent}
 #bCont *{pointer-events:none}
 #bCont .lbl{font-size:.62rem;font-weight:800;letter-spacing:.05em;color:#2a3320}
-#bCont .dot{width:28px;height:28px;border-radius:50%;border:2px solid #8a9a58;background:#A5B574;color:#1f2a14;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 9px rgba(0,0,0,.28),0 1px 3px rgba(0,0,0,.2);transition:transform .15s,box-shadow .15s,background .2s}
+#bCont .dot{width:28px;height:28px;border-radius:50%;border:2px solid #c0802f;background:#da9c48;color:#2a1a05;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 9px rgba(0,0,0,.28),0 1px 3px rgba(0,0,0,.2);transition:transform .15s,box-shadow .15s,background .2s}
 #bCont:hover .dot{transform:translateY(-1px) scale(1.08);box-shadow:0 6px 14px rgba(0,0,0,.32)}#bCont:active .dot{transform:scale(.92)}
-#bCont.on .dot{background:#da9c48;border-color:#c0802f;color:#2a1a05;transform:rotate(-8deg) scale(1.08)}
+#bCont.on .dot{background:#a2cce5;border-color:#7fb3d6;color:#1f2a33;transform:rotate(-8deg) scale(1.08)}
 @media(min-width:800px){header{padding-top:40px}header .hb{gap:16px}#bCont{top:8px;right:16px}#bCont .lbl{font-size:.7rem}}
 #contPanel{position:fixed;right:12px;top:calc(var(--hh,120px) + 8px);z-index:4;width:min(260px,calc(100vw - 24px));padding:14px;border-radius:18px;background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);box-shadow:0 12px 30px rgba(0,0,0,.25);animation:contIn .18s ease-out;transform-origin:top right}
 @keyframes contIn{from{opacity:0;transform:scale(.9) translateY(-6px)}to{opacity:1;transform:none}}
@@ -159,7 +161,7 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
 <header>
   <a href="#/" class="logo" aria-label="Valle GO"><img src="logo.png" alt="Valle GO" width="66" height="66"></a>
   <div class="marca"><a href="#/" aria-label="Va, llegó — ir al inicio"><img src="marca.png" alt="Va, llegó" width="450" height="92"></a></div>
-  <div class="hb"><button id="bPanel" style="display:none">Panel</button><button id="bCuenta"></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div>
+  <div class="hb"><button id="bPanel" style="display:none"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg><span>Panel</span></button><button id="bCuenta"></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div>
   <button id="bCont" type="button" aria-label="Contáctanos" aria-expanded="false" aria-controls="contPanel"><span class="lbl">REDES VALLE GO:</span><span class="dot"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M15.6 8.4v5.1a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.4 6.9"/></svg></span></button>
 </header>
 <div class="dirbar"><a href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a></div>
@@ -312,25 +314,27 @@ async function calcMonitoreo(mes){
   const d0=new Date(Y,M-6,1).toISOString(),d1=new Date(Y,M,1).toISOString();
   const pedPag=async()=>{let P=[],desde=0;for(;;){const r=await db.from("pedidos").select("comercio_id,total,pago,estado,estado_pago,creado").gte("creado",d0).lt("creado",d1).order("creado").order("id").range(desde,desde+999);
       if(r.error)throw r.error;P=P.concat(r.data||[]);if((r.data||[]).length<1000)break;desde+=1000}return P};
-  const [rc,P,rp]=await Promise.all([db.from("comercios").select("id,nombre,activo,plan,creado,mp_conectado,whatsapp").order("nombre"),pedPag(),db.from("cobros_pagos").select("comercio_id,mes,monto").in("mes",keys)]);
-  if(rc.error)throw rc.error;const cs=rc.data||[],PG=rp.error?[]:(rp.data||[]);
+  const [rc,P,rp,rg]=await Promise.all([db.from("comercios").select("id,nombre,activo,plan,creado,mp_conectado,whatsapp").order("nombre"),pedPag(),db.from("cobros_pagos").select("comercio_id,mes,monto").in("mes",keys),db.from("gastos").select("id,mes,concepto,monto,con_iva").in("mes",keys).order("creado")]);
+  if(rc.error)throw rc.error;const cs=rc.data||[],PG=rp.error?[]:(rp.data||[]),GA=rg.error?[]:(rg.data||[]);
   const ag={};let sinPagar=0;
   P.forEach(p=>{const online=p.pago==="en_linea"||p.pago==="tarjeta",k=mkey(new Date(p.creado)),sel=k===mes;
     if(p.estado==="Cancelado")return;if(online&&p.estado_pago!=="Pagado"){if(sel)sinPagar++;return}
     const a=((ag[p.comercio_id]=ag[p.comercio_id]||{})[k]=(ag[p.comercio_id][k]||{n:0,linea:0,otro:0})),v=Number(p.total)||0;a.n++;if(online)a.linea+=v;else a.otro+=v});
   const C={},Mes={};
-  keys.forEach((k,i)=>{const[y,m]=k.split("-").map(Number),fin=new Date(y,m,1);C[k]={};const T={n:0,linea:0,otro:0,tot:0,com:0,mem:0,cobrar:0,pag:0,saldo:0};
+  keys.forEach((k,i)=>{const[y,m]=k.split("-").map(Number),fin=new Date(y,m,1);C[k]={};const T={n:0,linea:0,otro:0,tot:0,com:0,mem:0,memI:0,cobrar:0,pag:0,saldo:0};
     cs.forEach(c=>{const a=(ag[c.id]||{})[k]||{n:0,linea:0,otro:0};const activo=(c.activo!==false||a.n>0)&&(!c.creado||new Date(c.creado)<fin);if(!activo&&!a.n)return;
       const tot=a.linea+a.otro,com=r2m(tot*0.01),mem=activo?memBase(c.plan):0,memI=activo?memConIva(c.plan):0,cobrar=r2m(com+memI),
         pag=r2m(PG.filter(x=>x.comercio_id===c.id&&x.mes===k).reduce((t,x)=>t+Number(x.monto),0)),saldo=Math.max(0,r2m(cobrar-pag));
       C[k][c.id]={id:c.id,nombre:c.nombre,plan:c.plan==="simple"?"simple":"basico",n:a.n,linea:a.linea,otro:a.otro,tot,com,mem,memI,cobrar,pag,saldo};
-      T.n+=a.n;T.linea+=a.linea;T.otro+=a.otro;T.tot+=tot;T.com+=com;T.mem+=mem;T.cobrar+=cobrar;T.pag+=pag;T.saldo+=saldo});
-    T.ing=r2m(T.com+T.mem);T.gan=r2m(T.ing-COSTO_FIJO);Mes[k]=T});
+      T.n+=a.n;T.linea+=a.linea;T.otro+=a.otro;T.tot+=tot;T.com+=com;T.mem+=mem;T.memI+=memI;T.cobrar+=cobrar;T.pag+=pag;T.saldo+=saldo});
+    T.ing=r2m(T.com+T.mem);T.gan=r2m(T.ing-COSTO_FIJO);
+    const gk=GA.filter(x=>x.mes===k);T.gast=r2m(gk.reduce((t,x)=>t+Number(x.monto),0));T.ivaG=r2m(gk.reduce((t,x)=>t+(x.con_iva?Number(x.monto)*16/116:0),0));
+    T.ivaC=r2m(T.memI-T.mem);T.ivaP=r2m(T.ivaC-T.ivaG);Mes[k]=T});
   const ant=keys[keys.length-2],alertas=[];
   cs.filter(c=>c.plan!=="simple"&&c.activo!==false&&!c.mp_conectado).forEach(c=>alertas.push("Sin Mercado Pago conectado: "+c.nombre));
   if(sinPagar)alertas.push(sinPagar+" pedido(s) en línea de este mes sin pagar (no cuentan en el reporte).");
   Object.values(C[ant]||{}).filter(r=>r.saldo>0).forEach(r=>alertas.push("Saldo pendiente de "+nomMes(ant)+": "+r.nombre+" ("+mxn(r.saldo)+")"));
-  return{mes,keys,cs,C,M:Mes,alertas,sinPagar}}
+  return{mes,keys,cs,C,M:Mes,alertas,sinPagar,GA}}
 function svgBarras(x,y,w,h,titulo,labels,series){
   const max=Math.max(1,...series.flatMap(s=>s.vals)),n=labels.length,left=52,gw=(w-left-8)/n,bw=Math.min(30,(gw-12)/series.length),top=y+34,base=y+h-26,ch=base-top;
   let g=`<text x="${x}" y="${y+16}" font-size="15" font-weight="700" fill="#2B2D22">${esc(titulo)}</text>`;
@@ -345,6 +349,7 @@ const svgWrap=(w,h,inner)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
 const AZ="#6fa8d6",NA="#da9c48",VE="#5C7648",GR="#9aa58a";
 const SG={ventas:(D)=>[{nombre:"Total vendido",color:VE,vals:D.keys.map(k=>D.M[k].tot)}],
   ing:(D)=>[{nombre:"Membresías",color:AZ,vals:D.keys.map(k=>D.M[k].mem)},{nombre:"Comisión 1%",color:NA,vals:D.keys.map(k=>D.M[k].com)}],
+  iva:(D)=>[{nombre:"IVA cobrado",color:AZ,vals:D.keys.map(k=>D.M[k].ivaC)},{nombre:"IVA de gastos",color:GR,vals:D.keys.map(k=>D.M[k].ivaG)},{nombre:"IVA por pagar",color:NA,vals:D.keys.map(k=>Math.max(0,D.M[k].ivaP))}],
   pagos:(D)=>[{nombre:"Cobrado",color:VE,vals:D.keys.map(k=>D.M[k].pag)},{nombre:"Por cobrar",color:NA,vals:D.keys.map(k=>D.M[k].saldo)}]};
 function kpiBox(x,y,w,t,v){return `<rect x="${x}" y="${y}" width="${w}" height="62" rx="10" fill="#f3f6ec" stroke="#dde5cf"/><text x="${x+12}" y="${y+22}" font-size="11" fill="#667">${esc(t)}</text><text x="${x+12}" y="${y+48}" font-size="19" font-weight="700" fill="#2B2D22">${esc(v)}</text>`}
 function svgInformeAdmin(D){
@@ -437,8 +442,12 @@ async function admTab(){
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0">
       ${card("Pedidos",T.n,"")}${card("Total vendido",mxn(T.tot),"En línea "+mxn(T.linea)+" · Otros "+mxn(T.otro))}${card("Comisión 1%",mxn(T.com),"")}
       ${card("Membresías (sin IVA)",mxn(T.mem),"")}${card("Ingresos Valle GO",mxn(T.ing),"Sin IVA")}${card("Ganancia estimada",mxn(T.gan),"Costos fijos "+mxn(COSTO_FIJO))}
-      ${card("Cobrado",mxn(T.pag),"Pagos registrados")}${card("Por cobrar",mxn(T.saldo),"Con IVA")}</div>
-    ${chart("Ventas por mes (todos los pedidos)",SG.ventas(D))}${chart("Ingresos de Valle GO por mes (sin IVA)",SG.ing(D))}${chart("Pagos por mes: cobrado y por cobrar",SG.pagos(D))}
+      ${card("Cobrado",mxn(T.pag),"Pagos registrados")}${card("Por cobrar",mxn(T.saldo),"Con IVA")}
+      ${card("IVA cobrado",mxn(T.ivaC),"De membresías")}${card("Gastos del mes",mxn(T.gast),"Registrados")}${card("IVA de gastos",mxn(T.ivaG),"Acreditable")}${card(T.ivaP<0?"IVA a favor":"IVA por pagar",mxn(Math.abs(T.ivaP)),"Cobrado − de gastos")}</div>
+    ${chart("Ventas por mes (todos los pedidos)",SG.ventas(D))}${chart("Ingresos de Valle GO por mes (sin IVA)",SG.ing(D))}${chart("Pagos por mes: cobrado y por cobrar",SG.pagos(D))}${chart("IVA por mes: cobrado, de gastos y por pagar",SG.iva(D))}
+    <h3>Gastos de ${esc(nomMes(D.mes))}</h3><p class="suave">Registra aquí lo que Valle GO paga (Supabase, Vercel, dominio, publicidad…). Si el gasto incluye IVA, déjalo marcado: se calcula el IVA acreditable.</p>
+    ${D.GA.filter(x=>x.mes===D.mes).map(x=>`<div class="item"><div class="in" style="flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap"><b style="flex:1">${esc(x.concepto)}</b><span>${mxn(Number(x.monto))}</span><span class="suave">${x.con_iva?"con IVA":"sin IVA"}</span><button class="btn sec" data-gdel="${x.id}">Quitar</button></div></div>`).join("")||'<p class="suave">Aún no hay gastos este mes.</p>'}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:8px 0 14px"><label style="flex:2;min-width:150px">Concepto<input id="gCon" placeholder="Ej. Supabase Pro"></label><label style="flex:1;min-width:110px">Monto (MXN)<input id="gMon" type="number" step="0.01" min="0" placeholder="0.00"></label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="gIva" checked style="width:auto"> Incluye IVA</label><button class="btn" data-gadd>Agregar gasto</button></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px"><button class="btn" data-mdl>Descargar informe (imagen)</button><button class="btn sec" data-mcsv>Descargar datos (CSV)</button><button class="btn sec" data-mshare>Compartir informe</button><button class="btn sec" data-mrec>Actualizar</button></div>
     <h3>Alertas</h3>${D.alertas.length?D.alertas.map(a=>`<div class="aviso">⚠️ ${esc(a)}</div>`).join(""):'<p class="suave">Sin alertas.</p>'}
     <h3>Compartir con comerciantes (plan Básico)</h3><p class="suave">Cada comercio recibe su propio informe del mes: sus ventas, el 1%, su membresía y su saldo. El plan Simple no tiene informe.</p>
@@ -528,8 +537,8 @@ document.addEventListener("click",async e=>{
   if(d.mrec!==undefined){adm.monForzar=true;return admTab()}
   if(d.mdl!==undefined||d.mshare!==undefined){const D=adm.mon;if(!D)return;try{const b=await svgAPng(svgInformeAdmin(D),820,992),n="valle-go-informe-"+D.mes+".png";
       if(d.mdl!==undefined)bajarBlob(b,n);else await compartirInforme(b,n,"Informe Valle GO de "+nomMes(D.mes),"")}catch(err){alert(err.message)}return}
-  if(d.mcsv!==undefined){const D=adm.mon;if(!D)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Mes","Pedidos","Total vendido","Pagos en linea","Transferencia/efectivo","Comision 1%","Membresias sin IVA","Ingresos","Ganancia estimada","Cobrado","Por cobrar"]];
-    D.keys.forEach(k=>{const T=D.M[k];L.push([k,T.n,T.tot.toFixed(2),T.linea.toFixed(2),T.otro.toFixed(2),T.com.toFixed(2),T.mem.toFixed(2),T.ing.toFixed(2),T.gan.toFixed(2),T.pag.toFixed(2),T.saldo.toFixed(2)])});
+  if(d.mcsv!==undefined){const D=adm.mon;if(!D)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Mes","Pedidos","Total vendido","Pagos en linea","Transferencia/efectivo","Comision 1%","Membresias sin IVA","Ingresos","Ganancia estimada","Cobrado","Por cobrar","IVA cobrado","Gastos","IVA de gastos","IVA por pagar"]];
+    D.keys.forEach(k=>{const T=D.M[k];L.push([k,T.n,T.tot.toFixed(2),T.linea.toFixed(2),T.otro.toFixed(2),T.com.toFixed(2),T.mem.toFixed(2),T.ing.toFixed(2),T.gan.toFixed(2),T.pag.toFixed(2),T.saldo.toFixed(2),T.ivaC.toFixed(2),T.gast.toFixed(2),T.ivaG.toFixed(2),T.ivaP.toFixed(2)])});
     bajarBlob(new Blob(["﻿"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),"valle-go-monitoreo-"+D.mes+".csv");return}
   if(d.mcd||d.mcs){const D=adm.mon;if(!D)return;const R=(D.C[D.mes]||{})[d.mcd||d.mcs];if(!R||R.plan!=="basico"){alert("Solo los comercios del plan Básico reciben informe.");return}
     try{const b=await svgAPng(svgInformeComercio(D,R.id),820,520),n="informe-"+R.nombre.replace(/[^a-z0-9]+/gi,"-").toLowerCase()+"-"+D.mes+".png";
@@ -546,6 +555,11 @@ document.addEventListener("click",async e=>{
     e.target.disabled=true;const r=await db.rpc("admin_eliminar_usuario",{uid:d.udel});
     if(r.error){alert("No se pudo eliminar: "+r.error.message);e.target.disabled=false;return}
     if(adm.uh&&capas.length){cierraCapa();return}adm.uh=null;return admTab()}
+  if(d.gadd!==undefined){const con=($("gCon").value||"").trim(),mon=Math.round(parseFloat($("gMon").value)*100)/100;
+    if(!con||!(mon>=0)||isNaN(mon)){alert("Escribe el concepto y el monto del gasto.");return}
+    const r=await db.from("gastos").insert({mes:adm.mesM||mkey(new Date()),concepto:con,monto:mon,con_iva:$("gIva").checked});
+    if(r.error){alert("No se pudo guardar: "+r.error.message);return}adm.monForzar=true;return admTab()}
+  if(d.gdel){if(!confirm("¿Quitar este gasto?"))return;const r=await db.from("gastos").delete().eq("id",d.gdel);if(r.error){alert(r.error.message);return}adm.monForzar=true;return admTab()}
   if(d.cpg){const[cid,sal]=d.cpg.split("|");const m=prompt("Monto recibido (MXN):",Number(sal).toFixed(2));if(m===null)return;const monto=Math.round(parseFloat(String(m).replace(/[$,\s]/g,""))*100)/100;
     if(!(monto>0)){alert("Escribe un monto válido.");return}
     const met=prompt("Cómo pagó (transferencia, efectivo, depósito…):","Transferencia");if(met===null)return;const nota=prompt("Nota (opcional):","");
@@ -722,6 +736,7 @@ const logoHTML=(t,g)=>t.logo?`<img class="logo-c${g?" g":""}" src="${esc(t.logo)
 function ruta(){
   clearInterval(adT);
   const [,r,id]=location.hash.split("/");
+  const bp=$("bPanel");if(bp)bp.classList.toggle("on",r==="panel"||r==="admin");
 
   if(r==="t")return vistaTienda(id);
   if(r==="cuenta")return vistaCuenta();
@@ -1090,7 +1105,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#bCont");if(b){e
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v78";
+const BUILD="valle-go-v80";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
