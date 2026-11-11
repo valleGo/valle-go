@@ -6,6 +6,6 @@ const VAPID_PUBLIC = "BKSoFne3ViGbTo5FG98fzsxEpOulJ654Dnd65kDloyigs-iO7DQimrwYVW
 // Medios de contacto de Valle GO (botón flotante). Deja vacío ("") el que no quieras mostrar.
 const CONTACTO = {
   whatsapp: "523751183053",   // número de WhatsApp Business, 10 dígitos o con lada país. Ej: "3331234567"
-  facebook: "",   // enlace completo. Ej: "https://www.facebook.com/tupagina"
+  facebook: "https://www.facebook.com/profile.php?id=61596645110030",   // enlace completo. Ej: "https://www.facebook.com/tupagina"
   instagram: ""   // enlace completo. Ej: "https://www.instagram.com/tuusuario"
 };
