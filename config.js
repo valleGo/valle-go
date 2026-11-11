@@ -7,5 +7,5 @@ const VAPID_PUBLIC = "BKSoFne3ViGbTo5FG98fzsxEpOulJ654Dnd65kDloyigs-iO7DQimrwYVW
 const CONTACTO = {
   whatsapp: "523751183053",   // número de WhatsApp Business, 10 dígitos o con lada país. Ej: "3331234567"
   facebook: "https://www.facebook.com/profile.php?id=61596645110030",   // enlace completo. Ej: "https://www.facebook.com/tupagina"
-  instagram: ""   // enlace completo. Ej: "https://www.instagram.com/tuusuario"
+  instagram: "https://www.instagram.com/valleg0/"   // enlace completo. Ej: "https://www.instagram.com/tuusuario"
 };
