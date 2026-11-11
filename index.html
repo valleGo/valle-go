@@ -814,7 +814,7 @@ if($("fPerfil"))$("fPerfil").onchange=async e=>{const f=e.target.files[0];if(!f)
 }
 function vistaCuenta(){
   if(sesion){ $("vista").innerHTML=`<h2>Hola, ${esc(sesion.nombre)}</h2><p class="suave">${esc(sesion.email)}</p><br>
-   <a class="btn" href="#/pedidos">Ver mis pedidos</a> <button class="btn sec" id="salir">Cerrar sesión</button>`+
+   <a class="btn" href="#/pedidos">Ver mis pedidos</a> <button class="btn sec" id="salir">Cerrar sesión</button><br><br>${notifBtnHTML()}`+
    (db&&sesion.id?"<br><br>"+perfilHTML():"")+
    (db&&sesion.id?`<br><br><div class="aviso" style="display:grid;gap:8px;max-width:360px"><b>Cambiar contraseña</b>
     <label>Nueva contraseña (mínimo 8)<input id="np1" type="password" autocomplete="new-password"></label>
@@ -1048,6 +1048,21 @@ window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
+const BUILD="valle-go-v71";
+// Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
+async function revisaVersion(){
+  try{
+    const r=await fetch("sw.js?_="+Date.now(),{cache:"no-store"});if(!r.ok)return;
+    const m=/CACHE\s*=\s*"([^"]+)"/.exec(await r.text());
+    if(m&&m[1]!==BUILD){
+      const t=Number(sessionStorage.getItem("recV")||0);if(Date.now()-t<45000)return;   // evita recargas repetidas
+      sessionStorage.setItem("recV",String(Date.now()));
+      if(!ocupado())location.reload();else avisoNueva();
+    }
+  }catch(e){}
+}
+setTimeout(revisaVersion,1200);setInterval(()=>{if(!document.hidden)revisaVersion()},60000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)revisaVersion()});
 // ---- Actualización automática: al abrir la app (o volver a ella) se actualiza sola ----
 let sinFoco=document.hidden?Date.now():0;
 const ocupado=()=>document.querySelector(".panel.on,#dirPanel")!==null||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
@@ -1068,7 +1083,7 @@ function avisoNueva(){
 }
 if("serviceWorker"in navigator){
   const habia=!!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register("sw.js").then(reg=>{
+  navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>{try{reg.update()}catch(e){}
     const vigila=w=>w&&w.addEventListener("statechange",()=>{if(w.state==="installed"||w.state==="activated"){if(habia)nuevaVersion()}});
     reg.addEventListener("updatefound",()=>vigila(reg.installing));
     const busca=()=>{try{reg.update()}catch(e){}};
