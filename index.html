@@ -821,7 +821,7 @@ function vistaCuenta(){
      $("np1").value="";$("np2").value="";alert("Contraseña actualizada. Úsala la próxima vez que entres.");
    };
    $("salir").onclick=async()=>{await cerrarAvisos();if(db)db.auth.signOut();esAdmin=false;misCom=[];sesion=null;$s("sesion",null);pintaHeader();location.hash="#/"};return;}
-  $("vista").innerHTML=`<h2>Crea tu cuenta Valle GO:</h2><div id="gBox"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+  $("vista").innerHTML=`<h2>Crea tu cuenta Valle GO:</h2><p class="aviso">📧 <b>Importante:</b> al crear tu cuenta te enviaremos un correo de confirmación. Debes abrirlo en tu bandeja de entrada (revisa también Spam o Promociones) y tocar el enlace para poder entrar. Aplica para usuarios y comercios.</p><div id="gBox"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
    <div class="caja" style="position:static;width:auto;padding:0">
     <label>Nombre<input id="rn" autocomplete="name"></label><label>Correo<input id="re" type="email" autocomplete="email"></label>
     <label>Teléfono<input id="rt" type="tel" autocomplete="tel"></label><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("rg",null)}
@@ -899,16 +899,24 @@ async function registrar(){
   if(!u.nombre||!u.email.includes("@")||p.length<6)return alert("Completa nombre, correo válido y una contraseña de 6 o más caracteres.");
   if(db){const {data,error}=await db.auth.signUp({email:u.email,password:p,options:{data:{nombre:u.nombre,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle,dir_num:u.dir_num,dir_col:u.dir_col}}});
     if(error)return alert(error.message);
-    if(!data.session)return alert("Revisa tu correo para confirmar tu cuenta y luego inicia sesión.");
+    if(!data.session)return avisoConfirmar(u.email);
     return abrirSesion(sesionDe(data.user));}
   const us=$$("usuarios",[]);
   if(us.some(x=>x.email===u.email))return alert("Ese correo ya está registrado. Inicia sesión.");
   u.pass=await hash(p); us.push(u); $s("usuarios",us); abrirSesion(u);
 }
+function avisoConfirmar(email){
+  $("vista").innerHTML=`<h2>📧 Confirma tu correo</h2><div class="aviso" style="font-size:1rem;line-height:1.6">
+   <p>¡Tu cuenta fue creada! Para poder entrar, <b>confirma tu correo</b>:</p>
+   <p>1. Abre la bandeja de entrada de <b>${esc(email)}</b>.<br>2. Busca el correo de confirmación de Valle GO (si no lo ves, revisa <b>Spam</b> o <b>Promociones</b>).<br>3. Toca el enlace del correo.<br>4. Regresa aquí e inicia sesión.</p>
+   <p class="suave">Mientras no confirmes tu correo no podrás acceder a tu cuenta.</p>
+   <button class="btn sec" id="reenv">Reenviar correo de confirmación</button> <a class="btn" href="#/cuenta">Ya confirmé, iniciar sesión</a></div>`;
+  $("reenv").onclick=async()=>{const r=await db.auth.resend({type:"signup",email});alert(r.error?"No se pudo reenviar: "+r.error.message:"Listo, te reenviamos el correo. Revisa tu bandeja y Spam.")};
+}
 async function entrar(){
   const e=$("le").value.trim().toLowerCase();
   if(db){const {data,error}=await db.auth.signInWithPassword({email:e,password:$("lp").value});
-    if(error)return alert("Correo o contraseña incorrectos.");return abrirSesion(sesionDe(data.user));}
+    if(error){if(/confirm/i.test(error.message))return avisoConfirmar(e);return alert("Correo o contraseña incorrectos.")}return abrirSesion(sesionDe(data.user));}
   const h=await hash($("lp").value);
   const u=$$("usuarios",[]).find(x=>x.email===e&&x.pass===h);
   if(!u)return alert("Correo o contraseña incorrectos.");
