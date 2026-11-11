@@ -819,6 +819,11 @@ async function notifAuto(){
       document.body.appendChild(d);$("bnotifX").onclick=()=>{try{sessionStorage.setItem("bnotifX","1")}catch(e){}d.remove()};return}
     if(!VAPID_PUBLIC)return;
     if(Notification.permission==="granted"){await registrarPush();return}
+    if(Notification.permission==="denied"&&staff&&!$("bnotif")){
+      try{if(sessionStorage.getItem("bnotifX"))return}catch(e){}
+      const d=document.createElement("div");d.id="bnotif";
+      d.innerHTML='<span>🔕 Las notificaciones están bloqueadas y no recibirás avisos de pedidos. Permítelas en los ajustes del navegador (candado junto a la dirección → Notificaciones → Permitir) o en Ajustes del celular → Notificaciones → Valle GO.</span><button id="bnotifX" aria-label="Cerrar">×</button>';
+      document.body.appendChild(d);$("bnotifX").onclick=()=>{try{sessionStorage.setItem("bnotifX","1")}catch(e){}d.remove()};return}
     if(Notification.permission!=="default"||$("bnotif"))return;
     try{if(sessionStorage.getItem("bnotifX"))return}catch(e){}
     const d=document.createElement("div");d.id="bnotif";
@@ -859,7 +864,11 @@ async function cerrarAvisos(){
       if(x){await db.from("push_suscripciones").delete().eq("endpoint",x.endpoint);await x.unsubscribe()}}
   }catch(e){}
 }
-document.addEventListener("click",e=>{if(e.target.id==="bNotif")activarNotif()});
+async function probarAviso(){
+  try{const reg=await navigator.serviceWorker.ready;
+    await reg.showNotification("Valle GO · prueba",{body:"Si ves esto, los avisos funcionan en este dispositivo.",icon:"icon-192.png",tag:"prueba",requireInteraction:true,vibrate:[500,200,500,200,900]});
+    sonido()}catch(err){alert("Este dispositivo no pudo mostrar el aviso: "+err.message)}}
+document.addEventListener("click",e=>{if(e.target.id==="bNotif")activarNotif();if(e.target.id==="bProbar")probarAviso()});
 
 // ---- Pago en línea (Mercado Pago): abre la página segura de pago ----
 async function pagarPedido(id){
@@ -1080,6 +1089,8 @@ async function sondeo(){
 }
 setInterval(sondeo,8000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)sondeo()});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&sesion&&sesion.id)notifAuto()});   // al volver, renueva la suscripción de avisos si hace falta
+if("serviceWorker"in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.tipo==="renovarPush"&&sesion&&sesion.id)notifAuto()});
 window.addEventListener("focus",sondeo);
 const PASOS=["Enviado al comercio","Preparando","En camino","Entregado"];
 async function vistaPedidos(silencio){
@@ -1091,7 +1102,7 @@ async function vistaPedidos(silencio){
   const hora=new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
   const pasos=p=>{if(p.estado==="Cancelado")return`<div class="pasos"><span class="paso mal">❌ Cancelado</span></div>`;
     const i=PASOS.indexOf(p.estado);return`<div class="pasos">${PASOS.map((x,k)=>`<span class="paso${k<=i?" ok":""}${k===i?" act":""}">${k<=i?"●":"○"} ${x}</span>`).join("")}</div>`};
-  const pushBtn=!notifOK()?notifBtnHTML():(VAPID_PUBLIC&&Notification.permission==="default"?`<p class="aviso">🔔 Activa los avisos para enterarte aunque tengas la app cerrada. <button class="btn" id="bNotif">Activar avisos</button></p>`:(Notification.permission==="denied"?`<p class="aviso">Las notificaciones están bloqueadas. Actívalas en Ajustes → Notificaciones → Valle GO.</p>`:""));
+  const pushBtn=!notifOK()?notifBtnHTML():(VAPID_PUBLIC&&Notification.permission==="default"?`<p class="aviso">🔔 Activa los avisos para enterarte aunque tengas la app cerrada. <button class="btn" id="bNotif">Activar avisos</button></p>`:(Notification.permission==="denied"?`<p class="aviso">🔕 Las notificaciones están bloqueadas en este dispositivo. Actívalas en los ajustes del navegador (candado o ⓘ junto a la dirección → Notificaciones → Permitir) o en Ajustes del celular → Notificaciones → Valle GO, y vuelve a abrir la app.</p>`:`<p class="aviso">🔔 Avisos activados en este dispositivo. <button class="btn sec" id="bProbar">Probar aviso</button> <button class="btn sec" id="bNotif">Reactivar</button></p>`));
   $("vista").innerHTML=`<h2>Mis pedidos</h2><p class="suave"><button class="btn sec" id="bActPed">🔄 Actualizar</button> En tiempo real · última actualización ${hora}</p>${pushBtn}`+(ps.length?ps.map(p=>`<div class="item"><div class="in">
    <b>${p.tienda}</b><span class="suave">${p.fecha}</span>
    <span>${p.lineas.join("<br>")}</span><span class="tot">${din(p.total)}</span>
@@ -1289,7 +1300,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v98";
+const BUILD="valle-go-v99";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{

@@ -1,5 +1,5 @@
 // Service worker de Valle GO: abre sin internet, siempre intenta traer la versión nueva y recibe notificaciones.
-const CACHE = "valle-go-v98";
+const CACHE = "valle-go-v99";
 const ARCHIVOS = ["./", "./index.html", "./config.js", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-180.png"];
 
 self.addEventListener("install", e => {
@@ -24,12 +24,19 @@ self.addEventListener("fetch", e => {
 // Notificaciones de pedidos nuevos
 self.addEventListener("push", e => {
   let d = {};
-  try { d = e.data.json(); } catch (x) {}
-  e.waitUntil(self.registration.showNotification(d.titulo || "Valle GO", {
+  try { d = e.data.json(); } catch (x) { try { d = { cuerpo: e.data.text() }; } catch (y) {} }
+  const tag = d.tag || ("vg" + Date.now());
+  const opc = {
     body: d.cuerpo || "", icon: "icon-192.png", badge: "icon-192.png",
-    tag: d.tag, renotify: true, requireInteraction: true, silent: false,
+    tag, renotify: true, requireInteraction: true, silent: false,
     vibrate: [500, 200, 500, 200, 500, 200, 900, 300, 900], timestamp: Date.now(), data: { url: d.url || "./index.html#/panel" }
-  }));
+  };
+  // si el navegador rechaza alguna opción, se muestra igual con lo básico (nunca se pierde el aviso)
+  e.waitUntil(self.registration.showNotification(d.titulo || "Valle GO", opc).catch(() =>
+    self.registration.showNotification(d.titulo || "Valle GO", { body: d.cuerpo || "", icon: "icon-192.png", data: opc.data })));
+});
+self.addEventListener("pushsubscriptionchange", e => {
+  e.waitUntil(clients.matchAll({ includeUncontrolled: true }).then(l => l.forEach(c => c.postMessage({ tipo: "renovarPush" }))));
 });
 self.addEventListener("notificationclick", e => {
   e.notification.close();
