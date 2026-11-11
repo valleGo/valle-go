@@ -34,7 +34,7 @@ header a{color:var(--verde);text-decoration:none;font-size:1.3rem;font-weight:80
 .logo{display:flex;align-items:center;gap:10px}.logo img{width:66px;height:66px;flex:none;display:block}
 .hb{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 header .logo{flex-shrink:0}header .hb{margin-left:auto;flex:0 1 auto;min-width:0}header{flex-wrap:wrap;row-gap:4px}.marca{flex:0 0 100%;order:3;display:flex;justify-content:center;align-items:center}.marca a{display:flex;justify-content:center;max-width:100%}.marca img{display:block;max-width:100%;width:auto;height:auto;max-height:26px;object-fit:contain}
-.dirbar{max-width:1180px;margin:0 auto;padding:8px 10px 0}.dirbar a{display:inline-block;background:var(--verde);color:var(--on-verde);border-radius:999px;padding:7px 16px;font-weight:800;letter-spacing:.08em;font-size:.78rem;text-decoration:none;border:1px solid var(--verde)}.dirbar a.on{background:var(--acento);color:var(--on-acento);border-color:var(--acento)}
+.dirbar{position:sticky;top:var(--hh,100px);z-index:4;max-width:1180px;margin:0 auto;padding:8px 10px 0;height:0;overflow:visible;pointer-events:none}.dirbar a{pointer-events:auto;box-shadow:0 4px 12px rgba(0,0,0,.28),0 1px 3px rgba(0,0,0,.2);transition:transform .15s,box-shadow .15s;display:inline-block;background:var(--verde);color:var(--on-verde);border-radius:999px;padding:7px 16px;font-weight:800;letter-spacing:.08em;font-size:.78rem;text-decoration:none;border:1px solid var(--verde)}.dirbar a:hover{transform:translateY(-2px);box-shadow:0 7px 16px rgba(0,0,0,.32)}.dirbar a:active{transform:translateY(1px) scale(.97);box-shadow:0 2px 6px rgba(0,0,0,.3)}.dirbar a.on{background:var(--acento);color:var(--on-acento);border-color:var(--acento)}
 .hb button{background:var(--tarjeta);color:var(--texto);border:1px solid var(--borde);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.85rem}
 .hb #bCarrito{background:var(--acento);color:var(--on-acento);border-color:var(--acento);font-weight:700}
 .hb #bPanel{background:var(--verde);color:var(--on-verde);border-color:var(--verde)}
@@ -136,7 +136,7 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
   <div class="hb"><button id="bPanel" style="display:none">Panel</button><button id="bCuenta"></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div>
 </header>
 <div class="dirbar"><a href="#/directorio" id="bDir">DIRECTORIO</a></div>
-<main id="vista"></main>
+<main id="vista" style="padding-top:48px"></main>
 <footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><a href="privacidad.html">Política de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
 <div class="panel" id="pCarrito"><div class="caja" id="cCarrito"></div></div>
 <div id="toast"></div><div id="inst"><span id="instT"></span><button id="instB">Instalar</button><button id="instX" aria-label="Cerrar">×</button></div>
@@ -584,7 +584,7 @@ function vistaDirectorio(){
   const lista=()=>{const q=norm(dirQ).trim(),F=q?L.filter(t=>norm(t.nombre+" "+((CATEGORIAS.find(k=>k.id===t.cat)||{}).nombre||"")+" "+t.giro).includes(q)):L;
     return F.length?`<div class="grid gcom">${F.map(tarjetaCom).join("")}</div>`:"<p>No encontramos comercios con esa búsqueda.</p>"};
   $("vista").innerHTML=`<h2>Directorio</h2>
-   <label style="font-size:1.25rem;font-weight:800">Buscar<input id="dirQ" type="search" placeholder="NOMBRE O CATEGORIA" value="${esc(dirQ)}" style="font-size:1.2rem;padding:16px 18px;margin-top:8px;margin-bottom:14px"></label><div id="dirL">${lista()}</div>`;
+   <label style="font-size:1.25rem;font-weight:800">BUSCAR:<input id="dirQ" type="search" placeholder="NOMBRE O CATEGORIA" value="${esc(dirQ)}" style="font-size:1.2rem;padding:16px 18px;margin-top:8px;margin-bottom:14px"></label><div id="dirL">${lista()}</div>`;
   $("dirQ").oninput=e=>{dirQ=e.target.value;$("dirL").innerHTML=lista()};
 }
 function vistaTienda(id){
@@ -715,6 +715,7 @@ async function entrar(){
   abrirSesion(u);
 }
 function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle||"",dir_num:u.dir_num||"",dir_col:u.dir_col||"",foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol();location.hash="#/"}
+const medirHeader=()=>{const h=document.querySelector("header");if(h)document.documentElement.style.setProperty("--hh",h.offsetHeight+"px")};window.addEventListener("resize",medirHeader);window.addEventListener("load",medirHeader);if(window.ResizeObserver)new ResizeObserver(medirHeader).observe(document.querySelector("header"));medirHeader();
 function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";$("bPanel").style.display=(esAdmin||misCom.length)?"":"none"}
 
 // ---------- Carrito ----------
