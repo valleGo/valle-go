@@ -52,6 +52,7 @@ header .logo{flex-shrink:0}header .hb{margin-left:auto;flex:0 1 auto;min-width:0
 #dirPanel h2{margin:4px 0 10px}
 .dirbar a.on{background:#da9c48!important;color:#2a1a05!important;border-color:#c0802f!important;background:var(--acento);color:var(--on-acento);border-color:var(--acento)}
 .hb button{background:var(--tarjeta);color:var(--texto);border:1px solid var(--borde);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.85rem}
+.hb #bPedidos{background:var(--verde);color:var(--on-verde);border-color:var(--verde);padding:10px 16px;font-size:.9rem}
 .hb #bCarrito{background:var(--acento);color:var(--on-acento);border-color:var(--acento);font-weight:700}
 .hb #bPanel{display:inline-flex;align-items:center;gap:6px;background:#A5B574;color:#1f2a14;border:1px solid #8a9a58;font-weight:800;letter-spacing:.06em;box-shadow:0 4px 12px rgba(138,154,88,.45),0 1px 3px rgba(0,0,0,.2);transition:transform .15s,box-shadow .15s,background .15s,border-color .15s,color .15s}
 .hb #bPanel *{pointer-events:none}.hb #bPanel:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(138,154,88,.55)}.hb #bPanel:active{transform:scale(.95)}
@@ -191,7 +192,7 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
 <header>
   <a href="#/" class="logo" aria-label="Valle GO"><img src="logo.png" alt="Valle GO" width="66" height="66"></a>
   <div class="marca"><a href="#/" aria-label="Va, llegó — ir al inicio"><img src="marca.png" alt="Va, llegó" width="450" height="92"></a></div>
-  <div class="hb"><button id="bPanel" style="display:none"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg><span>PANEL</span></button><button id="bCuenta"></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div>
+  <div class="hb"><button id="bPanel" style="display:none"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg><span>PANEL</span></button><button id="bPedidos" style="display:none">Ver mis pedidos</button><button id="bCuenta"></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div>
   <button id="bCont" type="button" aria-label="Contáctanos" aria-expanded="false" aria-controls="contPanel"><span class="lbl">REDES VALLE GO:</span><span class="dot"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M15.6 8.4v5.1a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.4 6.9"/></svg></span></button>
 </header>
 <div class="dirbar"><a href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a></div>
@@ -1157,7 +1158,7 @@ async function entrar(){
 }
 function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle||"",dir_num:u.dir_num||"",dir_col:u.dir_col||"",foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol();location.hash="#/"}
 const medirHeader=()=>{const h=document.querySelector("header");if(h)document.documentElement.style.setProperty("--hh",h.offsetHeight+"px")};window.addEventListener("resize",medirHeader);window.addEventListener("load",medirHeader);if(window.ResizeObserver)new ResizeObserver(medirHeader).observe(document.querySelector("header"));medirHeader();
-function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";$("bPanel").style.display=(esAdmin||misCom.length)?"":"none"}
+function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";$("bPanel").style.display=(esAdmin||misCom.length)?"":"none";$("bPedidos").style.display=sesion?"":"none"}
 
 // ---------- Carrito ----------
 function agregar(tid,mid){
@@ -1251,6 +1252,7 @@ document.addEventListener("click",e=>{const d=e.target.dataset;
   if(d.mas)cambia(d.mas,1); if(d.menos)cambia(d.menos,-1); if(d.cerrar!==undefined){if(capas.length)cierraCapa();else $("pCarrito").classList.remove("on")}});
 $("bCarrito").onclick=()=>{pintaCarrito();const p=$("pCarrito");if(!p.classList.contains("on")){p.classList.add("on");abreCapa(()=>p.classList.remove("on"))}};
 $("bCuenta").onclick=()=>location.hash="#/cuenta";
+$("bPedidos").onclick=async()=>{await cierraTodasCapas();location.hash="#/pedidos"};
 $("bPanel").onclick=()=>{const h=location.hash;location.hash=(h.startsWith("#/admin")||h.startsWith("#/panel"))?"#/":(esAdmin?"#/admin":"#/panel")};   // clic: abre el panel; otro clic: regresa al inicio
 window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
 
@@ -1305,7 +1307,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v103";
+const BUILD="valle-go-v104";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
