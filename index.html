@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Valle GO</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#E6E6E6">
@@ -90,7 +90,7 @@ main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .ca
 .panel{height:100vh;height:100dvh}   /* en el celular 100vh incluye las barras del navegador y cortaba el final */
 .caja{position:absolute;right:0;top:0;bottom:0;width:min(440px,100%);background:var(--fondo);padding:18px;display:grid;gap:12px;align-content:start;overflow:auto;box-shadow:-8px 0 30px rgba(93,119,74,.18);-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .caja{height:100vh;height:100dvh;bottom:auto}
-.caja{grid-auto-rows:max-content}.caja>*{min-height:min-content}   /* evita que los botones y campos se aplasten cuando el formulario es largo */
+.caja{touch-action:pan-y;grid-auto-rows:max-content}.caja>*{min-height:min-content}   /* evita que los botones y campos se aplasten cuando el formulario es largo */
 .linea{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--borde);padding:9px 0;gap:8px}
 .q button{width:30px;height:30px;border-radius:50%;border:1px solid var(--borde);background:var(--tarjeta);color:var(--texto);font-weight:700}
 input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta);color:var(--texto);font-weight:500}
@@ -1176,6 +1176,7 @@ function pintaCarrito(){
   $("n").textContent=Object.values(carrito.items).reduce((a,b)=>a+b,0);
   if(!t){$("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>Tu carrito</h2><p>Está vacío. Elige un comercio y agrega platillos.</p>`;return}
   const sub=subtotal(t), dom=t.domicilio&&($("entrega")?$("entrega").value==="domicilio":true), env=dom?t.envio:0;
+  const st0=$("cCarrito").scrollTop;   // se conserva la posición al repintar
   const keep=["entrega","pago","ck_c","ck_n","ck_l","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});keep.gdom=$("gdom")?$("gdom").checked:undefined;
   $("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>${t.nombre}</h2>`+
    ids.map(id=>{const m=t.menu.find(x=>x.id===id);return `<div class="linea"><span>${m.emoji} ${m.nombre}<br><small>${din(m.precio)}</small></span>
@@ -1195,6 +1196,7 @@ function pintaCarrito(){
   $("entrega").onchange=()=>{$("dirBox").style.display=$("entrega").value==="domicilio"?"grid":"none";
     const e=$("entrega").value==="domicilio"?t.envio:0;$("env").textContent=din(e);$("tot").textContent=din(sub+e)};
   $("entrega").onchange(); $("pedir").onclick=()=>confirmar(t,sub);
+  $("cCarrito").scrollTop=st0;
 }
 async function confirmar(t,sub){
   if(!sesion){await cierraTodasCapas();$("pCarrito").classList.remove("on");alert("Crea tu cuenta o inicia sesión para pedir.");location.hash="#/cuenta";return}
@@ -1303,7 +1305,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v101";
+const BUILD="valle-go-v102";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
