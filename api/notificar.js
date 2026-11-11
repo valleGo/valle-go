@@ -20,23 +20,32 @@ module.exports = async (req, res) => {
     const ped = p && p.record;
     if (!ped) return res.status(200).json({ ok: true, omitido: true });
 
-    let prefijo;
-    if (p.type === "INSERT" && ped.pago !== "en_linea") prefijo = "🛎️ Nuevo pedido";
-    else if (p.type === "UPDATE" && ped.pago === "en_linea" && ped.estado_pago === "Pagado" && p.old_record && p.old_record.estado_pago !== "Pagado") prefijo = "💳 Pedido pagado";
-    else return res.status(200).json({ ok: true, omitido: true });
-
-    webpush.setVapidDetails(process.env.VAPID_SUBJECT, process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+    const old = p.old_record || {};
+    let prefijo, ids, cuerpoX, urlX;
     const [com] = await sb(`comercios?id=eq.${encodeURIComponent(ped.comercio_id)}&select=nombre,dueno_id`);
     const admins = await sb("admins?select=user_id");
-    const ids = [...new Set([com && com.dueno_id, ...admins.map(a => a.user_id)].filter(Boolean))];
+    const staff = [...new Set([com && com.dueno_id, ...admins.map(a => a.user_id)].filter(Boolean))];
+    if (p.type === "INSERT" && ped.pago !== "en_linea") { prefijo = "🛎️ Nuevo pedido"; ids = staff; }
+    else if (p.type === "UPDATE" && ped.pago === "en_linea" && ped.estado_pago === "Pagado" && old.estado_pago !== "Pagado") { prefijo = "💳 Pedido pagado"; ids = staff; }
+    else if (p.type === "UPDATE" && ped.recibido_en && !old.recibido_en) { prefijo = "✅ Cliente confirmó recibido"; ids = staff; }
+    else if (p.type === "UPDATE" && ped.estado !== old.estado && ped.comprador_id && !(ped.recibido_en && !old.recibido_en)) {
+      const T = { "Preparando": ["👨‍🍳 Pedido confirmado", "El comercio confirmó tu pedido y lo está preparando."],
+        "En camino": ["🛵 Tu pedido va en camino", "Tu pedido ya salió. ¡Pronto llegará!"],
+        "Entregado": ["📦 Pedido entregado", "Tu pedido fue marcado como entregado. Confirma que lo recibiste."],
+        "Cancelado": ["❌ Pedido cancelado", "El comercio canceló tu pedido."] }[ped.estado];
+      if (!T) return res.status(200).json({ ok: true, omitido: true });
+      prefijo = T[0]; cuerpoX = T[1]; ids = [ped.comprador_id]; urlX = "./index.html#/pedidos";
+    } else return res.status(200).json({ ok: true, omitido: true });
+
+    webpush.setVapidDetails(process.env.VAPID_SUBJECT, process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
     if (!ids.length) return res.status(200).json({ ok: true, destinos: 0 });
 
     const subs = await sb(`push_suscripciones?user_id=in.(${ids.join(",")})&select=endpoint,p256dh,auth`);
     const pago = { efectivo: "Efectivo", transferencia: "Transferencia", en_linea: "Pagado en línea", tarjeta: "Tarjeta" }[ped.pago] || ped.pago;
     const msg = JSON.stringify({
       titulo: `${prefijo} · ${com ? com.nombre : ""}`,
-      cuerpo: `$${Number(ped.total).toFixed(2)} · ${pago} · ${ped.entrega === "domicilio" ? "A domicilio" : "Recoger"}`,
-      url: "./index.html#/panel", tag: ped.id
+      cuerpo: cuerpoX || `$${Number(ped.total).toFixed(2)} · ${pago} · ${ped.entrega === "domicilio" ? "A domicilio" : "Recoger"}`,
+      url: urlX || "./index.html#/panel", tag: ped.id + (cuerpoX ? ped.estado : "")
     });
 
     let enviados = 0;

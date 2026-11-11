@@ -86,6 +86,7 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .fila{display:flex;justify-content:space-between}.tot{font-weight:800;font-size:1.1rem}
 .x{justify-self:end;background:none;border:0;font-size:1.6rem;color:var(--texto);line-height:1}
 .aviso{background:color-mix(in srgb,var(--cielo) 24%,var(--tarjeta));border:1px solid color-mix(in srgb,var(--cielo) 55%,transparent);border-radius:12px;padding:12px;font-size:.85rem;font-weight:500}
+.pasos{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.78rem;color:var(--suave,#888)}.paso.ok{color:var(--texto);font-weight:600}.paso.act{color:var(--salvia)}.paso.mal{color:var(--coral);font-weight:600}
 .estado{display:inline-block;background:color-mix(in srgb,var(--salvia) 30%,var(--tarjeta));color:var(--texto);border-radius:999px;padding:3px 12px;font-size:.78rem;font-weight:600}
 #inst{display:none;position:fixed;bottom:14px;left:14px;right:14px;background:var(--acento);color:var(--on-acento);border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:4;align-items:center;gap:8px;font-size:.9rem;box-shadow:var(--sombra)}
 #inst span{flex:1}#inst button{border:0;border-radius:999px;padding:8px 14px;background:#2B2D22;color:#fff;font-weight:600}#inst #instX{background:none;color:var(--on-acento);font-size:1.3rem;padding:2px 8px}
@@ -213,7 +214,7 @@ async function cargarRol(){
   if(!db||!sesion||!sesion.id){pintaHeader();return}
   const a=await db.from("admins").select("user_id").eq("user_id",sesion.id); esAdmin=!!(a.data&&a.data.length);
   const c=await db.from("comercios").select("id,nombre,mp_conectado,plan").eq("dueno_id",sesion.id); misCom=c.data||[];
-  pintaHeader();escucharPedidos();notifAuto();
+  pintaHeader();escucharPedidos();escucharMisPedidos();notifAuto();
 }
 
 // ---- Subir foto comprimida (WebP, máx. 1000 px) ----
@@ -231,7 +232,7 @@ async function subirFoto(archivo,carpeta,max=1000){
 // ---- Tarjeta de pedido (la usan el comerciante y el administrador) ----
 const ped2html=(p,admin)=>`<div class="item"><div class="in"><b>${esc(p.comercios?p.comercios.nombre:"")}</b> <span class="suave">${new Date(p.creado).toLocaleString("es-MX")}</span>
  <span>${(p.lineas||[]).map(esc).join("<br>")}</span><span class="tot">${din(Number(p.total))}</span>
- <span class="suave">${esc(p.cliente_nombre)} · ${esc(p.cliente_tel)}<br>${p.entrega==="domicilio"?"A domicilio: "+esc(p.direccion):"Recoge en tienda"} · ${NPAGO[p.pago]||p.pago} · <b>${esc(p.estado_pago||"Pendiente")}</b>${p.notas?"<br>Notas: "+esc(p.notas):""}</span>
+ <span class="suave">${esc(p.cliente_nombre)} · ${esc(p.cliente_tel)}<br>${p.entrega==="domicilio"?"A domicilio: "+esc(p.direccion):"Recoge en tienda"} · ${NPAGO[p.pago]||p.pago} · <b>${esc(p.estado_pago||"Pendiente")}</b>${p.notas?"<br>Notas: "+esc(p.notas):""}${p.recibido_en?"<br><b style=\"color:var(--salvia)\">✅ Cliente confirmó recibido · "+new Date(p.recibido_en).toLocaleString("es-MX")+"</b>":""}</span>
  ${admin===true?`<select data-pag="${p.id}">${["Pendiente","Pagado","Fallido","Expirado"].map(e=>`<option ${e===(p.estado_pago||"Pendiente")?"selected":""}>${e}</option>`).join("")}</select> <select data-est="${p.id}">${ESTADOS.map(e=>`<option ${e===p.estado?"selected":""}>${e}</option>`).join("")}</select> <button class="btn sec" style="color:var(--coral);border-color:var(--coral)" data-pdel="${p.id}">🗑 Eliminar</button>`
   :admin==="com"?`${p.estado==="Enviado al comercio"?`<button class="btn" data-conf="${p.id}">✅ Confirmar pedido</button> `:""}${p.pago==="en_linea"?"":`<select data-pag="${p.id}" aria-label="Estado del pago">${["Pendiente","Pagado"].map(e=>`<option ${e===(p.estado_pago||"Pendiente")?"selected":""}>${e}</option>`).join("")}</select> `}<select data-est="${p.id}" aria-label="Estado del pedido">${ESTADOS.map(e=>`<option ${e===p.estado?"selected":""}>${e}</option>`).join("")}</select>`
   :`<span class="estado">${esc(p.estado)}</span>`}</div></div>`;
@@ -588,7 +589,7 @@ async function activarNotif(){
     if(await Notification.requestPermission()!=="granted")return alert("No se activaron. Permite las notificaciones en los ajustes del navegador.");
     await registrarPush();
     const b=$("bnotif");if(b)b.remove();
-    alert("Listo: recibirás avisos de pedidos nuevos en este dispositivo.");ruta();
+    alert("Listo: recibirás avisos de tus pedidos en este dispositivo.");ruta();
   }catch(err){alert("No se pudo activar: "+err.message)}
 }
 // Comerciantes y administrador: los avisos se activan solos si ya hay permiso; si no, aparece un aviso de un toque.
@@ -610,10 +611,27 @@ function escucharPedidos(){
   canal=db.channel("pedidos-nuevos").on("postgres_changes",{event:"INSERT",schema:"public",table:"pedidos"},p=>{
     sonido();aviso("🛎️ Nuevo pedido por "+din(Number(p.new.total)));
     if(location.hash==="#/panel"||location.hash==="#/admin")ruta();
+  }).on("postgres_changes",{event:"UPDATE",schema:"public",table:"pedidos"},p=>{
+    const n=p.new||{};
+    if(n.recibido_en&&Date.now()-new Date(n.recibido_en)<20000){sonido();aviso("✅ El cliente confirmó que recibió su pedido ("+din(Number(n.total))+")")}
+    if(location.hash==="#/panel"||location.hash==="#/admin")ruta();
   }).subscribe();
 }
+// ---- Cliente: avisos en tiempo real de sus pedidos ----
+let canalCli=null;const ultEst={};
+const AVISO_EST={"Preparando":"👨‍🍳 El comercio confirmó tu pedido y lo está preparando","En camino":"🛵 ¡Tu pedido va en camino!","Entregado":"📦 Tu pedido fue entregado. Confirma que lo recibiste en Mis pedidos","Cancelado":"❌ El comercio canceló tu pedido"};
+function escucharMisPedidos(){
+  if(!db||canalCli||!sesion||!sesion.id)return;
+  canalCli=db.channel("mis-pedidos-"+sesion.id).on("postgres_changes",{event:"UPDATE",schema:"public",table:"pedidos",filter:"comprador_id=eq."+sesion.id},p=>{
+    const n=p.new||{},antes=ultEst[n.id];ultEst[n.id]=n.estado;
+    if(n.estado!==antes&&AVISO_EST[n.estado]&&!(n.recibido_en&&Date.now()-new Date(n.recibido_en)<20000)){sonido();aviso(AVISO_EST[n.estado])}
+    if(location.hash==="#/pedidos")vistaPedidos(true);
+  }).subscribe();
+}
+async function cerrarMisPedidos(){try{if(canalCli){db.removeChannel(canalCli);canalCli=null}}catch(e){}}
 async function cerrarAvisos(){
   if(!db)return;
+  cerrarMisPedidos();
   try{if(canal){db.removeChannel(canal);canal=null}
     if(notifOK()){const reg=await navigator.serviceWorker.ready,x=await reg.pushManager.getSubscription();
       if(x){await db.from("push_suscripciones").delete().eq("endpoint",x.endpoint);await x.unsubscribe()}}
@@ -813,17 +831,34 @@ function vistaCuenta(){
     b.innerHTML=`<button class="btn" id="gBtn" style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#1f1f1f;border:1px solid #dadce0"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continuar con Google</button><p class="suave">o usa tu correo:</p>`;
     $("gBtn").onclick=entrarGoogle});
 }
-async function vistaPedidos(){
+const PASOS=["Enviado al comercio","Preparando","En camino","Entregado"];
+async function vistaPedidos(silencio){
   if(!sesion){location.hash="#/cuenta";return}
   let ps=$$("pedidos",[]).filter(p=>p.email===sesion.email).reverse();
   if(db&&sesion.id){const r=await db.from("pedidos").select("*, comercios(nombre)").eq("comprador_id",sesion.id).order("creado",{ascending:false});
-    if(r.data)ps=r.data.map(p=>({id:p.id,tienda:p.comercios?p.comercios.nombre:"",fecha:new Date(p.creado).toLocaleString("es-MX"),lineas:(p.lineas||[]).map(esc),total:Number(p.total),entrega:p.entrega,pago:p.pago,estado_pago:p.estado_pago,estado:p.estado}));}
-  $("vista").innerHTML=`<h2>Mis pedidos</h2>`+(ps.length?ps.map(p=>`<div class="item"><div class="in">
+    if(r.data)ps=r.data.map(p=>({id:p.id,tienda:p.comercios?p.comercios.nombre:"",fecha:new Date(p.creado).toLocaleString("es-MX"),lineas:(p.lineas||[]).map(esc),total:Number(p.total),entrega:p.entrega,pago:p.pago,estado_pago:p.estado_pago,estado:p.estado,recibido_en:p.recibido_en}));}
+  ps.forEach(p=>{if(p.id)ultEst[p.id]=p.estado});
+  const hora=new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const pasos=p=>{if(p.estado==="Cancelado")return`<div class="pasos"><span class="paso mal">❌ Cancelado</span></div>`;
+    const i=PASOS.indexOf(p.estado);return`<div class="pasos">${PASOS.map((x,k)=>`<span class="paso${k<=i?" ok":""}${k===i?" act":""}">${k<=i?"●":"○"} ${x}</span>`).join("")}</div>`};
+  const pushBtn=notifOK()&&VAPID_PUBLIC&&Notification.permission==="default"?`<p class="aviso">🔔 Activa los avisos para enterarte aunque tengas la app cerrada. <button class="btn sec" id="bNotif">Activar avisos</button></p>`:"";
+  $("vista").innerHTML=`<h2>Mis pedidos</h2><p class="suave"><button class="btn sec" id="bActPed">🔄 Actualizar</button> En tiempo real · última actualización ${hora}</p>${pushBtn}`+(ps.length?ps.map(p=>`<div class="item"><div class="in">
    <b>${p.tienda}</b><span class="suave">${p.fecha}</span>
    <span>${p.lineas.join("<br>")}</span><span class="tot">${din(p.total)}</span>
    <span class="suave">${p.entrega==="domicilio"?"A domicilio":"Recoger en tienda"} · ${NPAGO[p.pago]||p.pago}${p.estado_pago?" · "+p.estado_pago:""}</span>
-   <span class="estado">${p.estado}</span>${p.id&&p.pago==="en_linea"&&p.estado_pago==="Pendiente"?`<button class="btn" data-pagar="${p.id}">Pagar ahora</button>`:""}</div></div>`).join(""):"<p>Aún no tienes pedidos.</p>");
+   ${pasos(p)}<span class="estado">${p.estado}</span>${p.id&&p.pago==="en_linea"&&p.estado_pago==="Pendiente"?`<button class="btn" data-pagar="${p.id}">Pagar ahora</button>`:""}
+   ${p.recibido_en?`<span class="suave">✅ Recibido · ${new Date(p.recibido_en).toLocaleString("es-MX")}</span>`:(p.id&&(p.estado==="En camino"||p.estado==="Entregado")?`<button class="btn" data-recib="${p.id}">✅ Ya recibí mi pedido</button>`:"")}</div></div>`).join(""):"<p>Aún no tienes pedidos.</p>");
+  if(db&&notifOK()&&Notification.permission==="granted")registrarPush();
 }
+document.addEventListener("click",async e=>{
+  const t=e.target.closest("#bActPed");if(t){t.disabled=true;await vistaPedidos();return}
+  const b=e.target.closest("[data-recib]");if(!b)return;
+  if(!confirm("¿Confirmas que ya recibiste tu pedido? Se avisará al comercio."))return;
+  b.disabled=true;
+  const r=await db.rpc("cliente_confirmar_recibido",{pid:b.dataset.recib});
+  if(r.error){alert(r.error.message);b.disabled=false;return}
+  aviso("✅ Listo, avisamos al comercio que recibiste tu pedido");vistaPedidos();
+});
 
 // ---------- Cuentas (demo local) ----------
 async function hash(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
