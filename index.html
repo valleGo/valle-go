@@ -83,7 +83,7 @@ main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .ca
 .hor{display:flex;align-items:center;gap:8px}.hor select{flex:1}.fg{display:grid;gap:10px}.num{display:flex;align-items:center;gap:12px}.num input[type=number]{flex:1}.sn{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:.8rem;font-weight:600}
 .svbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.svbtns .btn.mini{display:inline-block}
 .dirbar{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:44px}   /* deja espacio para el segundo botón: no tapa la publicidad */.dirbar #bAg{background:#da9c48!important;color:#2a1a05!important;border-color:#c0802f!important}.dirbar #bAg.on{background:#a2cce5!important;color:#1f2a33!important;border-color:#7fb3d6!important}
-#bCq{position:fixed;left:50%;margin-left:-19px;top:calc(var(--hh,100px) + 8px);z-index:4;width:38px;height:38px;border-radius:50%;border:2px solid #46593a;background:#5C7648;color:#fff;display:grid;place-items:center;padding:0;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.28);transition:transform .15s,box-shadow .15s,background .15s;-webkit-tap-highlight-color:transparent}#bCq:hover{transform:translateY(-2px);box-shadow:0 7px 16px rgba(0,0,0,.32)}#bCq:active{transform:scale(.92)}#bCq.on{background:#da9c48;border-color:#c0802f;color:#2a1a05}
+#bCq{position:fixed;right:12px;top:calc(var(--hh,100px) + 56px);z-index:4;height:38px;border-radius:999px;border:2px solid #46593a;background:#5C7648;color:#fff;display:flex;align-items:center;gap:6px;padding:0 12px 0 9px;font-family:inherit;font-weight:800;font-size:.66rem;line-height:1;letter-spacing:.03em;white-space:nowrap;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.28);transition:transform .15s,box-shadow .15s,background .15s;-webkit-tap-highlight-color:transparent}body.sinPed #bCq{top:calc(var(--hh,100px) + 8px)}#bCq svg{flex:0 0 auto}#bCq:hover{transform:translateY(-2px);box-shadow:0 7px 16px rgba(0,0,0,.32)}#bCq:active{transform:scale(.92)}#bCq.on{background:#da9c48;border-color:#c0802f;color:#2a1a05}
 .svpanel{position:fixed;z-index:3;left:max(8px,calc((100vw - 1180px)/2));right:max(8px,calc((100vw - 1180px)/2));max-width:780px;margin:0 auto;top:calc(var(--hh,100px) + 104px);max-height:calc(100vh - var(--hh,100px) - 120px);max-height:calc(100dvh - var(--hh,100px) - 120px);overflow:auto;overscroll-behavior:contain;padding:14px 16px 24px;border-radius:20px;background:var(--fondo);border:1px solid var(--borde);box-shadow:0 18px 40px rgba(0,0,0,.28);animation:dirIn .18s ease-out}
 .svpanel .perfil .foto{height:90px;font-size:2.4rem}
 .svph{display:flex;justify-content:space-between;align-items:center;gap:8px}.svph h2{margin:0;font-size:1.15rem}
@@ -98,6 +98,7 @@ main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .ca
 .cats button{border:1px solid var(--borde);background:var(--claro-amarillo);color:var(--texto);border-radius:999px;padding:8px 14px;line-height:1.35;min-height:38px;white-space:nowrap;font-weight:600;font-size:.85rem;flex:0 0 auto;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .cats button.on{background:var(--verde);color:var(--on-verde);border-color:var(--verde)}
 .catmenu{position:relative;flex:0 0 auto}
+.cats button.catsrch{width:38px;height:38px;padding:0;display:grid;place-items:center;border-radius:50%}.catsrch svg{pointer-events:none}
 .catpop{display:none;position:absolute;left:0;top:calc(100% + 4px);z-index:40;min-width:210px;max-width:calc(100vw - 32px);max-height:55vh;overflow-y:auto;overscroll-behavior:contain;background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;box-shadow:0 8px 26px rgba(0,0,0,.18);padding:6px;flex-direction:column;gap:2px}
 .catmenu.open .catpop{display:flex}
 .cats .catpop button{border:0;background:transparent;border-radius:10px;width:100%;text-align:left;justify-content:flex-start;min-height:40px;padding:8px 12px;white-space:normal}
@@ -215,7 +216,7 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
 </header>
 <button id="bPedidos" style="display:none">Ver mis pedidos</button>
 <div class="dirbar"><a href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a><a href="#" id="bAg" role="button" aria-expanded="false" aria-controls="agPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2.2 2.2 4.3-4.4"/></svg>AGENDA SERVICIOS</a></div>
-<button id="bCq" type="button" aria-label="Consulta de stock" aria-expanded="false" aria-controls="cqPanel" title="Consulta de stock"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></button>
+<button id="bCq" type="button" aria-label="Consulta de stock" aria-expanded="false" aria-controls="cqPanel" title="Consulta de stock"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="11.5" cy="11.5" r="3.5"/><path d="M14.2 14.2L17 17"/></svg>CONSULTA DE STOCK</button>
 <main id="vista" style="padding-top:48px"></main>
 <footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><a href="privacidad.html">Política de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
 <div class="panel" id="pCarrito"><div class="caja" id="cCarrito"></div></div>
@@ -1267,13 +1268,21 @@ const tarjetaCom=t=>`
    ${t.dias?`<span class="suave">📅 ${diasTxt(t.dias)}</span>`:""}
    ${t.plan==="simple"?`${t.whatsapp?`<span class="suave">📞 ${esc(t.whatsapp)}</span>`:""}${t.correo?`<span class="suave">✉️ ${esc(t.correo)}</span>`:""}<a class="btn" href="#/t/${t.id}">Ver perfil</a>`:`<span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
    <a class="btn" href="#/t/${t.id}">Ver menú</a>`}</div></div>`;
+let homeQ="",homeQOpen=false;
+const normTxt=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function aplicaBusq(){const q=normTxt(homeQ).trim(),v=$("vista");if(!v)return;let vis=0;
+  v.querySelectorAll(".gcom .card").forEach(c=>{const ok=!q||normTxt((c.querySelector("b")||{}).textContent).includes(q);c.style.display=ok?"":"none";if(ok)vis++});
+  v.querySelectorAll("h3.seccat").forEach(h=>{const g=h.nextElementSibling;h.style.display=g&&[...g.querySelectorAll(".card")].some(c=>c.style.display!=="none")?"":"none"});
+  const no=$("hNo");if(no)no.style.display=q&&!vis?"":"none"}
 function vistaInicio(){
   const PRINC=COMERCIANTES.filter(t=>t.plan!=="simple");
   const usadas=CATEGORIAS.filter(k=>PRINC.some(t=>t.cat===k.id));
   const sinCat=PRINC.filter(t=>!usadas.some(k=>k.id===t.cat));
   const grid=L=>`<div class="grid gcom">${L.map(tarjetaCom).join("")}</div>`;
   let cuerpo;
-  if(!usadas.length)cuerpo=grid(PRINC);
+  const srchBtn=`<button class="catsrch${homeQOpen?" on":""}" data-hsrch type="button" aria-label="Buscar comercio por nombre" title="Buscar por nombre"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></button>`;
+  const srchRow=homeQOpen?`<input id="hQ" type="search" placeholder="Buscar comercio por nombre" value="${esc(homeQ)}" autocomplete="off" style="margin:0 0 12px"><p id="hNo" class="suave" style="display:none">No encontramos comercios con ese nombre.</p>`:"";
+  if(!usadas.length)cuerpo=`<div class="cats">${srchBtn}</div>`+srchRow+grid(PRINC);
   else{
     if(catCom!=="Todos"&&catCom!=="otros"&&!usadas.some(k=>k.id===catCom))catCom="Todos";
     if(catCom==="otros"&&!sinCat.length)catCom="Todos";
@@ -1283,12 +1292,13 @@ function vistaInicio(){
     const orden=[...usadas].sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),"es",{sensitivity:"base"}));
     const selK=orden.find(k=>k.id===catCom),selTxt=catCom==="otros"?"Otros":selK?nom(selK):"";
     cuerpo=`<div class="cats">${chip("Todos","Todos")}<span class="catmenu"><button class="${selTxt?"on":""}" data-catmenu aria-haspopup="true" aria-expanded="false">${selTxt?selTxt:"Categorías"} ▾</button>
-      <div class="catpop" role="menu">${orden.map(k=>chip(k.id,nom(k))).join("")}${sinCat.length?chip("otros","Otros"):""}</div></span></div>`+
+      <div class="catpop" role="menu">${orden.map(k=>chip(k.id,nom(k))).join("")}${sinCat.length?chip("otros","Otros"):""}</div></span>${srchBtn}</div>`+srchRow+
       (catCom==="Todos"?`<div class="todos">`+usadas.map(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id))).join("")+sec("Otros",sinCat)+`</div>`
        :catCom==="otros"?sec("Otros",sinCat)
        :(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
   }
   $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2>`+cuerpo;iniAds();
+  if(homeQOpen)aplicaBusq();
 }
 let dirQ="";
 // Directorio: solo perfiles de presentación (información visible, sin botones ni enlaces)
@@ -1501,7 +1511,7 @@ async function entrar(){
 }
 function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle||"",dir_num:u.dir_num||"",dir_col:u.dir_col||"",foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol();location.hash="#/"}
 const medirHeader=()=>{const h=document.querySelector("header");if(h)document.documentElement.style.setProperty("--hh",h.offsetHeight+"px")};window.addEventListener("resize",medirHeader);window.addEventListener("load",medirHeader);if(window.ResizeObserver)new ResizeObserver(medirHeader).observe(document.querySelector("header"));medirHeader();
-function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";const staff=!!(esAdmin||misCom.length||misSrv.length);$("bPanel").style.display=staff?"":"none";$("bPedidos").style.display=(sesion&&!staff)?"":"none";$("bCarrito").style.display=staff?"none":""}   // carrito y pedidos son solo para clientes
+function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";const staff=!!(esAdmin||misCom.length||misSrv.length);$("bPanel").style.display=staff?"":"none";$("bPedidos").style.display=(sesion&&!staff)?"":"none";document.body.classList.toggle("sinPed",!(sesion&&!staff));$("bCarrito").style.display=staff?"none":""}   // carrito y pedidos son solo para clientes
 
 // ---------- Carrito ----------
 function pideRegistro(){alert("Para ordenar y hacer pedidos necesitas registrarte o iniciar sesión.");location.hash="#/cuenta"}
@@ -1593,7 +1603,8 @@ document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.tar
 
 // ---------- Eventos ----------
 document.addEventListener("click",e=>{const d=e.target.dataset;
-  if(d.ver){abreFoto(d.ver,d.nom||"");return} if(d.catmenu!==undefined){const m=e.target.closest(".catmenu");if(m){const a=m.classList.toggle("open");e.target.closest("[data-catmenu]").setAttribute("aria-expanded",String(a))}return} if(d.ccat){catCom=d.ccat;vistaInicio();return} if(d.cat){cat=d.cat;ruta()} if(d.add){const[a,b]=d.add.split("|");agregar(a,b)}
+  if(d.ver){abreFoto(d.ver,d.nom||"");return} if(d.hsrch!==undefined){homeQOpen=!homeQOpen;if(homeQOpen)catCom="Todos";else homeQ="";vistaInicio();if(homeQOpen){const i=$("hQ");if(i)i.focus()}return}
+  if(d.catmenu!==undefined){const m=e.target.closest(".catmenu");if(m){const a=m.classList.toggle("open");e.target.closest("[data-catmenu]").setAttribute("aria-expanded",String(a))}return} if(d.ccat){catCom=d.ccat;vistaInicio();return} if(d.cat){cat=d.cat;ruta()} if(d.add){const[a,b]=d.add.split("|");agregar(a,b)}
   if(d.mas)cambia(d.mas,1); if(d.menos)cambia(d.menos,-1); if(d.cerrar!==undefined){if(capas.length)cierraCapa();else $("pCarrito").classList.remove("on")}});
 $("bCarrito").onclick=()=>{if(!sesion)return pideRegistro();pintaCarrito();const p=$("pCarrito");if(!p.classList.contains("on")){p.classList.add("on");abreCapa(()=>p.classList.remove("on"))}};
 $("bCuenta").onclick=()=>location.hash="#/cuenta";
@@ -1626,6 +1637,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#bCont");if(b){e
 
 // ---- Efecto de onda al tocar botones y rebote del carrito ----
 document.addEventListener("click",e=>{const o=document.querySelector(".catmenu.open");if(o&&!e.target.closest(".catmenu"))o.classList.remove("open")});
+document.addEventListener("input",e=>{if(e.target.id==="hQ"){homeQ=e.target.value;aplicaBusq()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const o=document.querySelector(".catmenu.open");if(o)o.classList.remove("open")}});
 document.addEventListener("pointerdown",e=>{const b=e.target.closest&&e.target.closest(".btn,.hb button,.monbtn,.admcats button,.cats button");if(!b||b.disabled)return;
   const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*2,x=e.clientX-r.left-d/2,y=e.clientY-r.top-d/2,el=document.createElement("span");
@@ -1654,7 +1666,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v126";
+const BUILD="valle-go-v127";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
