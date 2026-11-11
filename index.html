@@ -80,6 +80,9 @@ main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .ca
 .suave{color:var(--suave);font-size:.85rem;font-weight:500}.precio{color:var(--verde);font-weight:700}
 .btn{background:var(--verde);color:var(--on-verde);border:0;border-radius:999px;padding:10px 16px;text-decoration:none;text-align:center;font-weight:600;font-size:.9rem;display:inline-block;transition:transform .12s,opacity .12s}
 .btn:hover{opacity:.92}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.55;cursor:default}
+.svbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.svbtns .btn.mini{display:inline-block}
+.svhero{display:flex;align-items:center;gap:12px;margin:4px 0 14px;padding:12px 16px;border-radius:var(--radio);background:var(--acento);color:var(--on-acento);text-decoration:none;box-shadow:var(--sombra);transition:transform .18s,box-shadow .18s}.svhero:hover{transform:translateY(-2px)}.svhero:active{transform:scale(.98)}
+.svhero b{display:block;font-size:1.05rem;letter-spacing:.06em}.svhero small{font-weight:600;opacity:.85}.svh-e{font-size:1.7rem}.svh-a{margin-left:auto;font-size:1.8rem;font-weight:800}
 .nbtns{display:flex;flex-wrap:nowrap;gap:8px;margin-top:8px}.btn.mini{padding:6px 12px;font-size:.78rem;flex:0 0 auto;white-space:nowrap}
 .btn.sec{background:transparent;color:var(--verde);border:1.5px solid var(--verde)}
 .perfil{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden;margin-bottom:16px;box-shadow:var(--sombra)}
@@ -268,19 +271,19 @@ let rolP=null,rolOK=false;
 function cargarRol(){   // una sola consulta a la vez, aunque varias partes de la app la pidan
   if(!rolP)rolP=cargarRolReal().finally(()=>{rolP=null});return rolP}
 async function cargarRolReal(){
-  if(!db||!sesion||!sesion.id){esAdmin=false;misCom=[];rolOK=false;pintaHeader();return}
+  if(!db||!sesion||!sesion.id){esAdmin=false;misCom=[];misSrv=[];rolOK=false;pintaHeader();return}
   if(!rolOK){   // muestra de inmediato el último rol conocido (así el botón Panel no parpadea ni desaparece)
-    esAdmin=false;misCom=[];
-    try{const g=JSON.parse(localStorage.getItem("valle_rol_"+sesion.id)||"null");if(g){esAdmin=!!g.a;misCom=g.c||[]}}catch(e){}
+    esAdmin=false;misCom=[];misSrv=[];
+    try{const g=JSON.parse(localStorage.getItem("valle_rol_"+sesion.id)||"null");if(g){esAdmin=!!g.a;misCom=g.c||[];misSrv=g.s||[]}}catch(e){}
     pintaHeader()}
-  let a,c;
+  let a,c,sv;
   for(let i=0;i<3;i++){
-    try{[a,c]=await Promise.all([db.from("admins").select("user_id").eq("user_id",sesion.id),db.from("comercios").select("id,nombre,mp_conectado,plan").eq("dueno_id",sesion.id)])}catch(e){a=c={error:e}}
-    if(!a.error&&!c.error)break;await new Promise(r=>setTimeout(r,1200*(i+1)))}
-  if(a.error||c.error){pintaHeader();notifAuto();return}   // falló la red: se conserva lo último que se sabía, no se oculta el botón
-  esAdmin=!!(a.data&&a.data.length);misCom=c.data||[];rolOK=true;
-  try{localStorage.setItem("valle_rol_"+sesion.id,JSON.stringify({a:esAdmin,c:misCom}))}catch(e){}
-  pintaHeader();escucharPedidos();escucharMisPedidos();notifAuto();
+    try{[a,c,sv]=await Promise.all([db.from("admins").select("user_id").eq("user_id",sesion.id),db.from("comercios").select("id,nombre,mp_conectado,plan").eq("dueno_id",sesion.id),db.from("servicios_perfiles").select("id,nombre,tipo").eq("dueno_id",sesion.id)])}catch(e){a=c=sv={error:e}}
+    if(!a.error&&!c.error&&!sv.error)break;await new Promise(r=>setTimeout(r,1200*(i+1)))}
+  if(a.error||c.error||sv.error){pintaHeader();notifAuto();return}   // falló la red: se conserva lo último que se sabía, no se oculta el botón
+  esAdmin=!!(a.data&&a.data.length);misCom=c.data||[];misSrv=sv.data||[];rolOK=true;
+  try{localStorage.setItem("valle_rol_"+sesion.id,JSON.stringify({a:esAdmin,c:misCom,s:misSrv}))}catch(e){}
+  pintaHeader();escucharPedidos();escucharMisPedidos();escucharServicios();notifAuto();
 }
 
 // ---- Subir foto comprimida (WebP, máx. 1000 px) ----
@@ -314,6 +317,7 @@ async function llamaMp(cuerpo){const {data}=await db.auth.getSession();
 async function vistaPanel(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   $("vista").innerHTML="<p>Cargando...</p>"; await cargarRol();
+  if(!misCom.length&&misSrv.length){location.hash="#/panel-servicios";return}
   if(!misCom.length&&esAdmin){location.hash="#/admin";return}
   if(!misCom.length){$("vista").innerHTML=`<h2>Panel de comerciante</h2><p>Esta cuenta aún no está vinculada a un comercio. Pide al administrador de Valle GO que la vincule con tu correo.</p>`;return}
   if(misCom.every(c=>c.plan==="simple")){$("vista").innerHTML=`<h2>Mi panel</h2><div class="aviso"><b>Plan Simple</b><br>Tu comercio tiene un perfil de presentación en Valle GO: logo, portada, nombre, domicilio, horarios, días disponibles y teléfono. Este plan no incluye menú ni pedidos. Para cambiar tus datos o pasar al plan Básico, contacta al administrador de Valle GO.</div>`;return}
@@ -323,7 +327,7 @@ async function vistaPanel(){
     db.from("menu_items").select("*").in("comercio_id",ids).order("categoria")]);
   const P=pe.data||[], M=me.data||[];
   const ventas=P.filter(p=>p.estado!=="Cancelado").reduce((a,p)=>a+Number(p.total),0);
-  $("vista").innerHTML=`<h2>Mi panel</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)} · ${misCom.map(c=>esc(c.nombre)).join(", ")}</p>${pe.error?`<div class="aviso" style="color:var(--coral)">No se pudieron cargar los pedidos: ${esc(pe.error.message)}. Toca 🔄 o recarga la página.</div>`:""}<p class="suave">Aquí confirmas y actualizas el estado de tus pedidos. Para cambiar fotos, precios o platillos, contacta al administrador de Valle GO.</p>
+  $("vista").innerHTML=`<h2>Mi panel</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)} · ${misCom.map(c=>esc(c.nombre)).join(", ")}</p>${misSrv.length?`<p><a class="btn sec mini" href="#/panel-servicios">Ir a mi panel de servicios →</a></p>`:""}${pe.error?`<div class="aviso" style="color:var(--coral)">No se pudieron cargar los pedidos: ${esc(pe.error.message)}. Toca 🔄 o recarga la página.</div>`:""}<p class="suave">Aquí confirmas y actualizas el estado de tus pedidos. Para cambiar fotos, precios o platillos, contacta al administrador de Valle GO.</p>
    ${notifBtnHTML()}${cobroHTML()}<div class="aviso">${P.length} pedidos recientes · ${din(ventas)} en ventas</div><h2>Historial de pedidos</h2>`+
    (P.map(p=>ped2html(p,"com")).join("")||"<p>Aún no hay pedidos.</p>")+`<h2>Mi menú completo</h2>`+
    (M.map(m=>`<div class="item"><div class="foto" ${foto({foto:m.foto_url})}>${m.foto_url?"":esc(m.emoji||"🍽️")}</div><div class="in"><b>${esc(m.nombre)}</b>
@@ -341,6 +345,7 @@ const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descri
 const DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
 const formHTML=(cs,v)=>cs.map(c=>c.t==="dias"?`<label>${c.l}<span class="dias">${DIAS.map(d=>`<span class="dia"><input type="checkbox" data-dia="${d}" ${(v[c.k]||"").split(",").includes(d)?"checked":""} style="width:auto"> ${d}</span>`).join("")}</span><input type="hidden" data-f="${c.k}"></label>`
   :c.t==="file"?`<label>${c.l}<input type="file" accept="image/*" data-f="${c.k}">${v[c.k]?`<img src="${esc(v[c.k])}" alt="" style="height:60px;border-radius:8px">`:""}</label>`
+  :c.t==="srvtipo"?`<label>${c.l}<select data-f="${c.k}">${["agenda","transporte","consulta"].map(k=>`<option value="${k}" ${(v[c.k]||"agenda")===k?"selected":""}>${({agenda:"Agenda y citas (doctores, tatuajes, masajes, clases, viajes)",transporte:"Transporte (taxistas, transportistas)",consulta:"Consulta de stock (comercio con mucho inventario)"})[k]}</option>`).join("")}</select></label>`
   :c.t==="check"?`<label><span><input type="checkbox" data-f="${c.k}" ${v[c.k]?"checked":""} style="width:auto"> ${c.l}</span></label>`
   :c.t==="plan"?`<label>${c.l}<select data-f="${c.k}"><option value="basico" ${(v[c.k]||"basico")==="basico"?"selected":""}>Básico: menú y pedidos ($24 al día, $720 al mes IVA incluido)</option><option value="simple" ${v[c.k]==="simple"?"selected":""}>Simple: solo perfil de presentación ($12 al día, $360 al mes IVA incluido)</option></select></label>`
   :c.t==="select"?`<label>${c.l}<select data-f="${c.k}"><option value="">Sin categoría</option>${CATEGORIAS.map(k=>`<option value="${k.id}" ${v[c.k]===k.id?"selected":""}>${esc((k.emoji?k.emoji+" ":"")+k.nombre)}</option>`).join("")}</select></label>`
@@ -349,7 +354,7 @@ async function leerForm(cs,raiz,v){const o={};
   for(const c of cs){const el=raiz.querySelector(`[data-f="${c.k}"]`);
     if(c.t==="dias")o[c.k]=[...el.closest("label").querySelectorAll("[data-dia]")].filter(x=>x.checked).map(x=>x.dataset.dia).join(",");
     else if(c.t==="file")o[c.k]=el.files[0]?await subirFoto(el.files[0],c.carpeta):(v[c.k]||null);
-    else if(c.t==="select")o[c.k]=el.value||null; else if(c.t==="check")o[c.k]=el.checked; else if(c.t==="number")o[c.k]=Number(el.value||0); else o[c.k]=el.value.trim();}
+    else if(c.t==="select"||c.t==="srvtipo")o[c.k]=el.value||null; else if(c.t==="check")o[c.k]=el.checked; else if(c.t==="number")o[c.k]=Number(el.value||0); else o[c.k]=el.value.trim();}
   return o;}
 // ---- Monitoreo y gráficas mensuales (solo admin) ----
 const MESES_C=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"],MESES_L=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
@@ -531,13 +536,13 @@ async function vistaAdmin(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   if(!esAdmin)await cargarRol();
   if(!esAdmin){$("vista").innerHTML="<h2>Acceso restringido</h2><p>Esta sección es solo para el administrador.</p>";return}
-  const T={anuncios:"Publicidad",comercios:"Comercios",categorias:"Categorías",menu:"Menús",monitoreo:"Monitoreo",cobros:"Cobros 1%",membresias:"Membresías",pedidos:"Pedidos",usuarios:"Usuarios",admins:"Administradores",perfil:"Mi perfil"};
+  const T={anuncios:"Publicidad",comercios:"Comercios",categorias:"Categorías",menu:"Menús",monitoreo:"Monitoreo",cobros:"Cobros 1%",membresias:"Membresías",pedidos:"Pedidos",usuarios:"Usuarios",admins:"Administradores",perfil:"Mi perfil",servicios:"Servicios"};
   const icoCob='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-7 7"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/></svg>';
   const icoMem='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>';
   const icoMon='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg>';
   const IC={perfil:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.6-4 3.6-6 7-6s6.4 2 7 6"/></svg>',admins:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.4-3.1 8-7.5 9.5-4.4-1.5-7.5-5.1-7.5-9.5V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>',usuarios:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.5-3.4 3-5 6-5s5.5 1.6 6 5"/><circle cx="17" cy="9.5" r="2.5"/><path d="M16.5 14.7c2.6.2 4.2 1.7 4.5 4.3"/></svg>'};
   const mb=k=>`<button class="monbtn${adm.tab===k?" on":""}" data-tab="${k}">${IC[k]||({cobros:icoCob,membresias:icoMem,monitoreo:icoMon})[k]}<span>${T[k]}</span></button>`;
-  $("vista").innerHTML=`<div class="admtop"><div class="monstack izq">${["perfil","admins","usuarios"].map(mb).join("")}</div><h2>Administración</h2><div class="monstack der">${["cobros","membresias","monitoreo"].map(mb).join("")}</div></div>${notifBtnHTML()}<div class="cats admcats">${["anuncios","comercios","categorias","menu","pedidos"].map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
+  $("vista").innerHTML=`<div class="admtop"><div class="monstack izq">${["perfil","admins","usuarios"].map(mb).join("")}</div><h2>Administración</h2><div class="monstack der">${["cobros","membresias","monitoreo"].map(mb).join("")}</div></div>${notifBtnHTML()}<div class="cats admcats">${["anuncios","comercios","categorias","menu","servicios","pedidos"].map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
   await admTab();
 }
 async function admTab(){
@@ -565,6 +570,11 @@ async function admTab(){
     const L=(await db.from("comercios").select("*").order("nombre")).data||[];
     box.innerHTML=`<button class="btn" data-cnew>+ Nuevo comercio</button><br><br>`+L.map(c=>`<div class="item"><div class="foto" ${foto({foto:c.foto_url})}>${c.foto_url?"":esc(c.emoji||"🏪")}</div><div class="in"><b>${c.logo_url?`<img src="${esc(c.logo_url)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px">`:""}${esc(c.nombre)}</b>
       <span class="suave">${esc(c.giro)} · ${esc((CATEGORIAS.find(k=>k.id===c.categoria_id)||{nombre:"Sin categoría"}).nombre)} · ${c.activo?"Visible":"Oculto"} · Plan ${c.plan==="simple"?"Simple":"Básico"}</span><button class="btn sec" data-ced="${c.id}">Editar</button></div></div>`).join("");
+  }
+  if(t==="servicios"){
+    const L=(await db.from("servicios_perfiles").select("*").order("tipo").order("nombre")).data||[];
+    box.innerHTML=`<p class="suave">Prestadores de la sección SERVICIOS: agenda y citas, transporte y consulta de stock. Al crear uno, escribe el correo de su dueño (debe estar registrado en la app) para que reciba sus citas, consultas y avisos.</p><button class="btn" data-svnew>+ Nuevo prestador</button><br><br>`+
+      (L.map(p=>`<div class="item"><div class="foto" ${foto({foto:p.foto_url})}>${p.foto_url?"":SV[p.tipo].e}</div><div class="in"><b>${esc(p.nombre)}</b><span class="suave">${SV[p.tipo].t} · ${esc(p.giro||"")} · ${p.activo?"Visible":"Oculto"} · ${p.dueno_id?"Con dueño":"Sin dueño"}</span><span class="svbtns"><button class="btn sec mini" data-sved="${p.id}">Editar</button><button class="btn sec mini" data-svdel="${p.id}">Eliminar</button></span></div></div>`).join("")||"<p>Aún no hay prestadores de servicios.</p>");
   }
   if(t==="menu"){
     const cs=(await db.from("comercios").select("id,nombre").order("nombre")).data||[];
@@ -699,14 +709,14 @@ async function admTab(){
   }
 }
 function formAdm(tabla,cs,v){
-  const extra=tabla==="comercios"?`<label>Correo del comerciante, para su panel de consulta (vacío = no cambiar)<input id="dueno" type="email"></label>`:"";
+  const extra=(tabla==="comercios"||tabla==="servicios_perfiles")?`<label>Correo del ${tabla==="comercios"?"comerciante":"prestador"}, para su panel (vacío = no cambiar)<input id="dueno" type="email"></label>`:"";
   $("adm").innerHTML=`<div class="aviso"><b>${v.id?"Editar":"Nuevo"}</b></div>`+formHTML(cs,v)+extra+`<br><button class="btn" id="gF">Guardar</button> <button class="btn sec" id="cF">Cancelar</button>`;
   abreCapa(admTab);
   $("cF").onclick=cierraCapa;
   $("gF").onclick=async()=>{$("gF").disabled=true;$("gF").textContent="Guardando...";
     try{const o=await leerForm(cs,$("adm"),v); if(!o.nombre)throw new Error("Falta el nombre.");
       if(tabla==="menu_items")o.comercio_id=v.comercio_id;
-      if(tabla==="comercios"&&$("dueno").value.trim()){const r=await db.rpc("usuario_por_correo",{correo:$("dueno").value.trim()});if(!r.data)throw new Error("Ese correo no está registrado en la app.");o.dueno_id=r.data}
+      if((tabla==="comercios"||tabla==="servicios_perfiles")&&$("dueno").value.trim()){const r=await db.rpc("usuario_por_correo",{correo:$("dueno").value.trim()});if(!r.data)throw new Error("Ese correo no está registrado en la app.");o.dueno_id=r.data}
       const r=await (v.id?db.from(tabla).update(o).eq("id",v.id):db.from(tabla).insert(o)); if(r.error)throw r.error;
       cargarDatos(); cierraCapa();
     }catch(err){alert(err.message);$("gF").disabled=false;$("gF").textContent="Guardar"}};
@@ -753,6 +763,9 @@ document.addEventListener("click",async e=>{
     e.target.disabled=true;const r=await db.from("pedidos").delete().eq("id",d.pdel).select("id");
     if(r.error||!(r.data&&r.data.length)){alert(r.error?r.error.message:"No se pudo eliminar el pedido.");e.target.disabled=false;return}
     return admTab()}
+  if(d.svnew!==undefined)return formAdm("servicios_perfiles",cfSrv("servicios"),{activo:true,tipo:"agenda"});
+  if(d.sved){const r=await db.from("servicios_perfiles").select("*").eq("id",d.sved).single();return formAdm("servicios_perfiles",cfSrv("servicios"),r.data)}
+  if(d.svdel){if(!confirm("¿Eliminar este prestador y todas sus citas y consultas?\nNo se puede deshacer."))return;const r=await db.from("servicios_perfiles").delete().eq("id",d.svdel);if(r.error)return alert(r.error.message);return admTab()}
   if(d.cnew!==undefined)return formAdm("comercios",CF_COM,{activo:true,plan:"basico",envio:30,minimo:0,ofrece_domicilio:true,dias_abiertos:DIAS.join(",")});
   if(d.ced){const r=await db.from("comercios").select("*").eq("id",d.ced).single();return formAdm("comercios",CF_COM,r.data)}
   if(d.canew!==undefined)return formAdm("categorias",CF_CAT,{orden:CATEGORIAS.length+1});
@@ -780,7 +793,7 @@ const notifOK=()=>"Notification"in window&&"serviceWorker"in navigator&&"PushMan
 const notifBtnHTML=()=>notifOK()
   ?(Notification.permission==="granted"
     ?`<p class="aviso">🔔 Avisos de pedidos activados en este dispositivo. <span class="nbtns"><button class="btn sec mini" id="bProbar">Probar aviso</button><button class="btn sec mini" id="bNotif">Reactivar</button></span></p>`
-    :`<p class="aviso">Recibe un aviso en tu celular cuando entre un pedido nuevo. <button class="btn" id="bNotif">Activar notificaciones</button></p>`)
+    :`<p class="aviso">Recibe avisos en tu celular de pedidos, citas y consultas. <button class="btn" id="bNotif">Activar notificaciones</button></p>`)
   :iosViejo()?`<p class="aviso">${MSG_IOS_VIEJO(iosViejo())}</p>`:`<p class="aviso">Para recibir avisos en iPhone: 1) abre esta página en Safari, 2) toca Compartir ⬆️ → «Agregar a pantalla de inicio», 3) abre Valle GO desde ese ícono nuevo (no desde Safari) y 4) toca «Activar notificaciones». Requiere iOS 16.4 o más nuevo.</p>`;
 function aviso(t){const x=$("toast");x.textContent=t;x.style.display="block";setTimeout(()=>x.style.display="none",6000)}
 function sonido(){   // timbre largo (unos 4 s) + vibración, para que no pase desapercibido
@@ -816,7 +829,7 @@ async function activarNotif(){
 async function notifAuto(){
   try{
     if(!db||!sesion||!sesion.id)return;
-    const staff=!!(esAdmin||misCom.length);
+    const staff=!!(esAdmin||misCom.length||misSrv.length);
     const txt=staff?"🔔 Activa los avisos para enterarte al instante de cada pedido nuevo, aunque tengas la app cerrada o el celular bloqueado.":"🔔 Activa las notificaciones para recibir todos los avisos de Valle GO: cuando tu pedido esté confirmado, en camino o entregado, aunque tengas la app cerrada o el celular bloqueado.";
     if(!notifOK()){   // iPhone/iPad en Safari: las notificaciones solo funcionan con la app instalada en inicio
       if(!/iPhone|iPad|iPod/.test(navigator.userAgent)||$("bnotif"))return;
@@ -863,7 +876,7 @@ function escucharMisPedidos(){
     if(location.hash==="#/pedidos")vistaPedidos(true);
   }).subscribe();
 }
-async function cerrarMisPedidos(){try{if(canalCli){db.removeChannel(canalCli);canalCli=null}}catch(e){}}
+async function cerrarMisPedidos(){try{if(canalCli){db.removeChannel(canalCli);canalCli=null}}catch(e){}try{if(canalSrv){db.removeChannel(canalSrv);canalSrv=null}}catch(e){}}
 async function cerrarAvisos(){
   if(!db)return;
   cerrarMisPedidos();
@@ -922,17 +935,194 @@ async function cargarDatos(){
 const tienda=id=>COMERCIANTES.find(t=>t.id===id);
 const logoHTML=(t,g)=>t.logo?`<img class="logo-c${g?" g":""}" src="${esc(t.logo)}" alt="Logotipo de ${esc(t.nombre)}" loading="lazy">`:"";
 
+// ---------- SERVICIOS: agenda y citas, transporte y consulta de stock ----------
+const SV={agenda:{e:"📅",t:"Agenda y citas",d:"Doctores, tatuajes, masajes, clases, consultas y viajes: elige un día y una hora y el prestador te la confirma."},
+  transporte:{e:"🚕",t:"Transporte",d:"Taxistas, fletes, mudanzas y transportistas del Valle: llama o escribe directo por WhatsApp."},
+  consulta:{e:"🔎",t:"Consulta de stock",d:"Manda una foto y un texto al comercio para saber si lo tiene en existencia y a qué precio."}};
+let svTab="agenda",misSrv=[],canalSrv=null;
+const cfSrv=carp=>[{k:"tipo",l:"Tipo de servicio",t:"srvtipo"},{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Dentista, Tatuajes, Taxi, Papelería...)"},{k:"descripcion",l:"Descripción"},{k:"zona",l:"Zona o colonias donde atiende"},{k:"horario",l:"Horario (ej. 9:00 am - 6:00 pm)"},{k:"dias_abiertos",l:"Días que atiende",t:"dias"},{k:"telefono",l:"Teléfono"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"vehiculo",l:"Vehículo (solo transporte: marca, modelo, color)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:carp},{k:"logo_url",l:"Logotipo (opcional)",t:"file",carpeta:carp},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_SITEM=[{k:"nombre",l:"Nombre del servicio"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio (0 = a consultar)",t:"number"},{k:"duracion_min",l:"Duración en minutos (opcional)",t:"number"},{k:"activo",l:"Disponible",t:"check"}];
+const waUrl=n=>"https://wa.me/"+String(n||"").replace(/\D/g,""),telUrl=n=>"tel:"+String(n||"").replace(/[^\d+]/g,"");
+const hoyISO=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const fMX=f=>{const[y,m,d]=String(f).split("-");return d+"/"+m+"/"+y};
+const EST_CLS={Solicitada:"⏳",Confirmada:"✅",Reprogramada:"🔁",Cancelada:"❌",Completada:"🎉",Pendiente:"⏳",Hay:"✅","No hay":"😕",Consultar:"ℹ️"};
+const estTag=e=>`<span class="ctag">${EST_CLS[e]||""} ${esc(e)}</span>`;
+const svHero=()=>`<a class="svhero" href="#/servicios"><span class="svh-e">🛎️</span><span><b>SERVICIOS</b><small>Citas, transporte y consulta de stock</small></span><span class="svh-a">›</span></a>`;
+
+// --- Lista pública por categoría ---
+function vistaServicios(){
+  $("vista").innerHTML=`<h2>Servicios</h2><div class="cats">${Object.keys(SV).map(k=>`<button class="${svTab===k?"on":""}" data-svtab="${k}">${SV[k].e} ${SV[k].t}</button>`).join("")}${sesion&&db?`<button data-svmis>🗂️ Mis solicitudes</button>`:""}</div>
+  <p class="suave">${SV[svTab].d}</p><div id="svBody"><p>Cargando...</p></div>`;
+  svLista();
+}
+const svCard=p=>`<div class="card"><div class="foto-w"><div class="foto" ${p.foto_url?`style="background-image:url('${esc(p.foto_url)}')"`:""}>${p.foto_url?"":SV[p.tipo].e}</div>${p.logo_url?`<img class="logo-c" src="${esc(p.logo_url)}" alt="" loading="lazy">`:""}</div><div class="in${p.logo_url?" cl":""}">
+  <b>${esc(p.nombre)}</b><span class="suave">${esc(p.giro||"")}${p.horario?" · "+esc(p.horario):""}</span>
+  ${p.zona?`<span class="suave">📍 ${esc(p.zona)}</span>`:""}${p.tipo==="transporte"&&p.vehiculo?`<span class="suave">🚗 ${esc(p.vehiculo)}</span>`:""}${p.dias_abiertos?`<span class="suave">📅 ${diasTxt(p.dias_abiertos)}</span>`:""}
+  ${p.tipo==="transporte"?`<span class="svbtns">${(p.telefono||p.whatsapp)?`<a class="btn mini" href="${telUrl(p.telefono||p.whatsapp)}">📞 Llamar</a>`:""}${p.whatsapp?`<a class="btn mini" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:""}</span>`
+   :`<a class="btn" href="#/servicio/${p.id}">${p.tipo==="agenda"?"Agendar cita":"Consultar disponibilidad"}</a>`}</div></div>`;
+async function svLista(){
+  const b=$("svBody");if(!b)return;
+  if(!db){b.innerHTML="<p>Esta sección necesita conexión a internet.</p>";return}
+  const r=await db.from("servicios_perfiles").select("*").eq("activo",true).eq("tipo",svTab).order("nombre");
+  if(!$("svBody"))return;
+  if(r.error){$("svBody").innerHTML="<p>No se pudo cargar. Intenta de nuevo.</p>";return}
+  const L=r.data||[];
+  $("svBody").innerHTML=L.length?`<div class="grid gcom">${L.map(svCard).join("")}</div>`:`<div class="aviso">Aún no hay prestadores en esta categoría. ¿Ofreces este servicio? Escríbenos desde el botón de redes y súmate a Valle GO.</div>`;
+}
+
+// --- Detalle: solicitar cita / enviar consulta / contacto ---
+async function vistaServicio(id){
+  if(!db){location.hash="#/servicios";return}
+  $("vista").innerHTML="<p>Cargando...</p>";
+  const [pr,it]=await Promise.all([db.from("servicios_perfiles").select("*").eq("id",id).maybeSingle(),db.from("servicios_items").select("*").eq("perfil_id",id).eq("activo",true).order("nombre")]);
+  const p=pr.data;if(!p){$("vista").innerHTML=`<p>No encontramos este servicio.</p><a class="btn" href="#/servicios">Volver a Servicios</a>`;return}
+  svTab=p.tipo;const items=it.data||[],hoy=hoyISO();
+  const cab=`<p><a href="#/servicios">← Servicios</a></p><div class="perfil"><div class="foto" ${p.foto_url?`style="background-image:url('${esc(p.foto_url)}')"`:""}>${p.foto_url?"":SV[p.tipo].e}</div><div class="in"><h2 style="margin:0">${esc(p.nombre)}</h2>
+   <span class="suave">${esc(p.giro||"")}${p.horario?" · "+esc(p.horario):""}</span>${p.dias_abiertos?`<span class="suave">📅 ${diasTxt(p.dias_abiertos)}</span>`:""}${p.zona?`<span class="suave">📍 ${esc(p.zona)}</span>`:""}
+   ${p.descripcion?`<p style="margin:4px 0 0">${esc(p.descripcion)}</p>`:""}
+   <span class="svbtns">${(p.telefono||p.whatsapp)?`<a class="btn mini" href="${telUrl(p.telefono||p.whatsapp)}">📞 Llamar</a>`:""}${p.whatsapp?`<a class="btn mini" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:""}</span></div></div>`;
+  let cuerpo="";
+  if(p.tipo==="agenda"){
+    cuerpo=(items.length?`<h3>Servicios</h3>`+items.map(i=>`<div class="linea"><span><b>${esc(i.nombre)}</b>${i.descripcion?`<br><small>${esc(i.descripcion)}</small>`:""}</span><span style="text-align:right">${Number(i.precio)>0?din(Number(i.precio)):"A consultar"}${i.duracion_min?`<br><small>${i.duracion_min} min</small>`:""}</span></div>`).join(""):"")+
+     `<div class="aviso" style="display:grid;gap:10px;margin-top:14px"><b>Solicitar una cita</b>
+      ${items.length?`<label>Servicio<select id="svS">${items.map(i=>`<option value="${i.id}">${esc(i.nombre)}${Number(i.precio)>0?" · "+din(Number(i.precio)):""}</option>`).join("")}</select></label>`:""}
+      <label>Fecha<input id="svF" type="date" min="${hoy}"></label><label>Hora<input id="svH" type="time"></label>
+      <label>Notas (opcional)<textarea id="svN" rows="2" placeholder="Motivo, detalles, lugar de salida..."></textarea></label>
+      <button class="btn" id="svEnv">Solicitar cita</button><span class="suave" style="font-size:.8rem">El prestador confirmará tu cita o te propondrá otra hora. Te avisaremos por notificación.</span></div>`;
+  }else if(p.tipo==="consulta"){
+    cuerpo=`<div class="aviso" style="display:grid;gap:10px;margin-top:14px"><b>Consultar si hay en stock</b>
+      <label>¿Qué producto buscas? Escribe marca, modelo, medida...<textarea id="cqT" rows="3"></textarea></label>
+      <label>Foto del producto (opcional)<input id="cqF" type="file" accept="image/*"></label>
+      <button class="btn" id="cqEnv">Enviar consulta</button><span class="suave" style="font-size:.8rem">El comercio te responderá si lo tiene y a qué precio. Te avisaremos por notificación.</span></div>`;
+  }else cuerpo=`<div class="aviso">Contacta directo al prestador con los botones <b>Llamar</b> o <b>WhatsApp</b>. Los acuerdos de viaje y precio son entre tú y el prestador.</div>`;
+  $("vista").innerHTML=cab+cuerpo;
+  if($("svEnv"))$("svEnv").onclick=async()=>{
+    if(!sesion||!sesion.id)return pideRegistro();
+    const f=$("svF").value,h=$("svH").value;
+    if(!f||!h)return alert("Elige la fecha y la hora que prefieres.");
+    if(f<hoy)return alert("Elige una fecha de hoy en adelante.");
+    if(p.dias_abiertos){const dn=DIAS[(new Date(f+"T12:00:00").getDay()+6)%7];if(!p.dias_abiertos.split(",").includes(dn))return alert("Este prestador atiende: "+diasTxt(p.dias_abiertos)+". Elige otro día.")}
+    const s=items.find(x=>$("svS")&&x.id===$("svS").value);
+    $("svEnv").disabled=true;
+    const r=await db.from("citas").insert({perfil_id:p.id,servicio_id:s?s.id:null,servicio_nombre:s?s.nombre:"Cita",cliente_id:sesion.id,cliente_nombre:sesion.nombre,cliente_tel:sesion.tel||null,fecha:f,hora:h,notas:$("svN").value.trim()||null});
+    if(r.error){alert("No se pudo enviar: "+r.error.message);$("svEnv").disabled=false;return}
+    alert("Listo: tu solicitud fue enviada. Te avisaremos cuando el prestador la confirme.");location.hash="#/mis-servicios"};
+  if($("cqEnv"))$("cqEnv").onclick=async()=>{
+    if(!sesion||!sesion.id)return pideRegistro();
+    const t=$("cqT").value.trim();if(t.length<3)return alert("Escribe qué producto buscas.");
+    $("cqEnv").disabled=true;$("cqEnv").textContent="Enviando...";
+    try{const fl=$("cqF").files[0];const foto_url=fl?await subirFoto(fl,"consultas/"+sesion.id,900):null;
+      const r=await db.from("consultas_stock").insert({perfil_id:p.id,cliente_id:sesion.id,cliente_nombre:sesion.nombre,cliente_tel:sesion.tel||null,texto:t,foto_url});
+      if(r.error)throw r.error;
+      alert("Listo: tu consulta fue enviada. Te avisaremos cuando el comercio responda.");location.hash="#/mis-servicios";
+    }catch(err){alert("No se pudo enviar: "+err.message);$("cqEnv").disabled=false;$("cqEnv").textContent="Enviar consulta"}};
+}
+
+// --- Mis solicitudes (cliente) ---
+async function vistaMisServicios(){
+  if(!sesion||!db){location.hash="#/cuenta";return}
+  const [c,q]=await Promise.all([db.from("citas").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50),
+    db.from("consultas_stock").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50)]);
+  const C=c.data||[],Q=q.data||[];
+  const wa=p=>p&&p.whatsapp?` <a class="btn mini sec" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:"";
+  $("vista").innerHTML=`<p><a href="#/servicios">← Servicios</a></p><h2>Mis solicitudes</h2><p class="suave"><button class="btn sec mini" data-svref>🔄 Actualizar</button> En tiempo real</p>${notifBtnHTML()}
+   <h3>Citas</h3>`+(C.map(x=>`<div class="item"><div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
+    ${x.estado==="Reprogramada"?`<span class="aviso" style="padding:8px">🔁 El prestador propone esta nueva fecha y hora.</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
+    <span class="svbtns">${x.estado==="Reprogramada"?`<button class="btn mini" data-svok="${x.id}">Aceptar nueva hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-svcan="${x.id}">Cancelar cita</button>`:""}${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no tienes citas.</p>")+
+   `<h3>Consultas de stock</h3>`+(Q.map(x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
+    ${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}<span class="svbtns">${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no has enviado consultas.</p>");
+}
+
+// --- Panel del prestador ---
+function svForm(titulo,cs,v,guardar){
+  $("vista").innerHTML=`<div class="aviso"><b>${titulo}</b></div>`+formHTML(cs,v)+`<br><button class="btn" id="gSF">Guardar</button> <button class="btn sec" id="cSF">Cancelar</button>`;
+  abreCapa(vistaPanelSrv);$("cSF").onclick=cierraCapa;
+  $("gSF").onclick=async()=>{$("gSF").disabled=true;$("gSF").textContent="Guardando...";
+    try{const o=await leerForm(cs,$("vista"),v);if(!o.nombre)throw new Error("Falta el nombre.");await guardar(o);cierraCapa()}
+    catch(err){alert(err.message);$("gSF").disabled=false;$("gSF").textContent="Guardar"}};
+}
+async function vistaPanelSrv(){
+  if(!sesion||!db){location.hash="#/cuenta";return}
+  $("vista").innerHTML="<p>Cargando...</p>";await cargarRol();
+  if(!misSrv.length){location.hash=esAdmin?"#/admin":"#/panel";return}
+  const ids=misSrv.map(x=>x.id);
+  const [pf,it,ci,co]=await Promise.all([db.from("servicios_perfiles").select("*").in("id",ids).order("nombre"),db.from("servicios_items").select("*").in("perfil_id",ids).order("nombre"),
+    db.from("citas").select("*").in("perfil_id",ids).order("creado",{ascending:false}).limit(150),db.from("consultas_stock").select("*").in("perfil_id",ids).order("creado",{ascending:false}).limit(100)]);
+  const P=pf.data||[],I=it.data||[],orden={Solicitada:0,Reprogramada:1,Confirmada:2,Completada:3,Cancelada:4};
+  const C=(ci.data||[]).sort((a,b)=>(orden[a.estado]-orden[b.estado])||((a.fecha+a.hora)<(b.fecha+b.hora)?-1:1)),Q=co.data||[];
+  const citaHTML=x=>`<div class="item"><div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
+    ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.notas?`<span class="suave">📝 ${esc(x.notas)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
+    <span class="svbtns">${x.estado==="Solicitada"?`<button class="btn mini" data-cok="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-cfin="${x.id}">Completada</button>`:""}${["Solicitada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-crep="${x.id}">Otra hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-ccan="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
+    <div class="aviso" id="rep_${x.id}" style="display:none;gap:8px"><label>Nueva fecha<input type="date" id="repF_${x.id}" min="${hoyISO()}" value="${esc(x.fecha)}"></label><label>Nueva hora<input type="time" id="repH_${x.id}" value="${esc(x.hora)}"></label><label>Mensaje (opcional)<input id="repM_${x.id}"></label><button class="btn mini" data-crepok="${x.id}">Enviar propuesta</button></div></div></div>`;
+  const consHTML=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
+    ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
+    <label>Precio (opcional)<input id="cqP_${x.id}" value="${esc(x.precio||"")}" placeholder="$250"></label><label>Mensaje (opcional)<input id="cqM_${x.id}" value="${esc(x.respuesta||"")}" placeholder="Disponible en tienda, llega mañana..."></label>
+    <span class="svbtns"><button class="btn mini" data-cqr="${x.id}|Hay">Sí hay</button><button class="btn mini sec" data-cqr="${x.id}|No hay">No hay</button><button class="btn mini sec" data-cqr="${x.id}|Consultar">Responder</button></span></div></div>`;
+  $("vista").innerHTML=`<h2>Mi panel de servicios</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)}</p>${misCom.length?`<p><a class="btn sec mini" href="#/panel">← Mi panel de comercio</a></p>`:""}${notifBtnHTML()}`+
+   P.map(p=>{const mi=I.filter(i=>i.perfil_id===p.id),mc=C.filter(c=>c.perfil_id===p.id),mq=Q.filter(q=>q.perfil_id===p.id);
+    return `<div class="perfil" style="padding:14px;margin-top:16px"><h3 style="margin:0">${SV[p.tipo].e} ${esc(p.nombre)} <span class="suave" style="font-size:.8rem">· ${SV[p.tipo].t}${p.activo?"":" · Oculto"}</span></h3>
+     <p><button class="btn sec mini" data-sped="${p.id}">Editar mi perfil</button></p>`+
+     (p.tipo==="agenda"?`<h3>Mis servicios</h3>`+(mi.map(i=>`<div class="linea"><span><b>${esc(i.nombre)}</b>${i.activo?"":" (oculto)"}<br><small>${Number(i.precio)>0?din(Number(i.precio)):"A consultar"}${i.duracion_min?" · "+i.duracion_min+" min":""}</small></span><span><button class="btn mini sec" data-siedit="${i.id}">Editar</button> <button class="btn mini sec" data-sidel="${i.id}">Quitar</button></span></div>`).join("")||"<p class='suave'>Aún no agregas servicios.</p>")+
+       `<p><button class="btn mini" data-sinew="${p.id}">+ Agregar servicio</button></p><h3>Citas</h3>`+(mc.map(citaHTML).join("")||"<p>Aún no hay citas.</p>")
+      :p.tipo==="consulta"?`<h3>Consultas de clientes</h3>`+(mq.map(consHTML).join("")||"<p>Aún no hay consultas.</p>")
+      :`<p class="aviso">Los clientes te encuentran en el directorio de Transporte y te llaman o escriben por WhatsApp. Mantén tu teléfono, vehículo, zona y horario actualizados en <b>Editar mi perfil</b>.</p>`)+`</div>`}).join("");
+}
+
+// --- Acciones (clientes y prestadores) ---
+document.addEventListener("click",async e=>{
+  const b=e.target.closest&&e.target.closest("[data-svtab],[data-svmis],[data-svref],[data-svok],[data-svcan],[data-cok],[data-cfin],[data-crep],[data-crepok],[data-ccan],[data-cqr],[data-sped],[data-sinew],[data-siedit],[data-sidel]");
+  if(!b)return;const d=b.dataset;
+  if(d.svtab){svTab=d.svtab;return vistaServicios()}
+  if(d.svmis!==undefined){location.hash="#/mis-servicios";return}
+  if(d.svref!==undefined)return vistaMisServicios();
+  const cita=async(id,o,msg)=>{b.disabled=true;const r=await db.from("citas").update(o).eq("id",id);if(r.error){alert(msg||("No se pudo actualizar: "+r.error.message));b.disabled=false;return false}return true};
+  if(d.svok){if(await cita(d.svok,{estado:"Confirmada"}))vistaMisServicios();return}
+  if(d.svcan){if(!confirm("¿Cancelar esta cita?"))return;if(await cita(d.svcan,{estado:"Cancelada"}))vistaMisServicios();return}
+  if(d.cok){if(await cita(d.cok,{estado:"Confirmada",respuesta:null}))vistaPanelSrv();return}
+  if(d.cfin){if(await cita(d.cfin,{estado:"Completada"}))vistaPanelSrv();return}
+  if(d.ccan){const m=prompt("Motivo para el cliente (opcional):");if(m===null)return;if(await cita(d.ccan,{estado:"Cancelada",respuesta:m.trim()||null}))vistaPanelSrv();return}
+  if(d.crep){const r=$("rep_"+d.crep);if(r)r.style.display=r.style.display==="none"?"grid":"none";return}
+  if(d.crepok){const f=$("repF_"+d.crepok).value,h=$("repH_"+d.crepok).value;if(!f||!h)return alert("Elige la nueva fecha y hora.");
+    if(await cita(d.crepok,{estado:"Reprogramada",fecha:f,hora:h,respuesta:$("repM_"+d.crepok).value.trim()||null}))vistaPanelSrv();return}
+  if(d.cqr){const[id,est]=d.cqr.split("|");b.disabled=true;
+    const r=await db.from("consultas_stock").update({estado:est,precio:$("cqP_"+id).value.trim()||null,respuesta:$("cqM_"+id).value.trim()||null}).eq("id",id);
+    if(r.error){alert("No se pudo responder: "+r.error.message);b.disabled=false;return}return vistaPanelSrv()}
+  if(d.sped){const r=await db.from("servicios_perfiles").select("*").eq("id",d.sped).single();if(!r.data)return;
+    return svForm("Editar mi perfil",cfSrv("servicios/"+sesion.id).filter(c=>c.k!=="tipo"),r.data,async o=>{const x=await db.from("servicios_perfiles").update(o).eq("id",d.sped);if(x.error)throw x.error;cargarRol()})}
+  if(d.sinew)return svForm("Nuevo servicio",CF_SITEM.map(c=>({...c,l:c.l})),{activo:true,precio:0},async o=>{o.perfil_id=d.sinew;o.duracion_min=o.duracion_min||null;const x=await db.from("servicios_items").insert(o);if(x.error)throw x.error});
+  if(d.siedit){const r=await db.from("servicios_items").select("*").eq("id",d.siedit).single();if(!r.data)return;
+    return svForm("Editar servicio",CF_SITEM,r.data,async o=>{o.duracion_min=o.duracion_min||null;const x=await db.from("servicios_items").update(o).eq("id",d.siedit);if(x.error)throw x.error})}
+  if(d.sidel){if(!confirm("¿Quitar este servicio?"))return;const x=await db.from("servicios_items").delete().eq("id",d.sidel);if(x.error)return alert(x.error.message);vistaPanelSrv()}
+});
+
+// --- Tiempo real: avisos dentro de la app (además de las notificaciones push) ---
+const refrescaSrv=()=>{const h=location.hash;if(h==="#/mis-servicios")vistaMisServicios();else if(h==="#/panel-servicios")vistaPanelSrv()};
+function escucharServicios(){
+  if(!db||canalSrv||!sesion||!sesion.id)return;
+  const ch=db.channel("servicios-"+sesion.id);
+  ["citas","consultas_stock"].forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},p=>{
+    const n=p.new||{},esCita=t==="citas";
+    if(p.eventType==="INSERT"&&n.cliente_id!==sesion.id){sonido();aviso(esCita?"📅 Nueva solicitud de cita":"🔎 Nueva consulta de stock")}
+    else if(p.eventType==="UPDATE"&&n.cliente_id===sesion.id&&n.cambio_por!==sesion.id&&(n.estado||"")!=="Pendiente"){sonido();aviso((esCita?"📅 Tu cita: ":"🔎 Tu consulta: ")+n.estado)}
+    refrescaSrv()}));
+  canalSrv=ch.subscribe();
+}
+
 // ---------- Vistas ----------
 function ruta(){
   clearInterval(adT);
   const [,r,id]=location.hash.split("/");
-  const bp=$("bPanel");if(bp)bp.classList.toggle("on",r==="panel"||r==="admin");bp.setAttribute("aria-pressed",String(r==="panel"||r==="admin"));
+  const bp=$("bPanel"),enP=r==="panel"||r==="admin"||r==="panel-servicios";if(bp){bp.classList.toggle("on",enP);bp.setAttribute("aria-pressed",String(enP))}
 
   if(r==="t")return vistaTienda(id);
   if(r==="cuenta")return vistaCuenta();
   if(r==="panel")return vistaPanel();
   if(r==="admin")return vistaAdmin();
   if(r==="pedidos")return vistaPedidos();
+  if(r==="servicios")return vistaServicios();
+  if(r==="servicio")return vistaServicio(id);
+  if(r==="mis-servicios")return vistaMisServicios();
+  if(r==="panel-servicios")return vistaPanelSrv();
   vistaInicio();
 }
 const tarjetaCom=t=>`
@@ -960,7 +1150,7 @@ function vistaInicio(){
        :catCom==="otros"?sec("Otros",sinCat)
        :(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
   }
-  $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2>`+cuerpo;iniAds();
+  $("vista").innerHTML=adsHTML()+svHero()+`<h2>Lugares del Valle Hoy:</h2>`+cuerpo;iniAds();
 }
 let dirQ="";
 function cierraDirectorio(){const d=$("dirPanel");if(d)d.remove();const b=$("bDir");if(b){b.classList.remove("on");b.setAttribute("aria-expanded","false")}}
@@ -1162,7 +1352,7 @@ async function entrar(){
 }
 function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle||"",dir_num:u.dir_num||"",dir_col:u.dir_col||"",foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol();location.hash="#/"}
 const medirHeader=()=>{const h=document.querySelector("header");if(h)document.documentElement.style.setProperty("--hh",h.offsetHeight+"px")};window.addEventListener("resize",medirHeader);window.addEventListener("load",medirHeader);if(window.ResizeObserver)new ResizeObserver(medirHeader).observe(document.querySelector("header"));medirHeader();
-function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";const staff=!!(esAdmin||misCom.length);$("bPanel").style.display=staff?"":"none";$("bPedidos").style.display=(sesion&&!staff)?"":"none";$("bCarrito").style.display=staff?"none":""}   // carrito y pedidos son solo para clientes
+function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";const staff=!!(esAdmin||misCom.length||misSrv.length);$("bPanel").style.display=staff?"":"none";$("bPedidos").style.display=(sesion&&!staff)?"":"none";$("bCarrito").style.display=staff?"none":""}   // carrito y pedidos son solo para clientes
 
 // ---------- Carrito ----------
 function pideRegistro(){alert("Para ordenar y hacer pedidos necesitas registrarte o iniciar sesión.");location.hash="#/cuenta"}
@@ -1313,7 +1503,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v111";
+const BUILD="valle-go-v113";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{

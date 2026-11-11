@@ -12,6 +12,62 @@ async function sb(ruta) {
   return r.json();
 }
 
+
+// ---- SERVICIOS: avisos de citas y consultas de stock ----
+async function enviar(ids, msgObj) {
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT, process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+  ids = [...new Set(ids.filter(Boolean))];
+  if (!ids.length) return 0;
+  const subs = await sb(`push_suscripciones?user_id=in.(${ids.join(",")})&select=endpoint,p256dh,auth`);
+  const msg = JSON.stringify(msgObj);
+  let enviados = 0;
+  await Promise.all(subs.map(async s => {
+    try {
+      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, msg, { urgency: "high", TTL: 3600 });
+      enviados++;
+    } catch (e) {
+      if (e.statusCode === 404 || e.statusCode === 410)
+        await fetch(`${SB}/rest/v1/push_suscripciones?endpoint=eq.${encodeURIComponent(s.endpoint)}`, { method: "DELETE", headers: cab });
+    }
+  }));
+  return enviados;
+}
+const fechaMX = f => { const [y, m, d] = String(f).split("-"); return `${d}/${m}/${y}`; };
+async function servicios(p, res) {
+  const r = p.record, old = p.old_record || {};
+  const [per] = await sb(`servicios_perfiles?id=eq.${encodeURIComponent(r.perfil_id)}&select=nombre,dueno_id`);
+  if (!per) return res.status(200).json({ ok: true, omitido: true });
+  const admins = (await sb("admins?select=user_id")).map(a => a.user_id);
+  const dueño = per.dueno_id ? [per.dueno_id] : admins;   // si aún no tiene dueño asignado, avisa a los administradores
+  let ids, titulo, cuerpo, url, tag = r.id + (p.type === "UPDATE" ? r.estado : "");
+  if (p.table === "citas") {
+    const cuando = `${fechaMX(r.fecha)} a las ${r.hora}`;
+    if (p.type === "INSERT") { ids = dueño; titulo = `📅 Nueva solicitud de cita · ${per.nombre}`; cuerpo = `${r.cliente_nombre || "Cliente"}${r.cliente_tel ? " · " + r.cliente_tel : ""}\n${r.servicio_nombre || "Servicio"} · ${cuando}${r.notas ? "\nNotas: " + r.notas : ""}\nToca para confirmarla o proponer otra hora.`; url = "./index.html#/panel-servicios"; }
+    else if (r.cambio_por && r.cambio_por === r.cliente_id) {   // lo hizo el cliente: se avisa al prestador
+      if (r.estado === "Cancelada" && old.estado !== "Cancelada") { ids = dueño; titulo = `❌ Cita cancelada · ${per.nombre}`; cuerpo = `${r.cliente_nombre || "El cliente"} canceló su cita del ${cuando}.`; url = "./index.html#/panel-servicios"; }
+      else if (r.estado === "Confirmada" && old.estado === "Reprogramada") { ids = dueño; titulo = `✅ Cliente aceptó la nueva hora · ${per.nombre}`; cuerpo = `${r.cliente_nombre || "El cliente"} aceptó: ${cuando}.`; url = "./index.html#/panel-servicios"; }
+      else return res.status(200).json({ ok: true, omitido: true });
+    }
+    else if (r.estado !== old.estado || r.respuesta !== old.respuesta || r.fecha !== old.fecha || r.hora !== old.hora) {
+      const T = { Confirmada: ["✅ Cita confirmada", `${per.nombre} confirmó tu cita: ${r.servicio_nombre || "servicio"}, ${cuando}.`],
+        Reprogramada: ["🔁 Nueva hora propuesta", `${per.nombre} propone: ${cuando}. Toca para aceptarla o cancelar.`],
+        Cancelada: ["❌ Cita cancelada", `${per.nombre} canceló tu cita del ${cuando}.`],
+        Completada: ["🎉 Cita completada", `Gracias por tu visita a ${per.nombre}.`] }[r.estado];
+      if (!T) return res.status(200).json({ ok: true, omitido: true });
+      ids = [r.cliente_id]; titulo = `${T[0]} · ${per.nombre}`; cuerpo = T[1] + (r.respuesta ? `\nMensaje: ${r.respuesta}` : ""); url = "./index.html#/mis-servicios";
+    } else return res.status(200).json({ ok: true, omitido: true });
+  } else {
+    if (p.type === "INSERT") { ids = dueño; titulo = `🔎 Nueva consulta de stock · ${per.nombre}`; cuerpo = `${r.cliente_nombre || "Cliente"}: ${String(r.texto || "").slice(0, 140)}${r.foto_url ? "\n📷 Con foto" : ""}\nToca para responder.`; url = "./index.html#/panel-servicios"; }
+    else if (r.estado !== old.estado || r.respuesta !== old.respuesta) {
+      if (r.estado === "Pendiente") return res.status(200).json({ ok: true, omitido: true });
+      const E = { Hay: "✅ ¡Sí lo tienen!", "No hay": "😕 No lo tienen por ahora", Consultar: "ℹ️ Respuesta del comercio" }[r.estado];
+      ids = [r.cliente_id]; titulo = `${E} · ${per.nombre}`; cuerpo = [r.precio ? `Precio: ${r.precio}` : null, r.respuesta || null, "Toca para ver la respuesta."].filter(Boolean).join("\n"); url = "./index.html#/mis-servicios";
+    } else return res.status(200).json({ ok: true, omitido: true });
+  }
+  const enviados = await enviar(ids, { titulo, cuerpo, url, tag });
+  return res.status(200).json({ ok: true, enviados });
+}
+
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).end();
   if (req.headers["authorization"] !== `Bearer ${process.env.WEBHOOK_SECRET}`) return res.status(401).end();
@@ -19,6 +75,8 @@ module.exports = async (req, res) => {
     const p = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const ped = p && p.record;
     if (!ped) return res.status(200).json({ ok: true, omitido: true });
+
+    if (p.table === "citas" || p.table === "consultas_stock") return await servicios(p, res);   // citas y consultas de la sección SERVICIOS
 
     const old = p.old_record || {};
     let prefijo, ids, cuerpoX, urlX;
