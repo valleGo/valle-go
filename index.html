@@ -778,7 +778,7 @@ const MSG_IOS_VIEJO=v=>`📵 Tu iPhone tiene iOS ${v}, una versión que no permi
 const notifOK=()=>"Notification"in window&&"serviceWorker"in navigator&&"PushManager"in window;
 const notifBtnHTML=()=>notifOK()
   ?(Notification.permission==="granted"
-    ?`<p class="aviso">🔔 Avisos de pedidos activados en este dispositivo. <button class="btn sec" id="bNotif">Reactivar</button></p>`
+    ?`<p class="aviso">🔔 Avisos de pedidos activados en este dispositivo. <button class="btn sec" id="bProbar">Probar aviso</button> <button class="btn sec" id="bNotif">Reactivar</button></p>`
     :`<p class="aviso">Recibe un aviso en tu celular cuando entre un pedido nuevo. <button class="btn" id="bNotif">Activar notificaciones</button></p>`)
   :iosViejo()?`<p class="aviso">${MSG_IOS_VIEJO(iosViejo())}</p>`:`<p class="aviso">Para recibir avisos en iPhone: 1) abre esta página en Safari, 2) toca Compartir ⬆️ → «Agregar a pantalla de inicio», 3) abre Valle GO desde ese ícono nuevo (no desde Safari) y 4) toca «Activar notificaciones». Requiere iOS 16.4 o más nuevo.</p>`;
 function aviso(t){const x=$("toast");x.textContent=t;x.style.display="block";setTimeout(()=>x.style.display="none",6000)}
@@ -1164,7 +1164,9 @@ const medirHeader=()=>{const h=document.querySelector("header");if(h)document.do
 function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";const staff=!!(esAdmin||misCom.length);$("bPanel").style.display=staff?"":"none";$("bPedidos").style.display=(sesion&&!staff)?"":"none";$("bCarrito").style.display=staff?"none":""}   // carrito y pedidos son solo para clientes
 
 // ---------- Carrito ----------
+function pideRegistro(){alert("Para ordenar y hacer pedidos necesitas registrarte o iniciar sesión.");location.hash="#/cuenta"}
 function agregar(tid,mid){
+  if(!sesion)return pideRegistro();
   if(carrito.tienda&&carrito.tienda!==tid){
     if(!confirm("Tu carrito tiene productos de otro comercio. ¿Vaciarlo y empezar uno nuevo?"))return;
     carrito={tienda:null,items:{}};
@@ -1253,7 +1255,7 @@ document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.tar
 document.addEventListener("click",e=>{const d=e.target.dataset;
   if(d.ver){abreFoto(d.ver,d.nom||"");return} if(d.ccat){catCom=d.ccat;vistaInicio();return} if(d.cat){cat=d.cat;ruta()} if(d.add){const[a,b]=d.add.split("|");agregar(a,b)}
   if(d.mas)cambia(d.mas,1); if(d.menos)cambia(d.menos,-1); if(d.cerrar!==undefined){if(capas.length)cierraCapa();else $("pCarrito").classList.remove("on")}});
-$("bCarrito").onclick=()=>{pintaCarrito();const p=$("pCarrito");if(!p.classList.contains("on")){p.classList.add("on");abreCapa(()=>p.classList.remove("on"))}};
+$("bCarrito").onclick=()=>{if(!sesion)return pideRegistro();pintaCarrito();const p=$("pCarrito");if(!p.classList.contains("on")){p.classList.add("on");abreCapa(()=>p.classList.remove("on"))}};
 $("bCuenta").onclick=()=>location.hash="#/cuenta";
 $("bPedidos").onclick=async()=>{await cierraTodasCapas();location.hash="#/pedidos"};
 $("bPanel").onclick=()=>{const h=location.hash;location.hash=(h.startsWith("#/admin")||h.startsWith("#/panel"))?"#/":(esAdmin?"#/admin":"#/panel")};   // clic: abre el panel; otro clic: regresa al inicio
@@ -1310,7 +1312,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v108";
+const BUILD="valle-go-v109";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
