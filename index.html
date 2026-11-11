@@ -336,9 +336,9 @@ async function calcMonitoreo(mes){
   Object.values(C[ant]||{}).filter(r=>r.saldo>0).forEach(r=>alertas.push("Saldo pendiente de "+nomMes(ant)+": "+r.nombre+" ("+mxn(r.saldo)+")"));
   return{mes,keys,cs,C,M:Mes,alertas,sinPagar,GA}}
 function svgBarras(x,y,w,h,titulo,labels,series){
-  const max=Math.max(1,...series.flatMap(s=>s.vals)),n=labels.length,left=52,gw=(w-left-8)/n,bw=Math.min(30,(gw-12)/series.length),top=y+34,base=y+h-26,ch=base-top;
+  const max=Math.max(1,...series.flatMap(s=>s.vals)),n=labels.length,left=52,gw=(w-left-8)/n,bw=Math.min(30,(gw-12)/series.length),apil=series.length>2||titulo.length>30,top=y+(apil?56:34),base=y+h-26,ch=base-top;
   let g=`<text x="${x}" y="${y+16}" font-size="15" font-weight="700" fill="#2B2D22">${esc(titulo)}</text>`;
-  series.forEach((s,j)=>{const lx=x+w-8-(series.length-j)*118;g+=`<rect x="${lx}" y="${y+6}" width="10" height="10" rx="2" fill="${s.color}"/><text x="${lx+14}" y="${y+15}" font-size="11" fill="#555">${esc(s.nombre)}</text>`});
+  series.forEach((s,j)=>{const lx=apil?x+left+j*125:x+w-8-(series.length-j)*118,ly=apil?y+30:y+6;g+=`<rect x="${lx}" y="${ly}" width="10" height="10" rx="2" fill="${s.color}"/><text x="${lx+14}" y="${ly+9}" font-size="11" fill="#555">${esc(s.nombre)}</text>`});
   for(let i=0;i<=4;i++){const yy=base-ch*i/4;g+=`<line x1="${x+left}" y1="${yy}" x2="${x+w}" y2="${yy}" stroke="#e4e6dc"/><text x="${x+left-6}" y="${yy+4}" font-size="10" text-anchor="end" fill="#777">${mxk(max*i/4)}</text>`}
   labels.forEach((l,i)=>{const gx=x+left+i*gw+(gw-bw*series.length)/2;
     series.forEach((s,j)=>{const v=s.vals[i],bh=ch*v/max;g+=`<rect x="${gx+j*bw}" y="${base-bh}" width="${bw-2}" height="${Math.max(bh,v>0?1:0)}" rx="3" fill="${s.color}"/>`;
@@ -1105,7 +1105,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#bCont");if(b){e
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v80";
+const BUILD="valle-go-v81";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
