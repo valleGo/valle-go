@@ -80,6 +80,7 @@ main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .ca
 .suave{color:var(--suave);font-size:.85rem;font-weight:500}.precio{color:var(--verde);font-weight:700}
 .btn{background:var(--verde);color:var(--on-verde);border:0;border-radius:999px;padding:10px 16px;text-decoration:none;text-align:center;font-weight:600;font-size:.9rem;display:inline-block;transition:transform .12s,opacity .12s}
 .btn:hover{opacity:.92}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.55;cursor:default}
+.nbtns{display:flex;flex-wrap:nowrap;gap:8px;margin-top:8px}.btn.mini{padding:6px 12px;font-size:.78rem;flex:0 0 auto;white-space:nowrap}
 .btn.sec{background:transparent;color:var(--verde);border:1.5px solid var(--verde)}
 .perfil{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden;margin-bottom:16px;box-shadow:var(--sombra)}
 .perfil .foto{height:180px}.perfil .in{padding:16px;display:grid;gap:6px}
@@ -778,7 +779,7 @@ const MSG_IOS_VIEJO=v=>`📵 Tu iPhone tiene iOS ${v}, una versión que no permi
 const notifOK=()=>"Notification"in window&&"serviceWorker"in navigator&&"PushManager"in window;
 const notifBtnHTML=()=>notifOK()
   ?(Notification.permission==="granted"
-    ?`<p class="aviso">🔔 Avisos de pedidos activados en este dispositivo. <button class="btn sec" id="bProbar">Probar aviso</button> <button class="btn sec" id="bNotif">Reactivar</button></p>`
+    ?`<p class="aviso">🔔 Avisos de pedidos activados en este dispositivo. <span class="nbtns"><button class="btn sec mini" id="bProbar">Probar aviso</button><button class="btn sec mini" id="bNotif">Reactivar</button></span></p>`
     :`<p class="aviso">Recibe un aviso en tu celular cuando entre un pedido nuevo. <button class="btn" id="bNotif">Activar notificaciones</button></p>`)
   :iosViejo()?`<p class="aviso">${MSG_IOS_VIEJO(iosViejo())}</p>`:`<p class="aviso">Para recibir avisos en iPhone: 1) abre esta página en Safari, 2) toca Compartir ⬆️ → «Agregar a pantalla de inicio», 3) abre Valle GO desde ese ícono nuevo (no desde Safari) y 4) toca «Activar notificaciones». Requiere iOS 16.4 o más nuevo.</p>`;
 function aviso(t){const x=$("toast");x.textContent=t;x.style.display="block";setTimeout(()=>x.style.display="none",6000)}
@@ -1109,7 +1110,7 @@ async function vistaPedidos(silencio){
   const hora=new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
   const pasos=p=>{if(p.estado==="Cancelado")return`<div class="pasos"><span class="paso mal">❌ Cancelado</span></div>`;
     const i=PASOS.indexOf(p.estado);return`<div class="pasos">${PASOS.map((x,k)=>`<span class="paso${k<=i?" ok":""}${k===i?" act":""}">${k<=i?"●":"○"} ${x}</span>`).join("")}</div>`};
-  const pushBtn=!notifOK()?notifBtnHTML():(VAPID_PUBLIC&&Notification.permission==="default"?`<p class="aviso">🔔 Activa los avisos para enterarte aunque tengas la app cerrada. <button class="btn" id="bNotif">Activar avisos</button></p>`:(Notification.permission==="denied"?`<p class="aviso">🔕 Las notificaciones están bloqueadas en este dispositivo. Actívalas en los ajustes del navegador (candado o ⓘ junto a la dirección → Notificaciones → Permitir) o en Ajustes del celular → Notificaciones → Valle GO, y vuelve a abrir la app.</p>`:`<p class="aviso">🔔 Avisos activados en este dispositivo. <button class="btn sec" id="bProbar">Probar aviso</button> <button class="btn sec" id="bNotif">Reactivar</button></p>`));
+  const pushBtn=!notifOK()?notifBtnHTML():(VAPID_PUBLIC&&Notification.permission==="default"?`<p class="aviso">🔔 Activa los avisos para enterarte aunque tengas la app cerrada. <button class="btn" id="bNotif">Activar avisos</button></p>`:(Notification.permission==="denied"?`<p class="aviso">🔕 Las notificaciones están bloqueadas en este dispositivo. Actívalas en los ajustes del navegador (candado o ⓘ junto a la dirección → Notificaciones → Permitir) o en Ajustes del celular → Notificaciones → Valle GO, y vuelve a abrir la app.</p>`:`<p class="aviso">🔔 Avisos activados en este dispositivo. <span class="nbtns"><button class="btn sec mini" id="bProbar">Probar aviso</button><button class="btn sec mini" id="bNotif">Reactivar</button></span></p>`));
   $("vista").innerHTML=`<h2>Mis pedidos</h2><p class="suave"><button class="btn sec" id="bActPed">🔄 Actualizar</button> En tiempo real · última actualización ${hora}</p>${pushBtn}`+(ps.length?ps.map(p=>`<div class="item"><div class="in">
    <b>${p.tienda}</b><span class="suave">${p.fecha}</span>
    <span>${p.lineas.join("<br>")}</span><span class="tot">${din(p.total)}</span>
@@ -1312,7 +1313,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v109";
+const BUILD="valle-go-v110";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
