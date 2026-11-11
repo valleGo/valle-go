@@ -1161,7 +1161,7 @@ async function entrar(){
 }
 function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle||"",dir_num:u.dir_num||"",dir_col:u.dir_col||"",foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol();location.hash="#/"}
 const medirHeader=()=>{const h=document.querySelector("header");if(h)document.documentElement.style.setProperty("--hh",h.offsetHeight+"px")};window.addEventListener("resize",medirHeader);window.addEventListener("load",medirHeader);if(window.ResizeObserver)new ResizeObserver(medirHeader).observe(document.querySelector("header"));medirHeader();
-function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";$("bPanel").style.display=(esAdmin||misCom.length)?"":"none";$("bPedidos").style.display=sesion?"":"none"}
+function pintaHeader(){$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+esc((sesion.nombre||"").split(" ")[0]):"Entrar";const staff=!!(esAdmin||misCom.length);$("bPanel").style.display=staff?"":"none";$("bPedidos").style.display=(sesion&&!staff)?"":"none";$("bCarrito").style.display=staff?"none":""}   // carrito y pedidos son solo para clientes
 
 // ---------- Carrito ----------
 function agregar(tid,mid){
@@ -1310,7 +1310,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v107";
+const BUILD="valle-go-v108";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
