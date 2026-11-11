@@ -36,7 +36,7 @@ header a{color:var(--verde);text-decoration:none;font-size:1.3rem;font-weight:80
 header .logo{flex-shrink:0}header .hb{margin-left:auto;flex:0 1 auto;min-width:0}header{flex-wrap:wrap;row-gap:4px}.marca{flex:0 0 100%;order:3;display:flex;justify-content:center;align-items:center}.marca a{display:flex;justify-content:center;max-width:100%}.marca img{display:block;max-width:100%;width:auto;height:auto;max-height:26px;object-fit:contain}
 .admhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.admhead h2{margin:0}
 .monbtn{display:inline-flex;align-items:center;gap:10px;margin-left:auto;padding:14px 24px;border:0;border-radius:16px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-weight:800;font-size:1.1rem;letter-spacing:.02em;cursor:pointer;box-shadow:0 6px 16px rgba(79,70,229,.38);transition:transform .15s,box-shadow .15s}
-.monbtn:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(79,70,229,.45)}.monbtn:active{transform:scale(.97)}.monbtn.on{outline:3px solid #fbbf24;outline-offset:2px}
+.monbtn *{pointer-events:none}.monbtn:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(79,70,229,.45)}.monbtn:active{transform:scale(.97)}.monbtn.on{outline:3px solid #fbbf24;outline-offset:2px}
 .dirbar{position:sticky;top:var(--hh,100px);z-index:4;max-width:1180px;margin:0 auto;padding:8px 10px 0;height:0;overflow:visible;pointer-events:none}.dirbar a{display:inline-flex!important;align-items:center;gap:7px;background:#a2cce5!important;color:#1f2a33!important;border-color:#7fb3d6!important;pointer-events:auto;box-shadow:0 4px 12px rgba(0,0,0,.28),0 1px 3px rgba(0,0,0,.2);transition:transform .15s,box-shadow .15s;display:inline-block;background:var(--verde);color:var(--on-verde);border-radius:999px;padding:7px 16px;font-weight:800;letter-spacing:.08em;font-size:.78rem;text-decoration:none;border:1px solid var(--verde)}.dirbar a:hover{transform:translateY(-2px);box-shadow:0 7px 16px rgba(0,0,0,.32)}.dirbar a:active{transform:translateY(1px) scale(.97);box-shadow:0 2px 6px rgba(0,0,0,.3)}#dirPanel{position:fixed;z-index:3;left:max(8px,calc((100vw - 1180px)/2));right:max(8px,calc((100vw - 1180px)/2));top:calc(var(--hh,100px) + 54px);max-height:calc(100vh - var(--hh,100px) - 70px);overflow:auto;overscroll-behavior:contain;padding:14px 16px 18px;border-radius:20px;background:color-mix(in srgb,var(--claro-verde) 62%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5);border:1px solid rgba(255,255,255,.55);box-shadow:0 18px 40px rgba(0,0,0,.28);animation:dirIn .18s ease-out}
 @keyframes dirIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 #dirPanel h2{margin:4px 0 10px}
@@ -289,11 +289,10 @@ const nomMes=k=>{const[y,m]=k.split("-").map(Number);return MESES_L[m-1]+" "+y},
 async function calcMonitoreo(mes){
   const[Y,M]=mes.split("-").map(Number),keys=[];for(let i=5;i>=0;i--)keys.push(mkey(new Date(Y,M-1-i,1)));
   const d0=new Date(Y,M-6,1).toISOString(),d1=new Date(Y,M,1).toISOString();
-  const rc=await db.from("comercios").select("id,nombre,activo,plan,creado,mp_conectado,whatsapp").order("nombre");if(rc.error)throw rc.error;const cs=rc.data||[];
-  let P=[],desde=0;
-  for(;;){const r=await db.from("pedidos").select("comercio_id,total,pago,estado,estado_pago,creado").gte("creado",d0).lt("creado",d1).order("creado").range(desde,desde+999);
-    if(r.error)throw r.error;P=P.concat(r.data||[]);if((r.data||[]).length<1000)break;desde+=1000}
-  const rp=await db.from("cobros_pagos").select("comercio_id,mes,monto").in("mes",keys),PG=rp.error?[]:(rp.data||[]);
+  const pedPag=async()=>{let P=[],desde=0;for(;;){const r=await db.from("pedidos").select("comercio_id,total,pago,estado,estado_pago,creado").gte("creado",d0).lt("creado",d1).order("creado").order("id").range(desde,desde+999);
+      if(r.error)throw r.error;P=P.concat(r.data||[]);if((r.data||[]).length<1000)break;desde+=1000}return P};
+  const [rc,P,rp]=await Promise.all([db.from("comercios").select("id,nombre,activo,plan,creado,mp_conectado,whatsapp").order("nombre"),pedPag(),db.from("cobros_pagos").select("comercio_id,mes,monto").in("mes",keys)]);
+  if(rc.error)throw rc.error;const cs=rc.data||[],PG=rp.error?[]:(rp.data||[]);
   const ag={};let sinPagar=0;
   P.forEach(p=>{const online=p.pago==="en_linea"||p.pago==="tarjeta",k=mkey(new Date(p.creado)),sel=k===mes;
     if(p.estado==="Cancelado")return;if(online&&p.estado_pago!=="Pagado"){if(sel)sinPagar++;return}
@@ -402,8 +401,12 @@ async function admTab(){
   }
   if(t==="monitoreo"){
     const hoy=new Date();if(!adm.mesM)adm.mesM=mkey(hoy);
-    box.innerHTML="<p>Calculando…</p>";let D;
-    try{D=await calcMonitoreo(adm.mesM)}catch(err){box.innerHTML="<p>No se pudo cargar el monitoreo: "+esc(err.message||String(err))+"</p>";return}
+    const tk=adm.monTk=(adm.monTk||0)+1;let D;const ch=adm.monCache;
+    if(ch&&ch.mes===adm.mesM&&Date.now()-ch.t<45000&&!adm.monForzar)D=ch.D;
+    else{box.innerHTML='<p>Calculando el monitoreo…</p>';
+      try{D=await calcMonitoreo(adm.mesM)}catch(err){if(tk!==adm.monTk)return;box.innerHTML="<p>No se pudo cargar el monitoreo: "+esc(err.message||String(err))+'</p><button class="btn sec" data-mrec>Reintentar</button>';return}
+      adm.monCache={mes:adm.mesM,t:Date.now(),D};adm.monForzar=false}
+    if(tk!==adm.monTk||adm.tab!=="monitoreo")return;
     adm.mon=D;const T=D.M[D.mes],et=D.keys.map(etMes);
     const card=(t,v,sub)=>`<div class="aviso" style="margin:0"><span class="suave">${t}</span><br><b style="font-size:1.15rem">${v}</b>${sub?`<br><span class="suave">${sub}</span>`:""}</div>`;
     const chart=(tit,ser)=>`<div style="margin:12px 0;background:#fff;border-radius:14px;padding:6px;border:1px solid var(--borde)"><svg viewBox="0 0 640 250" style="width:100%;height:auto" font-family="Arial,Helvetica,sans-serif">${svgBarras(6,2,628,244,tit,et,ser)}</svg></div>`;
@@ -414,7 +417,7 @@ async function admTab(){
       ${card("Membresías (sin IVA)",mxn(T.mem),"")}${card("Ingresos Valle GO",mxn(T.ing),"Sin IVA")}${card("Ganancia estimada",mxn(T.gan),"Costos fijos "+mxn(COSTO_FIJO))}
       ${card("Cobrado",mxn(T.pag),"Pagos registrados")}${card("Por cobrar",mxn(T.saldo),"Con IVA")}</div>
     ${chart("Ventas por mes (todos los pedidos)",SG.ventas(D))}${chart("Ingresos de Valle GO por mes (sin IVA)",SG.ing(D))}${chart("Pagos por mes: cobrado y por cobrar",SG.pagos(D))}
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px"><button class="btn" data-mdl>Descargar informe (imagen)</button><button class="btn sec" data-mcsv>Descargar datos (CSV)</button><button class="btn sec" data-mshare>Compartir informe</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px"><button class="btn" data-mdl>Descargar informe (imagen)</button><button class="btn sec" data-mcsv>Descargar datos (CSV)</button><button class="btn sec" data-mshare>Compartir informe</button><button class="btn sec" data-mrec>Actualizar</button></div>
     <h3>Alertas</h3>${D.alertas.length?D.alertas.map(a=>`<div class="aviso">⚠️ ${esc(a)}</div>`).join(""):'<p class="suave">Sin alertas.</p>'}
     <h3>Compartir con comerciantes (plan Básico)</h3><p class="suave">Cada comercio recibe su propio informe del mes: sus ventas, el 1%, su membresía y su saldo. El plan Simple no tiene informe.</p>
     ${bas.map(r=>`<div class="item"><div class="in"><b>${esc(r.nombre)}</b><span class="suave">${r.n} pedidos · ${mxn(r.tot)} · saldo ${mxn(r.saldo)}</span>
@@ -500,6 +503,7 @@ function formAdm(tabla,cs,v){
 document.addEventListener("click",async e=>{
   const d=e.target.dataset; if(!esAdmin)return;
   if(d.tab){adm.tab=d.tab;adm.uh=null;await cierraTodasCapas();return vistaAdmin()}
+  if(d.mrec!==undefined){adm.monForzar=true;return admTab()}
   if(d.mdl!==undefined||d.mshare!==undefined){const D=adm.mon;if(!D)return;try{const b=await svgAPng(svgInformeAdmin(D),820,992),n="valle-go-informe-"+D.mes+".png";
       if(d.mdl!==undefined)bajarBlob(b,n);else await compartirInforme(b,n,"Informe Valle GO de "+nomMes(D.mes),"")}catch(err){alert(err.message)}return}
   if(d.mcsv!==undefined){const D=adm.mon;if(!D)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Mes","Pedidos","Total vendido","Pagos en linea","Transferencia/efectivo","Comision 1%","Membresias sin IVA","Ingresos","Ganancia estimada","Cobrado","Por cobrar"]];
