@@ -281,7 +281,7 @@ async function vistaAdmin(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   if(!esAdmin)await cargarRol();
   if(!esAdmin){$("vista").innerHTML="<h2>Acceso restringido</h2><p>Esta sección es solo para el administrador.</p>";return}
-  const T={anuncios:"Publicidad",comercios:"Comercios",categorias:"Categorías",menu:"Menús",cobros:"Cobros 1%",pedidos:"Pedidos",usuarios:"Usuarios",perfil:"Mi perfil"};
+  const T={anuncios:"Publicidad",comercios:"Comercios",categorias:"Categorías",menu:"Menús",cobros:"Cobros 1%",pedidos:"Pedidos",usuarios:"Usuarios",admins:"Administradores",perfil:"Mi perfil"};
   $("vista").innerHTML=`<h2>Administración</h2>${notifBtnHTML()}<div class="cats">${Object.keys(T).map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
   await admTab();
 }
@@ -323,6 +323,14 @@ async function admTab(){
   if(t==="perfil"){
     box.innerHTML=`<p class="suave">${esc(sesion.email)} · Administrador</p>`+perfilHTML();
     bindPerfil(admTab);
+  }
+  if(t==="admins"){
+    const r=await db.rpc("admin_lista_admins");
+    if(r.error){box.innerHTML="<p>No se pudo cargar: "+esc(r.error.message)+"</p>";return}
+    const A=r.data||[];
+    box.innerHTML=`<div class="aviso"><b>Administradores</b><br>Un administrador puede ver y modificar comercios, menús, pedidos, cobros y usuarios. Dalo solo a personas de plena confianza. La persona debe haberse registrado antes en la app con ese correo.</div>
+    <label>Correo del nuevo administrador<input id="aCorreo" type="email" placeholder="correo@ejemplo.com"></label><button class="btn" data-aadd>Agregar administrador</button><span class="suave" id="aMsg"></span>
+    <h3>Administradores actuales</h3>`+A.map(a=>`<div class="item"><div class="in"><b>${esc(a.email)}</b>${a.user_id===sesion.id?'<span class="suave">Tú</span>':`<button class="btn sec" data-arm="${a.user_id}" data-ae="${esc(a.email)}">Quitar</button>`}</div></div>`).join("");
   }
   if(t==="usuarios"){
     const fe=x=>x?new Date(x).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):"—";
@@ -395,6 +403,11 @@ function formAdm(tabla,cs,v){
 document.addEventListener("click",async e=>{
   const d=e.target.dataset; if(!esAdmin)return;
   if(d.tab){adm.tab=d.tab;adm.uh=null;await cierraTodasCapas();return vistaAdmin()}
+  if(d.aadd!==undefined){const c=($("aCorreo").value||"").trim();if(!c){$("aMsg").textContent=" Escribe un correo.";return}
+    if(!confirm("¿Dar permisos de administrador a "+c+"?"))return;
+    const r=await db.rpc("admin_agregar_admin",{correo:c});if(r.error){$("aMsg").textContent=" "+r.error.message;return}return admTab()}
+  if(d.arm){if(!confirm("¿Quitar permisos de administrador a "+(d.ae||"este usuario")+"?"))return;
+    const r=await db.rpc("admin_quitar_admin",{uid:d.arm});if(r.error){alert(r.error.message);return}return admTab()}
   if(d.uh){adm.uh=(adm.ul||[]).find(u=>u.id===d.uh)||null;if(adm.uh)abreCapa(()=>{adm.uh=null;admTab()});return admTab()}
   if(d.uback!==undefined){if(adm.uh&&capas.length)return cierraCapa();adm.uh=null;return admTab()}
   if(d.udel){const u=(adm.ul||[]).find(x=>x.id===d.udel)||adm.uh; const n=u?u.nombre+" ("+u.email+")":"este usuario";
