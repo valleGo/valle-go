@@ -567,12 +567,14 @@ document.addEventListener("click",async e=>{const c=e.target.dataset.conf;
 const NPAGO={efectivo:"Efectivo",transferencia:"Transferencia",tarjeta:"Tarjeta en línea",en_linea:"Pago en línea"};
 let canal=null;
 const b64u=x=>{const r=atob((x+"=".repeat((4-x.length%4)%4)).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))};
+const iosViejo=()=>{const m=/(?:iPhone|iPad|iPod).*? OS (\d+)_(\d+)/.exec(navigator.userAgent);if(!m)return null;const a=+m[1],b=+m[2];return(a<16||(a===16&&b<4))?a+"."+b:null};
+const MSG_IOS_VIEJO=v=>`📵 Tu iPhone tiene iOS ${v}, una versión que no permite notificaciones con la app cerrada. Mantén Valle GO abierta para ver los avisos (te avisará con sonido y mensaje dentro de la app) o usa un celular con iOS 16.4 o más nuevo, o Android.`;
 const notifOK=()=>"Notification"in window&&"serviceWorker"in navigator&&"PushManager"in window;
 const notifBtnHTML=()=>notifOK()
   ?(Notification.permission==="granted"
     ?`<p class="aviso">🔔 Avisos de pedidos activados en este dispositivo. <button class="btn sec" id="bNotif">Reactivar</button></p>`
     :`<p class="aviso">Recibe un aviso en tu celular cuando entre un pedido nuevo. <button class="btn" id="bNotif">Activar notificaciones</button></p>`)
-  :`<p class="aviso">Para recibir avisos en iPhone: 1) abre esta página en Safari, 2) toca Compartir ⬆️ → «Agregar a pantalla de inicio», 3) abre Valle GO desde ese ícono nuevo (no desde Safari) y 4) toca «Activar notificaciones». Requiere iOS 16.4 o más nuevo.</p>`;
+  :iosViejo()?`<p class="aviso">${MSG_IOS_VIEJO(iosViejo())}</p>`:`<p class="aviso">Para recibir avisos en iPhone: 1) abre esta página en Safari, 2) toca Compartir ⬆️ → «Agregar a pantalla de inicio», 3) abre Valle GO desde ese ícono nuevo (no desde Safari) y 4) toca «Activar notificaciones». Requiere iOS 16.4 o más nuevo.</p>`;
 function aviso(t){const x=$("toast");x.textContent=t;x.style.display="block";setTimeout(()=>x.style.display="none",6000)}
 function sonido(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.2;o.start();o.stop(a.currentTime+.4)}catch(e){}}
 async function registrarPush(){   // crea (o renueva) la suscripción de este dispositivo y la guarda; no pide permiso
@@ -608,7 +610,8 @@ async function notifAuto(){
       if(!/iPhone|iPad|iPod/.test(navigator.userAgent)||$("bnotif"))return;
       try{if(sessionStorage.getItem("bnotifX"))return}catch(e){}
       const d=document.createElement("div");d.id="bnotif";
-      d.innerHTML='<span>🔔 Para recibir avisos en tu iPhone con la app cerrada: toca Compartir ⬆️ → «Agregar a pantalla de inicio» y abre Valle GO desde ese ícono.</span><button id="bnotifX" aria-label="Cerrar">×</button>';
+      const v=iosViejo();
+      d.innerHTML=v?'<span>'+MSG_IOS_VIEJO(v)+'</span><button id="bnotifX" aria-label="Cerrar">×</button>':'<span>🔔 Para recibir avisos en tu iPhone con la app cerrada: toca Compartir ⬆️ → «Agregar a pantalla de inicio» y abre Valle GO desde ese ícono.</span><button id="bnotifX" aria-label="Cerrar">×</button>';
       document.body.appendChild(d);$("bnotifX").onclick=()=>{try{sessionStorage.setItem("bnotifX","1")}catch(e){}d.remove()};return}
     if(!VAPID_PUBLIC)return;
     if(Notification.permission==="granted"){await registrarPush();return}
@@ -1048,7 +1051,7 @@ window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v71";
+const BUILD="valle-go-v72";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
