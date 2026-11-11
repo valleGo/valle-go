@@ -81,6 +81,12 @@ main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .ca
 .btn{background:var(--verde);color:var(--on-verde);border:0;border-radius:999px;padding:10px 16px;text-decoration:none;text-align:center;font-weight:600;font-size:.9rem;display:inline-block;transition:transform .12s,opacity .12s}
 .btn:hover{opacity:.92}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.55;cursor:default}
 .svbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.svbtns .btn.mini{display:inline-block}
+.dirbar{display:flex;flex-direction:column;align-items:flex-start;gap:8px}.dirbar #bAg{background:#da9c48!important;color:#2a1a05!important;border-color:#c0802f!important}.dirbar #bAg.on{background:#a2cce5!important;color:#1f2a33!important;border-color:#7fb3d6!important}
+#bCq{position:fixed;left:50%;margin-left:-19px;top:calc(var(--hh,100px) + 8px);z-index:4;width:38px;height:38px;border-radius:50%;border:2px solid #46593a;background:#5C7648;color:#fff;display:grid;place-items:center;padding:0;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.28);transition:transform .15s,box-shadow .15s,background .15s;-webkit-tap-highlight-color:transparent}#bCq:hover{transform:translateY(-2px);box-shadow:0 7px 16px rgba(0,0,0,.32)}#bCq:active{transform:scale(.92)}#bCq.on{background:#da9c48;border-color:#c0802f;color:#2a1a05}
+.svpanel{position:fixed;z-index:3;left:max(8px,calc((100vw - 1180px)/2));right:max(8px,calc((100vw - 1180px)/2));max-width:780px;margin:0 auto;top:calc(var(--hh,100px) + 104px);max-height:calc(100vh - var(--hh,100px) - 120px);max-height:calc(100dvh - var(--hh,100px) - 120px);overflow:auto;overscroll-behavior:contain;padding:14px 16px 24px;border-radius:20px;background:var(--fondo);border:1px solid var(--borde);box-shadow:0 18px 40px rgba(0,0,0,.28);animation:dirIn .18s ease-out}
+.svpanel .perfil .foto{height:90px;font-size:2.4rem}
+.svph{display:flex;justify-content:space-between;align-items:center;gap:8px}.svph h2{margin:0;font-size:1.15rem}
+@media(max-width:370px){.dirbar a{padding:7px 12px;letter-spacing:.05em;font-size:.74rem}#bPedidos{padding:7px 11px;font-size:.76rem}}
 .svhero{display:flex;align-items:center;gap:12px;margin:4px 0 14px;padding:12px 16px;border-radius:var(--radio);background:var(--acento);color:var(--on-acento);text-decoration:none;box-shadow:var(--sombra);transition:transform .18s,box-shadow .18s}.svhero:hover{transform:translateY(-2px)}.svhero:active{transform:scale(.98)}
 .svhero b{display:block;font-size:1.05rem;letter-spacing:.06em}.svhero small{font-weight:600;opacity:.85}.svh-e{font-size:1.7rem}.svh-a{margin-left:auto;font-size:1.8rem;font-weight:800}
 .nbtns{display:flex;flex-wrap:nowrap;gap:8px;margin-top:8px}.btn.mini{padding:6px 12px;font-size:.78rem;flex:0 0 auto;white-space:nowrap}
@@ -202,7 +208,8 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
   <button id="bCont" type="button" aria-label="Contáctanos" aria-expanded="false" aria-controls="contPanel"><span class="lbl">REDES VALLE GO:</span><span class="dot"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M15.6 8.4v5.1a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.4 6.9"/></svg></span></button>
 </header>
 <button id="bPedidos" style="display:none">Ver mis pedidos</button>
-<div class="dirbar"><a href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a></div>
+<div class="dirbar"><a href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a><a href="#" id="bAg" role="button" aria-expanded="false" aria-controls="agPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2.2 2.2 4.3-4.4"/></svg>AGENDA SERVICIOS</a></div>
+<button id="bCq" type="button" aria-label="Consulta de stock" aria-expanded="false" aria-controls="cqPanel" title="Consulta de stock"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></button>
 <main id="vista" style="padding-top:48px"></main>
 <footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><a href="privacidad.html">Política de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
 <div class="panel" id="pCarrito"><div class="caja" id="cCarrito"></div></div>
@@ -278,7 +285,7 @@ async function cargarRolReal(){
     pintaHeader()}
   let a,c,sv;
   for(let i=0;i<3;i++){
-    try{[a,c,sv]=await Promise.all([db.from("admins").select("user_id").eq("user_id",sesion.id),db.from("comercios").select("id,nombre,mp_conectado,plan").eq("dueno_id",sesion.id),db.from("servicios_perfiles").select("id,nombre,tipo").eq("dueno_id",sesion.id)])}catch(e){a=c=sv={error:e}}
+    try{[a,c,sv]=await Promise.all([db.from("admins").select("user_id").eq("user_id",sesion.id),db.from("comercios").select("id,nombre,mp_conectado,plan,ofrece_citas").eq("dueno_id",sesion.id),db.from("servicios_perfiles").select("id,nombre,tipo").eq("dueno_id",sesion.id)])}catch(e){a=c=sv={error:e}}
     if(!a.error&&!c.error&&!sv.error)break;await new Promise(r=>setTimeout(r,1200*(i+1)))}
   if(a.error||c.error||sv.error){pintaHeader();notifAuto();return}   // falló la red: se conserva lo último que se sabía, no se oculta el botón
   esAdmin=!!(a.data&&a.data.length);misCom=c.data||[];misSrv=sv.data||[];rolOK=true;
@@ -320,6 +327,7 @@ async function vistaPanel(){
   if(!misCom.length&&misSrv.length){location.hash="#/panel-servicios";return}
   if(!misCom.length&&esAdmin){location.hash="#/admin";return}
   if(!misCom.length){$("vista").innerHTML=`<h2>Panel de comerciante</h2><p>Esta cuenta aún no está vinculada a un comercio. Pide al administrador de Valle GO que la vincule con tu correo.</p>`;return}
+  if(misCom.every(c=>c.plan==="simple")&&(misSrv.length||misCom.some(c=>c.ofrece_citas))){location.hash="#/panel-servicios";return}
   if(misCom.every(c=>c.plan==="simple")){$("vista").innerHTML=`<h2>Mi panel</h2><div class="aviso"><b>Plan Simple</b><br>Tu comercio tiene un perfil de presentación en Valle GO: logo, portada, nombre, domicilio, horarios, días disponibles y teléfono. Este plan no incluye menú ni pedidos. Para cambiar tus datos o pasar al plan Básico, contacta al administrador de Valle GO.</div>`;return}
   const ids=misCom.map(c=>c.id);
   const [pe,me]=await Promise.all([
@@ -327,7 +335,7 @@ async function vistaPanel(){
     db.from("menu_items").select("*").in("comercio_id",ids).order("categoria")]);
   const P=pe.data||[], M=me.data||[];
   const ventas=P.filter(p=>p.estado!=="Cancelado").reduce((a,p)=>a+Number(p.total),0);
-  $("vista").innerHTML=`<h2>Mi panel</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)} · ${misCom.map(c=>esc(c.nombre)).join(", ")}</p>${misSrv.length?`<p><a class="btn sec mini" href="#/panel-servicios">Ir a mi panel de servicios →</a></p>`:""}${pe.error?`<div class="aviso" style="color:var(--coral)">No se pudieron cargar los pedidos: ${esc(pe.error.message)}. Toca 🔄 o recarga la página.</div>`:""}<p class="suave">Aquí confirmas y actualizas el estado de tus pedidos. Para cambiar fotos, precios o platillos, contacta al administrador de Valle GO.</p>
+  $("vista").innerHTML=`<h2>Mi panel</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)} · ${misCom.map(c=>esc(c.nombre)).join(", ")}</p>${(misSrv.length||misCom.some(c=>c.ofrece_citas))?`<p><a class="btn sec mini" href="#/panel-servicios">Ir a mi agenda y servicios →</a></p>`:""}${pe.error?`<div class="aviso" style="color:var(--coral)">No se pudieron cargar los pedidos: ${esc(pe.error.message)}. Toca 🔄 o recarga la página.</div>`:""}<p class="suave">Aquí confirmas y actualizas el estado de tus pedidos. Para cambiar fotos, precios o platillos, contacta al administrador de Valle GO.</p>
    ${notifBtnHTML()}${cobroHTML()}<div class="aviso">${P.length} pedidos recientes · ${din(ventas)} en ventas</div><h2>Historial de pedidos</h2>`+
    (P.map(p=>ped2html(p,"com")).join("")||"<p>Aún no hay pedidos.</p>")+`<h2>Mi menú completo</h2>`+
    (M.map(m=>`<div class="item"><div class="foto" ${foto({foto:m.foto_url})}>${m.foto_url?"":esc(m.emoji||"🍽️")}</div><div class="in"><b>${esc(m.nombre)}</b>
@@ -339,15 +347,15 @@ let adm={tab:"anuncios",com:null};
 try{const g=JSON.parse(localStorage.getItem("valle_adm")||"null");if(g&&typeof g.tab==="string")Object.assign(adm,{tab:g.tab,mes:g.mes,mesM:g.mesM})}catch(e){}   // recuerda la pestaña del panel de administración al recargar
 
 const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
-const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Plan del comercio",t:"plan"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Plan del comercio",t:"plan"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"ofrece_citas",l:"Ofrece agenda de citas de servicios (también en plan Simple)",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
 const CF_CAT=[{k:"nombre",l:"Nombre de la categoría (Comida, Cafeterías, Servicios...)"},{k:"emoji",l:"Emoji (opcional)"},{k:"orden",l:"Orden de aparición (1, 2, 3...)",t:"number"}];
 const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
 const DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
 const formHTML=(cs,v)=>cs.map(c=>c.t==="dias"?`<label>${c.l}<span class="dias">${DIAS.map(d=>`<span class="dia"><input type="checkbox" data-dia="${d}" ${(v[c.k]||"").split(",").includes(d)?"checked":""} style="width:auto"> ${d}</span>`).join("")}</span><input type="hidden" data-f="${c.k}"></label>`
   :c.t==="file"?`<label>${c.l}<input type="file" accept="image/*" data-f="${c.k}">${v[c.k]?`<img src="${esc(v[c.k])}" alt="" style="height:60px;border-radius:8px">`:""}</label>`
-  :c.t==="srvtipo"?`<label>${c.l}<select data-f="${c.k}">${["agenda","transporte","consulta"].map(k=>`<option value="${k}" ${(v[c.k]||"agenda")===k?"selected":""}>${({agenda:"Agenda y citas (doctores, tatuajes, masajes, clases, viajes)",transporte:"Transporte (taxistas, transportistas)",consulta:"Consulta de stock (comercio con mucho inventario)"})[k]}</option>`).join("")}</select></label>`
+  :c.t==="srvtipo"?`<label>${c.l}<select data-f="${c.k}">${["transporte","consulta"].map(k=>`<option value="${k}" ${(v[c.k]||"transporte")===k?"selected":""}>${({transporte:"Transporte (taxistas, transportistas)",consulta:"Consulta de stock (comercio con mucho inventario)"})[k]}</option>`).join("")}</select></label>`
   :c.t==="check"?`<label><span><input type="checkbox" data-f="${c.k}" ${v[c.k]?"checked":""} style="width:auto"> ${c.l}</span></label>`
-  :c.t==="plan"?`<label>${c.l}<select data-f="${c.k}"><option value="basico" ${(v[c.k]||"basico")==="basico"?"selected":""}>Básico: menú y pedidos ($24 al día, $720 al mes IVA incluido)</option><option value="simple" ${v[c.k]==="simple"?"selected":""}>Simple: solo perfil de presentación ($12 al día, $360 al mes IVA incluido)</option></select></label>`
+  :c.t==="plan"?`<label>${c.l}<select data-f="${c.k}"><option value="basico" ${(v[c.k]||"basico")==="basico"?"selected":""}>Básico: menú y pedidos ($24 al día, $720 al mes IVA incluido)</option><option value="simple" ${v[c.k]==="simple"?"selected":""}>Simple: perfil de presentación y agenda de citas ($12 al día, $360 al mes IVA incluido)</option></select></label>`
   :c.t==="select"?`<label>${c.l}<select data-f="${c.k}"><option value="">Sin categoría</option>${CATEGORIAS.map(k=>`<option value="${k.id}" ${v[c.k]===k.id?"selected":""}>${esc((k.emoji?k.emoji+" ":"")+k.nombre)}</option>`).join("")}</select></label>`
   :`<label>${c.l}<input data-f="${c.k}" type="${c.t||"text"}" value="${esc(v[c.k]??"")}"></label>`).join("");
 async function leerForm(cs,raiz,v){const o={};
@@ -573,7 +581,7 @@ async function admTab(){
   }
   if(t==="servicios"){
     const L=(await db.from("servicios_perfiles").select("*").order("tipo").order("nombre")).data||[];
-    box.innerHTML=`<p class="suave">Prestadores de la sección SERVICIOS: agenda y citas, transporte y consulta de stock. Al crear uno, escribe el correo de su dueño (debe estar registrado en la app) para que reciba sus citas, consultas y avisos.</p><button class="btn" data-svnew>+ Nuevo prestador</button><br><br>`+
+    box.innerHTML=`<p class="suave">Transportistas y comercios con consulta de stock. La agenda de citas se activa en cada comercio, incluso del plan Simple: Comercios → Editar → «Ofrece agenda de citas». Al crear un prestador, escribe el correo de su dueño (debe estar registrado en la app).</p><button class="btn" data-svnew>+ Nuevo prestador</button><br><br>`+
       (L.map(p=>`<div class="item"><div class="foto" ${foto({foto:p.foto_url})}>${p.foto_url?"":SV[p.tipo].e}</div><div class="in"><b>${esc(p.nombre)}</b><span class="suave">${SV[p.tipo].t} · ${esc(p.giro||"")} · ${p.activo?"Visible":"Oculto"} · ${p.dueno_id?"Con dueño":"Sin dueño"}</span><span class="svbtns"><button class="btn sec mini" data-sved="${p.id}">Editar</button><button class="btn sec mini" data-svdel="${p.id}">Eliminar</button></span></div></div>`).join("")||"<p>Aún no hay prestadores de servicios.</p>");
   }
   if(t==="menu"){
@@ -763,7 +771,7 @@ document.addEventListener("click",async e=>{
     e.target.disabled=true;const r=await db.from("pedidos").delete().eq("id",d.pdel).select("id");
     if(r.error||!(r.data&&r.data.length)){alert(r.error?r.error.message:"No se pudo eliminar el pedido.");e.target.disabled=false;return}
     return admTab()}
-  if(d.svnew!==undefined)return formAdm("servicios_perfiles",cfSrv("servicios"),{activo:true,tipo:"agenda"});
+  if(d.svnew!==undefined)return formAdm("servicios_perfiles",cfSrv("servicios"),{activo:true,tipo:"transporte"});
   if(d.sved){const r=await db.from("servicios_perfiles").select("*").eq("id",d.sved).single();return formAdm("servicios_perfiles",cfSrv("servicios"),r.data)}
   if(d.svdel){if(!confirm("¿Eliminar este prestador y todas sus citas y consultas?\nNo se puede deshacer."))return;const r=await db.from("servicios_perfiles").delete().eq("id",d.svdel);if(r.error)return alert(r.error.message);return admTab()}
   if(d.cnew!==undefined)return formAdm("comercios",CF_COM,{activo:true,plan:"basico",envio:30,minimo:0,ofrece_domicilio:true,dias_abiertos:DIAS.join(",")});
@@ -928,7 +936,7 @@ async function cargarDatos(){
   const {data,error}=await db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre");
   if(error||!data||!data.length)return;
   COMERCIANTES=data.map(c=>({id:c.id,plan:c.plan==="simple"?"simple":"basico",nombre:c.nombre,giro:c.giro||"",cat:c.categoria_id||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
-    desc:c.descripcion||"",whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
+    desc:c.descripcion||"",citas:!!c.ofrece_citas,whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
     menu:(c.menu_items||[]).filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
       desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}))}));
 }
@@ -936,52 +944,79 @@ const tienda=id=>COMERCIANTES.find(t=>t.id===id);
 const logoHTML=(t,g)=>t.logo?`<img class="logo-c${g?" g":""}" src="${esc(t.logo)}" alt="Logotipo de ${esc(t.nombre)}" loading="lazy">`:"";
 
 // ---------- SERVICIOS: agenda y citas, transporte y consulta de stock ----------
-const SV={agenda:{e:"📅",t:"Agenda y citas",d:"Doctores, tatuajes, masajes, clases, consultas y viajes: elige un día y una hora y el prestador te la confirma."},
+const SV={agenda:{e:"📅",t:"Agenda y citas",d:"Servicios por cita: doctores, tatuajes, masajes, clases, consultas y viajes. Elige un día y una hora y el prestador te la confirma."},
   transporte:{e:"🚕",t:"Transporte",d:"Taxistas, fletes, mudanzas y transportistas del Valle: llama o escribe directo por WhatsApp."},
   consulta:{e:"🔎",t:"Consulta de stock",d:"Manda una foto y un texto al comercio para saber si lo tiene en existencia y a qué precio."}};
 let svTab="agenda",misSrv=[],canalSrv=null;
-const cfSrv=carp=>[{k:"tipo",l:"Tipo de servicio",t:"srvtipo"},{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Dentista, Tatuajes, Taxi, Papelería...)"},{k:"descripcion",l:"Descripción"},{k:"zona",l:"Zona o colonias donde atiende"},{k:"horario",l:"Horario (ej. 9:00 am - 6:00 pm)"},{k:"dias_abiertos",l:"Días que atiende",t:"dias"},{k:"telefono",l:"Teléfono"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"vehiculo",l:"Vehículo (solo transporte: marca, modelo, color)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:carp},{k:"logo_url",l:"Logotipo (opcional)",t:"file",carpeta:carp},{k:"activo",l:"Visible en la app",t:"check"}];
+const cfSrv=carp=>[{k:"tipo",l:"Tipo de prestador",t:"srvtipo"},{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Dentista, Tatuajes, Taxi, Papelería...)"},{k:"descripcion",l:"Descripción"},{k:"zona",l:"Zona o colonias donde atiende"},{k:"horario",l:"Horario (ej. 9:00 am - 6:00 pm)"},{k:"dias_abiertos",l:"Días que atiende",t:"dias"},{k:"telefono",l:"Teléfono"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"vehiculo",l:"Vehículo (solo transporte: marca, modelo, color)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:carp},{k:"logo_url",l:"Logotipo (opcional)",t:"file",carpeta:carp},{k:"activo",l:"Visible en la app",t:"check"}];
 const CF_SITEM=[{k:"nombre",l:"Nombre del servicio"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio (0 = a consultar)",t:"number"},{k:"duracion_min",l:"Duración en minutos (opcional)",t:"number"},{k:"activo",l:"Disponible",t:"check"}];
 const waUrl=n=>"https://wa.me/"+String(n||"").replace(/\D/g,""),telUrl=n=>"tel:"+String(n||"").replace(/[^\d+]/g,"");
 const hoyISO=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const fMX=f=>{const[y,m,d]=String(f).split("-");return d+"/"+m+"/"+y};
 const EST_CLS={Solicitada:"⏳",Confirmada:"✅",Reprogramada:"🔁",Cancelada:"❌",Completada:"🎉",Pendiente:"⏳",Hay:"✅","No hay":"😕",Consultar:"ℹ️"};
 const estTag=e=>`<span class="ctag">${EST_CLS[e]||""} ${esc(e)}</span>`;
-const svHero=()=>`<a class="svhero" href="#/servicios"><span class="svh-e">🛎️</span><span><b>SERVICIOS</b><small>Citas, transporte y consulta de stock</small></span><span class="svh-a">›</span></a>`;
 
-// --- Lista pública por categoría ---
-function vistaServicios(){
-  $("vista").innerHTML=`<h2>Servicios</h2><div class="cats">${Object.keys(SV).map(k=>`<button class="${svTab===k?"on":""}" data-svtab="${k}">${SV[k].e} ${SV[k].t}</button>`).join("")}${sesion&&db?`<button data-svmis>🗂️ Mis solicitudes</button>`:""}</div>
-  <p class="suave">${SV[svTab].d}</p><div id="svBody"><p>Cargando...</p></div>`;
-  svLista();
-}
+// --- Paneles flotantes: AGENDA SERVICIOS (citas y transporte) y consulta de stock (círculo de búsqueda) ---
+let agTab="agenda",agSel=null,cqSel=null;
+const adaptaCom=t=>({id:t.id,tipo:"agenda",nombre:t.nombre,giro:t.giro,horario:t.horario,dias_abiertos:t.dias,zona:t.direccion,descripcion:t.desc,foto_url:t.foto,logo_url:t.logo,whatsapp:t.whatsapp,telefono:t.whatsapp});
 const svCard=p=>`<div class="card"><div class="foto-w"><div class="foto" ${p.foto_url?`style="background-image:url('${esc(p.foto_url)}')"`:""}>${p.foto_url?"":SV[p.tipo].e}</div>${p.logo_url?`<img class="logo-c" src="${esc(p.logo_url)}" alt="" loading="lazy">`:""}</div><div class="in${p.logo_url?" cl":""}">
   <b>${esc(p.nombre)}</b><span class="suave">${esc(p.giro||"")}${p.horario?" · "+esc(p.horario):""}</span>
   ${p.zona?`<span class="suave">📍 ${esc(p.zona)}</span>`:""}${p.tipo==="transporte"&&p.vehiculo?`<span class="suave">🚗 ${esc(p.vehiculo)}</span>`:""}${p.dias_abiertos?`<span class="suave">📅 ${diasTxt(p.dias_abiertos)}</span>`:""}
   ${p.tipo==="transporte"?`<span class="svbtns">${(p.telefono||p.whatsapp)?`<a class="btn mini" href="${telUrl(p.telefono||p.whatsapp)}">📞 Llamar</a>`:""}${p.whatsapp?`<a class="btn mini" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:""}</span>`
-   :`<a class="btn" href="#/servicio/${p.id}">${p.tipo==="agenda"?"Agendar cita":"Consultar disponibilidad"}</a>`}</div></div>`;
-async function svLista(){
-  const b=$("svBody");if(!b)return;
-  if(!db){b.innerHTML="<p>Esta sección necesita conexión a internet.</p>";return}
-  const r=await db.from("servicios_perfiles").select("*").eq("activo",true).eq("tipo",svTab).order("nombre");
-  if(!$("svBody"))return;
-  if(r.error){$("svBody").innerHTML="<p>No se pudo cargar. Intenta de nuevo.</p>";return}
+   :`<button class="btn" data-svopen="${p.id}" data-svt="${p.tipo}">${p.tipo==="agenda"?"Agendar cita":"Consultar disponibilidad"}</button>`}</div></div>`;
+const cierraAg=()=>{const d=$("agPanel");if(d)d.remove();agSel=null;const b=$("bAg");if(b){b.classList.remove("on");b.setAttribute("aria-expanded","false")}};
+const cierraCq=()=>{const d=$("cqPanel");if(d)d.remove();cqSel=null;const b=$("bCq");if(b){b.classList.remove("on");b.setAttribute("aria-expanded","false")}};
+async function abrePanelSv(id,boton,cierra,pinta){
+  if($("dirPanel")||$("agPanel")||$("cqPanel")||$("contPanel")||($("pCarrito")&&$("pCarrito").classList.contains("on")))await cierraTodasCapas();
+  const d=document.createElement("div");d.id=id;d.className="svpanel";d.setAttribute("role","dialog");document.body.appendChild(d);
+  const b=$(boton);b.classList.add("on");b.setAttribute("aria-expanded","true");abreCapa(cierra);pinta();
+}
+function toggleAgenda(){if($("agPanel")){cierraCapa();return}abrePanelSv("agPanel","bAg",cierraAg,svAgPinta)}
+function toggleConsulta(){if($("cqPanel")){cierraCapa();return}abrePanelSv("cqPanel","bCq",cierraCq,svCqPinta)}
+const svCab=(titulo,cod)=>`<div class="svph"><h2>${titulo}</h2><button class="x" data-svclose="${cod}" aria-label="Cerrar">×</button></div>`;
+async function svAgPinta(){
+  const d=$("agPanel");if(!d)return;
+  if(agSel)return svDetalle(d,agSel,()=>{agSel=null;svAgPinta()},"ag");
+  d.scrollTop=0;d.innerHTML=svCab("AGENDA SERVICIOS","ag")+`<div class="cats"><button class="${agTab==="agenda"?"on":""}" data-agtab="agenda">📅 Citas</button><button class="${agTab==="transporte"?"on":""}" data-agtab="transporte">🚕 Transporte</button>${sesion&&db?`<button data-svmis>🗂️ Mis solicitudes</button>`:""}</div>
+   <p class="suave">${SV[agTab].d}</p><div id="agBody"><p>Cargando...</p></div>`;
+  if(agTab==="agenda"){
+    const L=COMERCIANTES.filter(t=>t.citas);
+    $("agBody").innerHTML=L.length?`<div class="grid gcom">${L.map(t=>svCard(adaptaCom(t))).join("")}</div>`:`<div class="aviso">Aún no hay comercios con agenda de citas. ¿Vendes servicios por cita? Escríbenos desde el botón de redes y súmate a Valle GO.</div>`;
+  }else{
+    if(!db){$("agBody").innerHTML="<p>Esta sección necesita conexión a internet.</p>";return}
+    const r=await db.from("servicios_perfiles").select("*").eq("activo",true).eq("tipo","transporte").order("nombre");
+    if(!$("agBody")||agTab!=="transporte")return;
+    const L=r.data||[];
+    $("agBody").innerHTML=r.error?"<p>No se pudo cargar. Intenta de nuevo.</p>":L.length?`<div class="grid gcom">${L.map(svCard).join("")}</div>`:`<div class="aviso">Aún no hay taxistas ni transportistas registrados. ¿Eres transportista? Escríbenos desde el botón de redes y súmate a Valle GO.</div>`;
+  }
+}
+async function svCqPinta(){
+  const d=$("cqPanel");if(!d)return;
+  if(cqSel)return svDetalle(d,cqSel,()=>{cqSel=null;svCqPinta()},"cq");
+  d.scrollTop=0;d.innerHTML=svCab("🔎 CONSULTA DE STOCK","cq")+`<div class="cats">${sesion&&db?`<button data-svmis>🗂️ Mis consultas</button>`:""}</div><p class="suave">${SV.consulta.d}</p><div id="cqBody"><p>Cargando...</p></div>`;
+  if(!db){$("cqBody").innerHTML="<p>Esta sección necesita conexión a internet.</p>";return}
+  const r=await db.from("servicios_perfiles").select("*").eq("activo",true).eq("tipo","consulta").order("nombre");
+  if(!$("cqBody"))return;
   const L=r.data||[];
-  $("svBody").innerHTML=L.length?`<div class="grid gcom">${L.map(svCard).join("")}</div>`:`<div class="aviso">Aún no hay prestadores en esta categoría. ¿Ofreces este servicio? Escríbenos desde el botón de redes y súmate a Valle GO.</div>`;
+  $("cqBody").innerHTML=r.error?"<p>No se pudo cargar. Intenta de nuevo.</p>":L.length?`<div class="grid gcom">${L.map(svCard).join("")}</div>`:`<div class="aviso">Aún no hay comercios con consulta de stock. ¿Tu comercio maneja mucho inventario? Escríbenos desde el botón de redes y súmate a Valle GO.</div>`;
 }
 
-// --- Detalle: solicitar cita / enviar consulta / contacto ---
-async function vistaServicio(id){
-  if(!db){location.hash="#/servicios";return}
-  $("vista").innerHTML="<p>Cargando...</p>";
-  const [pr,it]=await Promise.all([db.from("servicios_perfiles").select("*").eq("id",id).maybeSingle(),db.from("servicios_items").select("*").eq("perfil_id",id).eq("activo",true).order("nombre")]);
-  const p=pr.data;if(!p){$("vista").innerHTML=`<p>No encontramos este servicio.</p><a class="btn" href="#/servicios">Volver a Servicios</a>`;return}
-  svTab=p.tipo;const items=it.data||[],hoy=hoyISO();
-  const cab=`<p><a href="#/servicios">← Servicios</a></p><div class="perfil"><div class="foto" ${p.foto_url?`style="background-image:url('${esc(p.foto_url)}')"`:""}>${p.foto_url?"":SV[p.tipo].e}</div><div class="in"><h2 style="margin:0">${esc(p.nombre)}</h2>
+// --- Detalle dentro del panel: formulario de cita o de consulta ---
+async function svDetalle(root,id,volver,cod){
+  root.innerHTML=svCab("","")+"<p>Cargando...</p>";
+  let p,items=[];
+  if(cod==="ag"){const t=COMERCIANTES.find(x=>x.id===id);p=t?adaptaCom(t):null;
+    if(p){const it=await db.from("servicios_items").select("*").eq("perfil_id",id).eq("activo",true).order("nombre");items=it.data||[]}}
+  else{const r=await db.from("servicios_perfiles").select("*").eq("id",id).maybeSingle();p=r.data}
+  if(!root.isConnected)return;
+  if(!p){root.innerHTML=`<p>No encontramos este servicio.</p><button class="btn" data-svback>Volver</button>`;root.querySelector("[data-svback]").onclick=volver;return}
+  const hoy=hoyISO();
+  const cab=`<div class="svph"><button class="btn sec mini" data-svback>← Volver</button><button class="x" data-svclose="${cod}" aria-label="Cerrar">×</button></div>
+   <div class="perfil" style="margin-top:10px"><div class="foto" ${p.foto_url?`style="background-image:url('${esc(p.foto_url)}')"`:""}>${p.foto_url?"":SV[p.tipo].e}</div><div class="in"><h2 style="margin:0">${esc(p.nombre)}</h2>
    <span class="suave">${esc(p.giro||"")}${p.horario?" · "+esc(p.horario):""}</span>${p.dias_abiertos?`<span class="suave">📅 ${diasTxt(p.dias_abiertos)}</span>`:""}${p.zona?`<span class="suave">📍 ${esc(p.zona)}</span>`:""}
    ${p.descripcion?`<p style="margin:4px 0 0">${esc(p.descripcion)}</p>`:""}
    <span class="svbtns">${(p.telefono||p.whatsapp)?`<a class="btn mini" href="${telUrl(p.telefono||p.whatsapp)}">📞 Llamar</a>`:""}${p.whatsapp?`<a class="btn mini" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:""}</span></div></div>`;
-  let cuerpo="";
+  let cuerpo;
   if(p.tipo==="agenda"){
     cuerpo=(items.length?`<h3>Servicios</h3>`+items.map(i=>`<div class="linea"><span><b>${esc(i.nombre)}</b>${i.descripcion?`<br><small>${esc(i.descripcion)}</small>`:""}</span><span style="text-align:right">${Number(i.precio)>0?din(Number(i.precio)):"A consultar"}${i.duracion_min?`<br><small>${i.duracion_min} min</small>`:""}</span></div>`).join(""):"")+
      `<div class="aviso" style="display:grid;gap:10px;margin-top:14px"><b>Solicitar una cita</b>
@@ -989,13 +1024,12 @@ async function vistaServicio(id){
       <label>Fecha<input id="svF" type="date" min="${hoy}"></label><label>Hora<input id="svH" type="time"></label>
       <label>Notas (opcional)<textarea id="svN" rows="2" placeholder="Motivo, detalles, lugar de salida..."></textarea></label>
       <button class="btn" id="svEnv">Solicitar cita</button><span class="suave" style="font-size:.8rem">El prestador confirmará tu cita o te propondrá otra hora. Te avisaremos por notificación.</span></div>`;
-  }else if(p.tipo==="consulta"){
-    cuerpo=`<div class="aviso" style="display:grid;gap:10px;margin-top:14px"><b>Consultar si hay en stock</b>
+  }else cuerpo=`<div class="aviso" style="display:grid;gap:10px;margin-top:14px"><b>Consultar si hay en stock</b>
       <label>¿Qué producto buscas? Escribe marca, modelo, medida...<textarea id="cqT" rows="3"></textarea></label>
       <label>Foto del producto (opcional)<input id="cqF" type="file" accept="image/*"></label>
       <button class="btn" id="cqEnv">Enviar consulta</button><span class="suave" style="font-size:.8rem">El comercio te responderá si lo tiene y a qué precio. Te avisaremos por notificación.</span></div>`;
-  }else cuerpo=`<div class="aviso">Contacta directo al prestador con los botones <b>Llamar</b> o <b>WhatsApp</b>. Los acuerdos de viaje y precio son entre tú y el prestador.</div>`;
-  $("vista").innerHTML=cab+cuerpo;
+  root.innerHTML=cab+cuerpo;root.scrollTop=0;
+  root.querySelector("[data-svback]").onclick=volver;
   if($("svEnv"))$("svEnv").onclick=async()=>{
     if(!sesion||!sesion.id)return pideRegistro();
     const f=$("svF").value,h=$("svH").value;
@@ -1006,7 +1040,7 @@ async function vistaServicio(id){
     $("svEnv").disabled=true;
     const r=await db.from("citas").insert({perfil_id:p.id,servicio_id:s?s.id:null,servicio_nombre:s?s.nombre:"Cita",cliente_id:sesion.id,cliente_nombre:sesion.nombre,cliente_tel:sesion.tel||null,fecha:f,hora:h,notas:$("svN").value.trim()||null});
     if(r.error){alert("No se pudo enviar: "+r.error.message);$("svEnv").disabled=false;return}
-    alert("Listo: tu solicitud fue enviada. Te avisaremos cuando el prestador la confirme.");location.hash="#/mis-servicios"};
+    alert("Listo: tu solicitud fue enviada. Te avisaremos cuando el prestador la confirme.");await cierraTodasCapas();location.hash="#/mis-servicios"};
   if($("cqEnv"))$("cqEnv").onclick=async()=>{
     if(!sesion||!sesion.id)return pideRegistro();
     const t=$("cqT").value.trim();if(t.length<3)return alert("Escribe qué producto buscas.");
@@ -1014,7 +1048,7 @@ async function vistaServicio(id){
     try{const fl=$("cqF").files[0];const foto_url=fl?await subirFoto(fl,"consultas/"+sesion.id,900):null;
       const r=await db.from("consultas_stock").insert({perfil_id:p.id,cliente_id:sesion.id,cliente_nombre:sesion.nombre,cliente_tel:sesion.tel||null,texto:t,foto_url});
       if(r.error)throw r.error;
-      alert("Listo: tu consulta fue enviada. Te avisaremos cuando el comercio responda.");location.hash="#/mis-servicios";
+      alert("Listo: tu consulta fue enviada. Te avisaremos cuando el comercio responda.");await cierraTodasCapas();location.hash="#/mis-servicios";
     }catch(err){alert("No se pudo enviar: "+err.message);$("cqEnv").disabled=false;$("cqEnv").textContent="Enviar consulta"}};
 }
 
@@ -1025,7 +1059,7 @@ async function vistaMisServicios(){
     db.from("consultas_stock").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50)]);
   const C=c.data||[],Q=q.data||[];
   const wa=p=>p&&p.whatsapp?` <a class="btn mini sec" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:"";
-  $("vista").innerHTML=`<p><a href="#/servicios">← Servicios</a></p><h2>Mis solicitudes</h2><p class="suave"><button class="btn sec mini" data-svref>🔄 Actualizar</button> En tiempo real</p>${notifBtnHTML()}
+  $("vista").innerHTML=`<p><a href="#/">← Inicio</a></p><h2>Mis solicitudes</h2><p class="suave"><button class="btn sec mini" data-svref>🔄 Actualizar</button> En tiempo real</p>${notifBtnHTML()}
    <h3>Citas</h3>`+(C.map(x=>`<div class="item"><div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
     ${x.estado==="Reprogramada"?`<span class="aviso" style="padding:8px">🔁 El prestador propone esta nueva fecha y hora.</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <span class="svbtns">${x.estado==="Reprogramada"?`<button class="btn mini" data-svok="${x.id}">Aceptar nueva hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-svcan="${x.id}">Cancelar cita</button>`:""}${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no tienes citas.</p>")+
@@ -1044,11 +1078,12 @@ function svForm(titulo,cs,v,guardar){
 async function vistaPanelSrv(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   $("vista").innerHTML="<p>Cargando...</p>";await cargarRol();
-  if(!misSrv.length){location.hash=esAdmin?"#/admin":"#/panel";return}
-  const ids=misSrv.map(x=>x.id);
-  const [pf,it,ci,co]=await Promise.all([db.from("servicios_perfiles").select("*").in("id",ids).order("nombre"),db.from("servicios_items").select("*").in("perfil_id",ids).order("nombre"),
+  const agCom=misCom.filter(c=>c.ofrece_citas);
+  if(!misSrv.length&&!agCom.length){location.hash=esAdmin?"#/admin":"#/panel";return}
+  const idsP=misSrv.map(x=>x.id),ids=[...idsP,...agCom.map(c=>c.id)];
+  const [pf,it,ci,co]=await Promise.all([db.from("servicios_perfiles").select("*").in("id",idsP).order("nombre"),db.from("servicios_items").select("*").in("perfil_id",ids).order("nombre"),
     db.from("citas").select("*").in("perfil_id",ids).order("creado",{ascending:false}).limit(150),db.from("consultas_stock").select("*").in("perfil_id",ids).order("creado",{ascending:false}).limit(100)]);
-  const P=pf.data||[],I=it.data||[],orden={Solicitada:0,Reprogramada:1,Confirmada:2,Completada:3,Cancelada:4};
+  const P=[...agCom.map(c=>({id:c.id,tipo:"agenda",nombre:c.nombre,activo:true,_com:true,plan:c.plan})),...(pf.data||[])],I=it.data||[],orden={Solicitada:0,Reprogramada:1,Confirmada:2,Completada:3,Cancelada:4};
   const C=(ci.data||[]).sort((a,b)=>(orden[a.estado]-orden[b.estado])||((a.fecha+a.hora)<(b.fecha+b.hora)?-1:1)),Q=co.data||[];
   const citaHTML=x=>`<div class="item"><div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
     ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.notas?`<span class="suave">📝 ${esc(x.notas)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
@@ -1058,10 +1093,10 @@ async function vistaPanelSrv(){
     ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <label>Precio (opcional)<input id="cqP_${x.id}" value="${esc(x.precio||"")}" placeholder="$250"></label><label>Mensaje (opcional)<input id="cqM_${x.id}" value="${esc(x.respuesta||"")}" placeholder="Disponible en tienda, llega mañana..."></label>
     <span class="svbtns"><button class="btn mini" data-cqr="${x.id}|Hay">Sí hay</button><button class="btn mini sec" data-cqr="${x.id}|No hay">No hay</button><button class="btn mini sec" data-cqr="${x.id}|Consultar">Responder</button></span></div></div>`;
-  $("vista").innerHTML=`<h2>Mi panel de servicios</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)}</p>${misCom.length?`<p><a class="btn sec mini" href="#/panel">← Mi panel de comercio</a></p>`:""}${notifBtnHTML()}`+
+  $("vista").innerHTML=`<h2>Mi panel de servicios</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)}</p>${misCom.some(c=>c.plan!=="simple")?`<p><a class="btn sec mini" href="#/panel">← Mi panel de comercio</a></p>`:""}${notifBtnHTML()}`+
    P.map(p=>{const mi=I.filter(i=>i.perfil_id===p.id),mc=C.filter(c=>c.perfil_id===p.id),mq=Q.filter(q=>q.perfil_id===p.id);
     return `<div class="perfil" style="padding:14px;margin-top:16px"><h3 style="margin:0">${SV[p.tipo].e} ${esc(p.nombre)} <span class="suave" style="font-size:.8rem">· ${SV[p.tipo].t}${p.activo?"":" · Oculto"}</span></h3>
-     <p><button class="btn sec mini" data-sped="${p.id}">Editar mi perfil</button></p>`+
+     ${p._com?`<p class="suave" style="font-size:.85rem">${p.plan==="simple"?"Plan Simple: incluye tu perfil de presentación y la agenda de citas de tus servicios. ":""}Tu perfil de comercio lo edita el administrador de Valle GO.</p>`:`<p><button class="btn sec mini" data-sped="${p.id}">Editar mi perfil</button></p>`}`+
      (p.tipo==="agenda"?`<h3>Mis servicios</h3>`+(mi.map(i=>`<div class="linea"><span><b>${esc(i.nombre)}</b>${i.activo?"":" (oculto)"}<br><small>${Number(i.precio)>0?din(Number(i.precio)):"A consultar"}${i.duracion_min?" · "+i.duracion_min+" min":""}</small></span><span><button class="btn mini sec" data-siedit="${i.id}">Editar</button> <button class="btn mini sec" data-sidel="${i.id}">Quitar</button></span></div>`).join("")||"<p class='suave'>Aún no agregas servicios.</p>")+
        `<p><button class="btn mini" data-sinew="${p.id}">+ Agregar servicio</button></p><h3>Citas</h3>`+(mc.map(citaHTML).join("")||"<p>Aún no hay citas.</p>")
       :p.tipo==="consulta"?`<h3>Consultas de clientes</h3>`+(mq.map(consHTML).join("")||"<p>Aún no hay consultas.</p>")
@@ -1070,10 +1105,12 @@ async function vistaPanelSrv(){
 
 // --- Acciones (clientes y prestadores) ---
 document.addEventListener("click",async e=>{
-  const b=e.target.closest&&e.target.closest("[data-svtab],[data-svmis],[data-svref],[data-svok],[data-svcan],[data-cok],[data-cfin],[data-crep],[data-crepok],[data-ccan],[data-cqr],[data-sped],[data-sinew],[data-siedit],[data-sidel]");
+  const b=e.target.closest&&e.target.closest("[data-svopen],[data-agtab],[data-svclose],[data-svmis],[data-svref],[data-svok],[data-svcan],[data-cok],[data-cfin],[data-crep],[data-crepok],[data-ccan],[data-cqr],[data-sped],[data-sinew],[data-siedit],[data-sidel]");
   if(!b)return;const d=b.dataset;
-  if(d.svtab){svTab=d.svtab;return vistaServicios()}
-  if(d.svmis!==undefined){location.hash="#/mis-servicios";return}
+  if(d.agtab){agTab=d.agtab;return svAgPinta()}
+  if(d.svclose){return cierraCapa()}
+  if(d.svopen){if($("agPanel")){agSel=d.svopen;return svAgPinta()}cqSel=d.svopen;return svCqPinta()}
+  if(d.svmis!==undefined){await cierraTodasCapas();location.hash="#/mis-servicios";return}
   if(d.svref!==undefined)return vistaMisServicios();
   const cita=async(id,o,msg)=>{b.disabled=true;const r=await db.from("citas").update(o).eq("id",id);if(r.error){alert(msg||("No se pudo actualizar: "+r.error.message));b.disabled=false;return false}return true};
   if(d.svok){if(await cita(d.svok,{estado:"Confirmada"}))vistaMisServicios();return}
@@ -1119,8 +1156,6 @@ function ruta(){
   if(r==="panel")return vistaPanel();
   if(r==="admin")return vistaAdmin();
   if(r==="pedidos")return vistaPedidos();
-  if(r==="servicios")return vistaServicios();
-  if(r==="servicio")return vistaServicio(id);
   if(r==="mis-servicios")return vistaMisServicios();
   if(r==="panel-servicios")return vistaPanelSrv();
   vistaInicio();
@@ -1150,12 +1185,13 @@ function vistaInicio(){
        :catCom==="otros"?sec("Otros",sinCat)
        :(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
   }
-  $("vista").innerHTML=adsHTML()+svHero()+`<h2>Lugares del Valle Hoy:</h2>`+cuerpo;iniAds();
+  $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2>`+cuerpo;iniAds();
 }
 let dirQ="";
 function cierraDirectorio(){const d=$("dirPanel");if(d)d.remove();const b=$("bDir");if(b){b.classList.remove("on");b.setAttribute("aria-expanded","false")}}
 function toggleDirectorio(){
   if($("dirPanel")){cierraCapa();return}
+  if($("agPanel")||$("cqPanel")){cierraTodasCapas().then(toggleDirectorio);return}
   const L=COMERCIANTES.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
   const norm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   const lista=()=>{const q=norm(dirQ).trim(),F=q?L.filter(t=>norm(t.nombre+" "+((CATEGORIAS.find(k=>k.id===t.cat)||{}).nombre||"")+" "+t.giro).includes(q)):L;
@@ -1168,7 +1204,9 @@ function toggleDirectorio(){
   $("dirQ").oninput=e=>{dirQ=e.target.value;$("dirL").innerHTML=lista()};
   d.addEventListener("click",async e=>{const a=e.target.closest('a[href^="#/"]');if(!a)return;e.preventDefault();const h=a.getAttribute("href");await cierraTodasCapas();location.hash=h});
 }
-document.addEventListener("click",e=>{const b=e.target.closest("#bDir");if(b){e.preventDefault();toggleDirectorio();return}if($("dirPanel")&&!e.target.closest("#dirPanel")&&e.target.isConnected)cierraCapa()});
+document.addEventListener("click",e=>{const g=e.target.closest("#bAg,#bCq");if(g){e.preventDefault();g.id==="bAg"?toggleAgenda():toggleConsulta();return}
+  for(const pid of["agPanel","cqPanel"])if($(pid)&&!e.target.closest("#"+pid+",#bDir")&&e.target.isConnected&&!e.target.closest(".x"))cierraCapa();
+  const b=e.target.closest("#bDir");if(b){e.preventDefault();toggleDirectorio();return}if($("dirPanel")&&!e.target.closest("#dirPanel")&&e.target.isConnected)cierraCapa()});
 function vistaTienda(id){
   const t=tienda(id); if(!t)return vistaInicio();
   if(t.plan==="simple"){
@@ -1491,7 +1529,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
   const el=document.createElement("div");el.id="ptr";el.innerHTML=ic;document.body.appendChild(el);
   let y0=null,d=0,listo=false;const UMBRAL=90;
   const enCaja=t=>{for(let n=t;n&&n!==document.body&&n.nodeType===1;n=n.parentElement){const o=getComputedStyle(n).overflowY;if((o==="auto"||o==="scroll")&&n.scrollTop>0)return true}return false};
-  const bloqueado=()=>document.querySelector(".panel.on,#dirPanel,.modal.on")!==null;
+  const bloqueado=()=>document.querySelector(".panel.on,#dirPanel,.svpanel,.modal.on")!==null;
   const pon=(v,op)=>{el.style.transition="none";el.style.transform=`translateY(${v-60}px) rotate(${v*4}deg)`;el.style.opacity=op};
   addEventListener("touchstart",e=>{y0=null;if(e.touches.length!==1||(document.scrollingElement||document.documentElement).scrollTop>0||bloqueado()||enCaja(e.target))return;y0=e.touches[0].clientY;d=0;listo=false},{passive:true});
   addEventListener("touchmove",e=>{if(y0===null)return;d=e.touches[0].clientY-y0;
@@ -1503,7 +1541,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v113";
+const BUILD="valle-go-v116";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -1520,7 +1558,7 @@ setTimeout(revisaVersion,1200);setInterval(()=>{if(!document.hidden)revisaVersio
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)revisaVersion()});
 // ---- Actualización automática: al abrir la app (o volver a ella) se actualiza sola ----
 let sinFoco=document.hidden?Date.now():0;
-const ocupado=()=>document.querySelector(".panel.on,#dirPanel")!==null||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+const ocupado=()=>document.querySelector(".panel.on,#dirPanel,.svpanel")!==null||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
 function nuevaVersion(){ if(document.hidden||!ocupado())location.reload(); else avisoNueva() }
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){sinFoco=Date.now();return}

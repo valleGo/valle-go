@@ -35,7 +35,8 @@ async function enviar(ids, msgObj) {
 const fechaMX = f => { const [y, m, d] = String(f).split("-"); return `${d}/${m}/${y}`; };
 async function servicios(p, res) {
   const r = p.record, old = p.old_record || {};
-  const [per] = await sb(`servicios_perfiles?id=eq.${encodeURIComponent(r.perfil_id)}&select=nombre,dueno_id`);
+  const tablaPer = p.table === "citas" ? "comercios" : "servicios_perfiles";   // las citas son de comercios; las consultas, de prestadores de consulta de stock
+  const [per] = await sb(`${tablaPer}?id=eq.${encodeURIComponent(r.perfil_id)}&select=nombre,dueno_id`);
   if (!per) return res.status(200).json({ ok: true, omitido: true });
   const admins = (await sb("admins?select=user_id")).map(a => a.user_id);
   const dueño = per.dueno_id ? [per.dueno_id] : admins;   // si aún no tiene dueño asignado, avisa a los administradores
