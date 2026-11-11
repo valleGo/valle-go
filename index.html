@@ -601,12 +601,21 @@ async function activarNotif(){
 // Comerciantes y administrador: los avisos se activan solos si ya hay permiso; si no, aparece un aviso de un toque.
 async function notifAuto(){
   try{
-    if(!db||!sesion||!sesion.id||!(esAdmin||misCom.length)||!notifOK()||!VAPID_PUBLIC)return;
+    if(!db||!sesion||!sesion.id)return;
+    const staff=!!(esAdmin||misCom.length);
+    const txt=staff?"🔔 Activa los avisos para enterarte al instante de cada pedido nuevo, aunque tengas la app cerrada o el celular bloqueado.":"🔔 Activa los avisos para saber cuando tu pedido esté confirmado, en camino o entregado, aunque tengas la app cerrada o el celular bloqueado.";
+    if(!notifOK()){   // iPhone/iPad en Safari: las notificaciones solo funcionan con la app instalada en inicio
+      if(!/iPhone|iPad|iPod/.test(navigator.userAgent)||$("bnotif"))return;
+      try{if(sessionStorage.getItem("bnotifX"))return}catch(e){}
+      const d=document.createElement("div");d.id="bnotif";
+      d.innerHTML='<span>🔔 Para recibir avisos en tu iPhone con la app cerrada: toca Compartir ⬆️ → «Agregar a pantalla de inicio» y abre Valle GO desde ese ícono.</span><button id="bnotifX" aria-label="Cerrar">×</button>';
+      document.body.appendChild(d);$("bnotifX").onclick=()=>{try{sessionStorage.setItem("bnotifX","1")}catch(e){}d.remove()};return}
+    if(!VAPID_PUBLIC)return;
     if(Notification.permission==="granted"){await registrarPush();return}
     if(Notification.permission!=="default"||$("bnotif"))return;
     try{if(sessionStorage.getItem("bnotifX"))return}catch(e){}
     const d=document.createElement("div");d.id="bnotif";
-    d.innerHTML='<span>🔔 Activa los avisos para enterarte al instante de cada pedido nuevo.</span><button id="bnotifOk">Activar</button><button id="bnotifX" aria-label="Cerrar">×</button>';
+    d.innerHTML='<span>'+txt+'</span><button id="bnotifOk">Activar</button><button id="bnotifX" aria-label="Cerrar">×</button>';
     document.body.appendChild(d);
     $("bnotifOk").onclick=activarNotif;
     $("bnotifX").onclick=()=>{try{sessionStorage.setItem("bnotifX","1")}catch(e){}d.remove()};
@@ -1039,7 +1048,16 @@ window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-// ---- Aviso de "Nueva versión disponible" ----
+// ---- Actualización automática: al abrir la app (o volver a ella) se actualiza sola ----
+let sinFoco=document.hidden?Date.now():0;
+const ocupado=()=>document.querySelector(".panel.on,#dirPanel")!==null||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+function nuevaVersion(){ if(document.hidden||!ocupado())location.reload(); else avisoNueva() }
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){sinFoco=Date.now();return}
+  const fuera=sinFoco?Date.now()-sinFoco:0;sinFoco=0;
+  if(fuera>15000&&!ocupado())location.reload();   // la app estuvo cerrada o en segundo plano: se recarga con lo más reciente
+});
+// ---- Aviso de "Nueva versión disponible" (solo si no se puede recargar sola, por ejemplo mientras escribes) ----
 function avisoNueva(){
   if($("bnueva"))return;
   const d=document.createElement("div");d.id="bnueva";
@@ -1051,7 +1069,7 @@ function avisoNueva(){
 if("serviceWorker"in navigator){
   const habia=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.register("sw.js").then(reg=>{
-    const vigila=w=>w&&w.addEventListener("statechange",()=>{if(w.state==="installed"||w.state==="activated"){if(habia)avisoNueva()}});
+    const vigila=w=>w&&w.addEventListener("statechange",()=>{if(w.state==="installed"||w.state==="activated"){if(habia)nuevaVersion()}});
     reg.addEventListener("updatefound",()=>vigila(reg.installing));
     const busca=()=>{try{reg.update()}catch(e){}};
     setInterval(busca,5*60*1000);
