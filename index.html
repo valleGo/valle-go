@@ -286,6 +286,8 @@ async function vistaPanel(){
 
 // ---- Panel de administración: SOLO el administrador edita ----
 let adm={tab:"anuncios",com:null};
+try{const g=JSON.parse(localStorage.getItem("valle_adm")||"null");if(g&&typeof g.tab==="string")Object.assign(adm,{tab:g.tab,mes:g.mes,mesM:g.mesM})}catch(e){}   // recuerda la pestaña del panel de administración al recargar
+
 const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
 const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Plan del comercio",t:"plan"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
 const CF_CAT=[{k:"nombre",l:"Nombre de la categoría (Comida, Cafeterías, Servicios...)"},{k:"emoji",l:"Emoji (opcional)"},{k:"orden",l:"Orden de aparición (1, 2, 3...)",t:"number"}];
@@ -388,6 +390,7 @@ async function vistaAdmin(){
   await admTab();
 }
 async function admTab(){
+  try{localStorage.setItem("valle_adm",JSON.stringify({tab:adm.tab,mes:adm.mes,mesM:adm.mesM}))}catch(e){}
   const box=$("adm"), t=adm.tab; box.innerHTML="<p>Cargando...</p>";
   if(t==="anuncios"){
     const L=(await db.from("anuncios").select("*").order("orden")).data||[];
@@ -1105,7 +1108,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#bCont");if(b){e
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v81";
+const BUILD="valle-go-v82";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
