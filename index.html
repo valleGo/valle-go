@@ -97,6 +97,13 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 #inst span{flex:1}#inst button{border:0;border-radius:999px;padding:8px 14px;background:#2B2D22;color:#fff;font-weight:600}#inst #instX{background:none;color:var(--on-acento);font-size:1.3rem;padding:2px 8px}
 .pista{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:20px;margin-bottom:18px;scrollbar-width:none;box-shadow:var(--sombra)}.pista::-webkit-scrollbar{display:none}
 .sl{flex:0 0 100%;scroll-snap-align:start;aspect-ratio:16/7;background:var(--crema) center/cover;display:grid;place-items:center;font-size:1.3rem;font-weight:700;text-align:center;padding:10px;color:var(--texto);text-decoration:none}
+#bCont{position:fixed;right:12px;top:calc(var(--hh,100px) + 10px);z-index:4;width:46px;height:46px;border-radius:50%;border:2px solid #8a9a58;background:#A5B574;color:#1f2a14;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.28),0 1px 3px rgba(0,0,0,.2);transition:transform .15s,box-shadow .15s,background .2s;-webkit-tap-highlight-color:transparent}
+#bCont svg,#bCont *{pointer-events:none}#bCont:hover{transform:translateY(-2px) scale(1.06);box-shadow:0 8px 18px rgba(0,0,0,.32)}#bCont:active{transform:scale(.93)}
+#bCont.on{background:#da9c48;border-color:#c0802f;color:#2a1a05;transform:rotate(-8deg) scale(1.05)}
+#contPanel{position:fixed;right:12px;top:calc(var(--hh,100px) + 64px);z-index:4;width:min(260px,calc(100vw - 24px));padding:14px;border-radius:18px;background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);box-shadow:0 12px 30px rgba(0,0,0,.25);animation:contIn .18s ease-out;transform-origin:top right}
+@keyframes contIn{from{opacity:0;transform:scale(.9) translateY(-6px)}to{opacity:1;transform:none}}
+#contPanel h3{margin:0 0 10px;font-size:1rem}#contPanel a{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-top:8px;border-radius:12px;text-decoration:none;font-weight:700;color:#1f2a14;background:rgba(165,181,116,.35);border:1px solid rgba(138,154,88,.5);transition:transform .12s,background .15s}
+#contPanel a:hover{background:rgba(236,146,67,.35);transform:translateX(-2px)}#contPanel a svg{flex:none}#contPanel p{margin:6px 0 0;font-size:.85rem}
 #bnueva{position:fixed;left:12px;right:12px;bottom:14px;max-width:520px;margin:auto;z-index:99998;background:#da9c48;color:#fff;border-radius:999px;padding:10px 12px 10px 18px;display:flex;align-items:center;gap:8px;font-weight:700;font-size:.88rem;box-shadow:0 6px 18px rgba(0,0,0,.3)}#bnueva span{flex:1}#bnueva button{border:0;border-radius:999px;padding:8px 14px;font-weight:800;cursor:pointer;background:#fff;color:#8a5a12}#bnueva #bnuevaX{background:transparent;color:#fff;font-size:1.2rem;padding:4px 8px}
 #toast{display:none;position:fixed;top:68px;left:14px;right:14px;max-width:560px;margin:auto;background:var(--verde);color:var(--on-verde);border-radius:var(--radio);padding:14px;font-weight:700;z-index:20;text-align:center;box-shadow:var(--sombra)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -150,7 +157,7 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
   <div class="marca"><a href="#/" aria-label="Va, llegó — ir al inicio"><img src="marca.png" alt="Va, llegó" width="450" height="92"></a></div>
   <div class="hb"><button id="bPanel" style="display:none">Panel</button><button id="bCuenta"></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div>
 </header>
-<div class="dirbar"><a href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a></div>
+<div class="dirbar"><a href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a></div><button id="bCont" type="button" aria-label="Contacto" aria-expanded="false" aria-controls="contPanel"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 11h6M9 14h4"/></svg></button>
 <main id="vista" style="padding-top:48px"></main>
 <footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><a href="privacidad.html">Política de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
 <div class="panel" id="pCarrito"><div class="caja" id="cCarrito"></div></div>
@@ -1038,6 +1045,28 @@ $("bCuenta").onclick=()=>location.hash="#/cuenta";
 $("bPanel").onclick=()=>location.hash=esAdmin?"#/admin":"#/panel";
 window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
 
+
+// ---- Botón flotante de contacto (WhatsApp, Facebook, Instagram) ----
+function cierraContacto(){const d=$("contPanel");if(d)d.remove();const b=$("bCont");if(b){b.classList.remove("on");b.setAttribute("aria-expanded","false")}}
+function toggleContacto(){
+  if($("contPanel")){cierraCapa();return}
+  const C=(typeof CONTACTO!=="undefined"&&CONTACTO)||{};
+  const wa=String(C.whatsapp||"").replace(/\D/g,""),fb=C.facebook||"",ig=C.instagram||"";
+  const ic={wa:'<svg viewBox="0 0 24 24" width="22" height="22" fill="#1f9d55"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.2 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.2-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.3.4-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.4.3.1.4.1.6-.1l.8-1c.2-.2.3-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.8-.1 1.2z"/></svg>',
+    fb:'<svg viewBox="0 0 24 24" width="22" height="22" fill="#1877f2"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.3v7A10 10 0 0 0 22 12z"/></svg>',
+    ig:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#c13584" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="#c13584" stroke="none"/></svg>'};
+  const L=[];
+  if(wa)L.push(`<a href="https://wa.me/${wa.length===10?"52"+wa:wa}?text=${encodeURIComponent("Hola, me gustaría información de Valle GO")}" target="_blank" rel="noopener">${ic.wa} WhatsApp Business</a>`);
+  if(fb)L.push(`<a href="${esc(fb)}" target="_blank" rel="noopener">${ic.fb} Facebook</a>`);
+  if(ig)L.push(`<a href="${esc(ig)}" target="_blank" rel="noopener">${ic.ig} Instagram</a>`);
+  const d=document.createElement("div");d.id="contPanel";d.setAttribute("role","dialog");d.setAttribute("aria-label","Contacto");
+  d.innerHTML=`<h3>Contáctanos</h3>${L.join("")||"<p>Muy pronto tendremos aquí nuestros medios de contacto.</p>"}`;
+  document.body.appendChild(d);
+  const b=$("bCont");b.classList.add("on");b.setAttribute("aria-expanded","true");
+  abreCapa(cierraContacto);
+}
+document.addEventListener("click",e=>{const b=e.target.closest("#bCont");if(b){e.preventDefault();toggleContacto();return}
+  if($("contPanel")&&!e.target.closest("#contPanel")&&e.target.isConnected)cierraCapa()});
 // ---- Jalar hacia abajo para recargar (funciona en el navegador y en la app instalada, en cualquier dispositivo táctil) ----
 (function(){
   const ic='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>';
@@ -1056,7 +1085,7 @@ window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v73";
+const BUILD="valle-go-v74";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
