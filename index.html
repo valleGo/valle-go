@@ -581,10 +581,10 @@ let dirQ="";
 function vistaDirectorio(){
   const L=COMERCIANTES.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
   const norm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-  const lista=()=>{const q=norm(dirQ).trim(),F=q?L.filter(t=>norm(t.nombre+" "+t.giro+" "+t.direccion).includes(q)):L;
+  const lista=()=>{const q=norm(dirQ).trim(),F=q?L.filter(t=>norm(t.nombre+" "+((CATEGORIAS.find(k=>k.id===t.cat)||{}).nombre||"")+" "+t.giro).includes(q)):L;
     return F.length?`<div class="grid gcom">${F.map(tarjetaCom).join("")}</div>`:"<p>No encontramos comercios con esa búsqueda.</p>"};
   $("vista").innerHTML=`<h2>Directorio</h2>
-   <label style="font-size:1.25rem;font-weight:800">Buscar<input id="dirQ" type="search" placeholder="Nombre, giro o domicilio" value="${esc(dirQ)}" style="font-size:1.2rem;padding:16px 18px;margin-top:8px;margin-bottom:14px"></label><div id="dirL">${lista()}</div>`;
+   <label style="font-size:1.25rem;font-weight:800">Buscar<input id="dirQ" type="search" placeholder="NOMBRE O CATEGORIA" value="${esc(dirQ)}" style="font-size:1.2rem;padding:16px 18px;margin-top:8px;margin-bottom:14px"></label><div id="dirL">${lista()}</div>`;
   $("dirQ").oninput=e=>{dirQ=e.target.value;$("dirL").innerHTML=lista()};
 }
 function vistaTienda(id){
