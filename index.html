@@ -86,7 +86,7 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .fila{display:flex;justify-content:space-between}.tot{font-weight:800;font-size:1.1rem}
 .x{justify-self:end;background:none;border:0;font-size:1.6rem;color:var(--texto);line-height:1}
 .aviso{background:color-mix(in srgb,var(--cielo) 24%,var(--tarjeta));border:1px solid color-mix(in srgb,var(--cielo) 55%,transparent);border-radius:12px;padding:12px;font-size:.85rem;font-weight:500}
-.btnrec{background:#da9c48;color:#fff;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 22px;box-shadow:0 3px 10px rgba(0,0,0,.2)}.btnrec:active{transform:scale(.97)}.btnrec img{width:150px;height:auto;pointer-events:none}.btnrec span{pointer-events:none}
+.btnrec{background:#da9c48;color:#fff;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 22px;box-shadow:0 3px 10px rgba(0,0,0,.2)}.btnrec:active{transform:scale(.97)}.btnrec img{width:170px;height:auto;pointer-events:none}.btnrec span{pointer-events:none}
 .pasos{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.78rem;color:var(--suave,#888)}.paso.ok{color:var(--texto);font-weight:600}.paso.act{color:var(--salvia)}.paso.mal{color:var(--coral);font-weight:600}
 .estado{display:inline-block;background:color-mix(in srgb,var(--salvia) 30%,var(--tarjeta));color:var(--texto);border-radius:999px;padding:3px 12px;font-size:.78rem;font-weight:600}
 #inst{display:none;position:fixed;bottom:14px;left:14px;right:14px;background:var(--acento);color:var(--on-acento);border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:4;align-items:center;gap:8px;font-size:.9rem;box-shadow:var(--sombra)}
@@ -875,7 +875,7 @@ async function vistaPedidos(silencio){
    <span>${p.lineas.join("<br>")}</span><span class="tot">${din(p.total)}</span>
    <span class="suave">${p.entrega==="domicilio"?"A domicilio":"Recoger en tienda"} · ${NPAGO[p.pago]||p.pago}${p.estado_pago?" · "+p.estado_pago:""}</span>
    ${pasos(p)}<span class="estado">${p.estado}</span>${p.id&&p.pago==="en_linea"&&p.estado_pago==="Pendiente"?`<button class="btn" data-pagar="${p.id}">Pagar ahora</button>`:""}
-   ${p.recibido_en?`<span class="suave">✅ Recibido · ${new Date(p.recibido_en).toLocaleString("es-MX")}</span>`:(p.id&&(p.estado==="En camino"||p.estado==="Entregado")?`<button class="btn btnrec" data-recib="${p.id}"><span>✅ Ya recibí mi pedido</span><img src="va-llego.png" alt="Va, llegó" width="150" height="31"></button>`:"")}</div></div>`).join(""):"<p>Aún no tienes pedidos.</p>");
+   ${p.recibido_en?`<span class="suave">✅ Recibido · ${new Date(p.recibido_en).toLocaleString("es-MX")}</span>`:(p.id&&(p.estado==="En camino"||p.estado==="Entregado")?`<button class="btn btnrec" data-recib="${p.id}"><img src="va-llego.png" alt="Ya recibí mi pedido: Va, llegó" width="170" height="35"></button>`:"")}</div></div>`).join(""):"<p>Aún no tienes pedidos.</p>");
   if(db&&notifOK()&&Notification.permission==="granted")registrarPush();
 }
 document.addEventListener("click",async e=>{
