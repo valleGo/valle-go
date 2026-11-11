@@ -596,8 +596,14 @@ async function admTab(){
   }
   if(t==="servicios"){
     const L=(await db.from("servicios_perfiles").select("*").order("tipo").order("nombre")).data||[];
-    box.innerHTML=`<p class="suave">Transportistas y taxistas. La agenda de servicios y la consulta de stock se activan en cada comercio del plan Básico (el plan Simple solo tiene perfil en el directorio): Comercios → Editar → «Ofrece agenda de citas» y «Ofrece consulta de stock». Al crear un transportista, escribe el correo de su dueño (debe estar registrado en la app).</p><button class="btn" data-svnew>+ Nuevo transportista</button><br><br>`+
+    const hoyA=new Date();if(!adm.mes)adm.mes=mkey(hoyA);let CT=[],ctErr="";try{CT=await corteTransporte(adm.mes)}catch(e){ctErr=e.message||String(e)}
+    const ctHTML=`<div class="aviso"><b>Corte mensual de transporte</b><br>Cada transportista paga la membresía del plan Simple (${mxn(memConIva("simple"))} al mes, IVA incluido) más el 7% del total de los viajes completados en la app (sin IVA). Se cobra junto al final del mes.</div>
+      <label>Mes<input type="month" id="tcMes" value="${adm.mes}"></label>`+(ctErr?`<p class="suave">No se pudo cargar el corte: ${esc(ctErr)}</p>`:CT.length?CT.map(r=>`<div class="item"><div class="in"><b>${esc(r.nombre)}</b><span>Viajes completados: ${r.n} · Total: ${mxn(r.tot)}</span><span>Comisión 7%: <b>${mxn(r.com)}</b>${r.comMP?` (+ ${mxn(r.comMP)} descontada por Mercado Pago)`:""}</span><span>Membresía: ${mxn(r.mem)}</span><span>Total a cobrar: <b>${mxn(r.cobrar)}</b> · Pagado: ${mxn(r.pag)}</span><span>${r.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':"Saldo: <b>"+mxn(r.saldo)+"</b>"+(r.pag>0?" (parcial)":"")}</span>
+        ${r.pags.map(x=>`<span class="suave">💵 ${mxn(Number(x.monto))} · ${new Date(x.pagado_en).toLocaleDateString("es-MX")}${x.metodo?" · "+esc(x.metodo):""} <button class="btn sec mini" data-tcdel="${x.id}">Quitar</button></span>`).join("")}
+        <span class="svbtns">${r.saldo>0.004?`<button class="btn mini" data-tcpg="${r.id}|${r.saldo}">Registrar pago</button>`:""}${r.whatsapp?`<a class="btn mini sec" target="_blank" rel="noopener" href="${waUrl(r.whatsapp)}?text=${encodeURIComponent(corteResumen(r,adm.mes))}">Enviar corte por WhatsApp</a>`:""}</span></div></div>`).join(""):"<p class='suave'>No hay transportistas activos este mes.</p>")+"<hr>";
+    box.innerHTML=ctHTML+`<p class="suave">Transportistas y taxistas. La agenda de servicios y la consulta de stock se activan en cada comercio del plan Básico (el plan Simple solo tiene perfil en el directorio): Comercios → Editar → «Ofrece agenda de citas» y «Ofrece consulta de stock». Al crear un transportista, escribe el correo de su dueño (debe estar registrado en la app).</p><button class="btn" data-svnew>+ Nuevo transportista</button><br><br>`+
       (L.map(p=>`<div class="item"><div class="foto" ${foto({foto:p.foto_url})}>${p.foto_url?"":SV[p.tipo].e}</div><div class="in"><b>${esc(p.nombre)}</b><span class="suave">${SV[p.tipo].t} · ${esc(p.giro||"")} · ${p.activo?"Visible":"Oculto"} · ${p.dueno_id?"Con dueño":"Sin dueño"}</span><span class="svbtns"><button class="btn sec mini" data-sved="${p.id}">Editar</button><button class="btn sec mini" data-svdel="${p.id}">Eliminar</button></span></div></div>`).join("")||"<p>Aún no hay transportistas.</p>");
+    if($("tcMes"))$("tcMes").onchange=e=>{if(e.target.value){adm.mes=e.target.value;admTab()}};
   }
   if(t==="menu"){
     const cs=(await db.from("comercios").select("id,nombre").order("nombre")).data||[];
@@ -793,6 +799,11 @@ document.addEventListener("click",async e=>{
     const met=prompt("Cómo pagó (transferencia, efectivo, depósito…):","Transferencia");if(met===null)return;const nota=prompt("Nota (opcional):","");
     e.target.disabled=true;const r=await db.from("cobros_pagos").insert({comercio_id:cid,mes:adm.mes,concepto:d.cc==="membresia"?"membresia":"comision",monto,metodo:(met||"").trim()||null,nota:((nota||"").trim())||null});
     if(r.error){alert("No se pudo guardar: "+r.error.message);e.target.disabled=false;return}return admTab()}
+  if(d.tcpg){const[pid,sal]=d.tcpg.split("|");const m=prompt("Monto recibido (MXN):",Number(sal).toFixed(2));if(m===null)return;const monto=numMX(m);if(!(monto>0)){alert("Escribe un monto válido.");return}
+    const met=prompt("Cómo pagó (transferencia, efectivo, depósito…):","Efectivo");if(met===null)return;
+    e.target.disabled=true;const r=await db.from("cobros_transporte").insert({perfil_id:pid,mes:adm.mes,monto,metodo:(met||"").trim()||null});
+    if(r.error){alert("No se pudo guardar: "+r.error.message);e.target.disabled=false;return}return admTab()}
+  if(d.tcdel&&confirm("¿Quitar este pago registrado?")){const r=await db.from("cobros_transporte").delete().eq("id",d.tcdel);if(r.error){alert(r.error.message);return}return admTab()}
   if(d.cpdel&&confirm("¿Quitar este pago registrado?")){const r=await db.from("cobros_pagos").delete().eq("id",d.cpdel);if(r.error){alert(r.error.message);return}return admTab()}
   if(d.aon){const[i,a]=d.aon.split("|");await db.from("anuncios").update({activo:a!=="true"}).eq("id",i);cargarDatos();return admTab()}
   if(d.adel&&confirm("¿Borrar este anuncio?")){await db.from("anuncios").delete().eq("id",d.adel);cargarDatos();return admTab()}
@@ -1096,6 +1107,22 @@ async function svDetalle(root,id,volver,cod){
     }catch(err){alert("No se pudo enviar: "+err.message);$("cqEnv").disabled=false;$("cqEnv").textContent="Enviar consulta"}};
 }
 
+// --- Corte mensual de transporte: membresía Simple + 7% de los viajes completados (sin IVA en la comisión) ---
+const COM_TR=0.07;
+const numMX=s=>{const v=Math.round(parseFloat(String(s||"").replace(/[$,\s]/g,""))*100)/100;return isNaN(v)?0:v};
+async function corteTransporte(mes,ids){
+  const[Y,M]=mes.split("-").map(Number),fin=new Date(Y,M,1);
+  let q=db.from("servicios_perfiles").select("id,nombre,activo,creado,whatsapp").eq("tipo","transporte").order("nombre");if(ids)q=q.in("id",ids);
+  const[pf,vj,pg]=await Promise.all([q,db.from("viajes").select("perfil_id,precio_num,comision,cobro_mp").eq("estado","Completada").eq("mes",mes),db.from("cobros_transporte").select("*").eq("mes",mes).order("pagado_en")]);
+  if(pf.error)throw pf.error;
+  const V=vj.data||[],PG=pg.data||[],R=[];
+  (pf.data||[]).forEach(p=>{const v=V.filter(x=>x.perfil_id===p.id),n=v.length,activo=p.activo!==false&&(!p.creado||new Date(p.creado)<fin);if(!activo&&!n)return;
+    const tot=r2m(v.reduce((t,x)=>t+Number(x.precio_num||0),0)),com=r2m(v.filter(x=>!x.cobro_mp).reduce((t,x)=>t+Number(x.comision||0),0)),comMP=r2m(v.filter(x=>x.cobro_mp).reduce((t,x)=>t+Number(x.comision||0),0)),
+      mem=activo?memConIva("simple"):0,cobrar=r2m(com+mem),pags=PG.filter(x=>x.perfil_id===p.id),pag=r2m(pags.reduce((t,x)=>t+Number(x.monto),0));
+    R.push({id:p.id,nombre:p.nombre,whatsapp:p.whatsapp,n,tot,com,comMP,mem,cobrar,pag,pags,saldo:Math.max(0,r2m(cobrar-pag))})});
+  return R}
+const corteResumen=(r,mes)=>`Corte de ${nomMes(mes)} · ${r.nombre}\nViajes completados: ${r.n} · Total: ${mxn(r.tot)}\nComisión 7% (uso y mantenimiento, sin IVA): ${mxn(r.com)}${r.comMP?" (+ "+mxn(r.comMP)+" ya descontada por Mercado Pago)":""}\nMembresía plan Simple (IVA incluido): ${mxn(r.mem)}\nTotal a pagar: ${mxn(r.cobrar)} · Pagado: ${mxn(r.pag)} · Saldo: ${mxn(r.saldo)}`;
+
 // --- Mis solicitudes (cliente) ---
 async function vistaMisServicios(){
   if(!sesion||!db){location.hash="#/cuenta";return}
@@ -1134,10 +1161,15 @@ async function vistaPanelSrv(){
     idsP.length?db.from("viajes").select("*").in("perfil_id",idsP).order("creado",{ascending:false}).limit(100):Promise.resolve({data:[]})]);
   const P=[...agCom.filter(c=>c.ofrece_citas).map(c=>({id:c.id,tipo:"agenda",nombre:c.nombre,activo:true,_com:true,plan:c.plan})),...agCom.filter(c=>c.ofrece_consulta).map(c=>({id:c.id,tipo:"consulta",nombre:c.nombre,activo:true,_com:true,plan:c.plan})),...(pf.data||[])],I=it.data||[],orden={Solicitada:0,Reprogramada:1,Confirmada:2,Completada:3,Cancelada:4};
   const C=(ci.data||[]).sort((a,b)=>(orden[a.estado]-orden[b.estado])||((a.fecha+a.hora)<(b.fecha+b.hora)?-1:1)),Q=co.data||[],Vj=(vj.data||[]).sort((a,b)=>({Solicitada:0,Cotizada:1,Confirmada:2,Completada:3,Cancelada:4}[a.estado]-{Solicitada:0,Cotizada:1,Confirmada:2,Completada:3,Cancelada:4}[b.estado]));
+  window._vj={};Vj.forEach(v=>window._vj[v.id]=v);
+  const idsTr=misSrv.filter(s=>s.tipo==="transporte").map(s=>s.id),mesAct=mkey(new Date());let cortes=[];
+  if(idsTr.length){try{cortes=await corteTransporte(mesAct,idsTr)}catch(e){cortes=[]}}
+  const corteHTML=p=>{const r=cortes.find(c=>c.id===p.id);if(!r)return"";
+    return `<div class="aviso" style="margin:10px 0"><b>Mi corte de ${nomMes(mesAct)}</b><br>Viajes completados: ${r.n} · Total: ${mxn(r.tot)}<br>Comisión 7% de uso y mantenimiento (sin IVA): <b>${mxn(r.com)}</b>${r.comMP?`<br>Ya descontada por Mercado Pago: ${mxn(r.comMP)}`:""}<br>Membresía plan Simple (IVA incluido): <b>${mxn(r.mem)}</b><br>Total a pagar a final de mes: <b>${mxn(r.cobrar)}</b> · Pagado: ${mxn(r.pag)} · ${r.saldo<=0.004?"✅ Al corriente":"Saldo: <b>"+mxn(r.saldo)+"</b>"}<br><span class="suave" style="font-size:.78rem">Se cobra junto el último día del mes. Solo cuentan los viajes que marcas como "Completado" en la app.</span></div>`};
   const viajeHTML=x=>`<div class="item"><div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${x.tipo==="agenda"?"Viaje agendado":"Cotización"}: ${esc(x.origen)} → ${esc(x.destino)}</span>
     ${x.fecha?`<span class="suave">📅 ${fMX(x.fecha)}${x.hora?" · "+esc(x.hora):""}</span>`:""}${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.detalle?`<span class="suave">📝 ${esc(x.detalle)}</span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <span class="svbtns">${["Solicitada","Cotizada"].includes(x.estado)?`<button class="btn mini" data-vq="${x.id}">${x.estado==="Cotizada"?"Cambiar precio":"Cotizar"}</button>`:""}${x.estado==="Solicitada"&&x.tipo==="agenda"?`<button class="btn mini" data-vcf="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-vfn="${x.id}">Completado</button>`:""}${["Solicitada","Cotizada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-vrc="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
-    <div class="aviso" id="vq_${x.id}" style="display:none;gap:8px"><label>Precio<input id="vqP_${x.id}" value="${esc(x.precio||"")}" placeholder="$150"></label><label>Mensaje (opcional)<input id="vqM_${x.id}" placeholder="Llego en 10 minutos..."></label><button class="btn mini" data-vqok="${x.id}">Enviar cotización</button></div></div></div>`;
+    <div class="aviso" id="vq_${x.id}" style="display:none;gap:8px"><label>Precio total del viaje (pesos)<input id="vqP_${x.id}" type="number" inputmode="decimal" min="1" step="0.01" value="${x.precio_num||""}" placeholder="150"></label><label>Mensaje (opcional)<input id="vqM_${x.id}" placeholder="Llego en 10 minutos..."></label><button class="btn mini" data-vqok="${x.id}">Enviar cotización</button></div></div></div>`;
   const citaHTML=x=>`<div class="item"><div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
     ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.notas?`<span class="suave">📝 ${esc(x.notas)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <span class="svbtns">${x.estado==="Solicitada"?`<button class="btn mini" data-cok="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-cfin="${x.id}">Completada</button>`:""}${["Solicitada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-crep="${x.id}">Otra hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-ccan="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
@@ -1153,7 +1185,7 @@ async function vistaPanelSrv(){
      (p.tipo==="agenda"?`<h3>Mis servicios</h3>`+(mi.map(i=>`<div class="linea"><span><b>${esc(i.nombre)}</b>${i.activo?"":" (oculto)"}<br><small>${Number(i.precio)>0?din(Number(i.precio)):"A consultar"}${i.duracion_min?" · "+i.duracion_min+" min":""}</small></span><span><button class="btn mini sec" data-siedit="${i.id}">Editar</button> <button class="btn mini sec" data-sidel="${i.id}">Quitar</button></span></div>`).join("")||"<p class='suave'>Aún no agregas servicios.</p>")+
        `<p><button class="btn mini" data-sinew="${p.id}">+ Agregar servicio</button></p><h3>Citas</h3>`+(mc.map(citaHTML).join("")||"<p>Aún no hay citas.</p>")
       :p.tipo==="consulta"?`<h3>Consultas de clientes</h3>`+(mq.map(consHTML).join("")||"<p>Aún no hay consultas.</p>")
-      :`<h3>Solicitudes de viaje y cotización</h3>`+(Vj.filter(v=>v.perfil_id===p.id).map(viajeHTML).join("")||"<p>Aún no hay solicitudes. Mantén tu teléfono, vehículo, zona y horario actualizados en <b>Editar mi perfil</b>.</p>"))+`</div>`}).join("");
+      :corteHTML(p)+`<h3>Solicitudes de viaje y cotización</h3>`+(Vj.filter(v=>v.perfil_id===p.id).map(viajeHTML).join("")||"<p>Aún no hay solicitudes. Mantén tu teléfono, vehículo, zona y horario actualizados en <b>Editar mi perfil</b>.</p>"))+`</div>`}).join("");
 }
 
 // --- Acciones (clientes y prestadores) ---
@@ -1181,10 +1213,11 @@ document.addEventListener("click",async e=>{
   if(d.vac){if(await viaje(d.vac,{estado:"Confirmada"}))vistaMisServicios();return}
   if(d.vcl){if(!confirm("¿Cancelar esta solicitud?"))return;if(await viaje(d.vcl,{estado:"Cancelada"}))vistaMisServicios();return}
   if(d.vq){const r=$("vq_"+d.vq);if(r)r.style.display=r.style.display==="none"?"grid":"none";return}
-  if(d.vqok){const pr=$("vqP_"+d.vqok).value.trim();if(!pr)return alert("Escribe el precio de la cotización.");
-    if(await viaje(d.vqok,{estado:"Cotizada",precio:pr,respuesta:$("vqM_"+d.vqok).value.trim()||null}))vistaPanelSrv();return}
+  if(d.vqok){const pn=numMX($("vqP_"+d.vqok).value);if(!(pn>0))return alert("Escribe el precio de la cotización en pesos.");
+    if(await viaje(d.vqok,{estado:"Cotizada",precio_num:pn,precio:mxn(pn),respuesta:$("vqM_"+d.vqok).value.trim()||null}))vistaPanelSrv();return}
   if(d.vcf){if(await viaje(d.vcf,{estado:"Confirmada",respuesta:null}))vistaPanelSrv();return}
-  if(d.vfn){if(await viaje(d.vfn,{estado:"Completada"}))vistaPanelSrv();return}
+  if(d.vfn){const v=(window._vj||{})[d.vfn]||{};const t=prompt("Total cobrado por el viaje (pesos).\nSe usa para calcular el 7% de uso de la app:",v.precio_num||"");if(t===null)return;const pn=numMX(t);if(!(pn>0))return alert("Escribe un total válido.");
+    if(await viaje(d.vfn,{estado:"Completada",precio_num:pn,precio:mxn(pn)}))vistaPanelSrv();return}
   if(d.vrc){const m=prompt("Motivo para el cliente (opcional):");if(m===null)return;if(await viaje(d.vrc,{estado:"Cancelada",respuesta:m.trim()||null}))vistaPanelSrv();return}
   if(d.sped){const r=await db.from("servicios_perfiles").select("*").eq("id",d.sped).single();if(!r.data)return;
     return svForm("Editar mi perfil",cfSrv("servicios/"+sesion.id).filter(c=>c.k!=="tipo"),r.data,async o=>{const x=await db.from("servicios_perfiles").update(o).eq("id",d.sped);if(x.error)throw x.error;cargarRol()})}
@@ -1603,7 +1636,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v121";
+const BUILD="valle-go-v122";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
