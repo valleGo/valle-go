@@ -84,8 +84,8 @@ main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .ca
 .btn.sec{background:transparent;color:var(--verde);border:1.5px solid var(--verde)}
 .perfil{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden;margin-bottom:16px;box-shadow:var(--sombra)}
 .perfil .foto{height:180px}.perfil .in{padding:16px;display:grid;gap:6px}
-.cats{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}.cats::-webkit-scrollbar{display:none}
-.cats button{border:1px solid var(--borde);background:var(--claro-amarillo);color:var(--texto);border-radius:999px;padding:8px 16px;white-space:nowrap;font-weight:600;font-size:.85rem}
+.cats{display:flex;flex-wrap:wrap;gap:8px;overflow:visible;padding:2px 0 12px}   /* las categorías bajan a nuevas filas: nada queda oculto ni hay que desplazar de lado */
+.cats button{border:1px solid var(--borde);background:var(--claro-amarillo);color:var(--texto);border-radius:999px;padding:8px 14px;line-height:1.35;min-height:38px;white-space:nowrap;font-weight:600;font-size:.85rem;flex:0 0 auto;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .cats button.on{background:var(--verde);color:var(--on-verde);border-color:var(--verde)}
 .item{display:flex;gap:12px;background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);padding:12px;margin-bottom:12px;box-shadow:var(--sombra)}
 .item .foto{width:92px;height:92px;border-radius:12px;font-size:2.3rem;flex:none}
@@ -277,7 +277,7 @@ async function cargarRolReal(){
   for(let i=0;i<3;i++){
     try{[a,c]=await Promise.all([db.from("admins").select("user_id").eq("user_id",sesion.id),db.from("comercios").select("id,nombre,mp_conectado,plan").eq("dueno_id",sesion.id)])}catch(e){a=c={error:e}}
     if(!a.error&&!c.error)break;await new Promise(r=>setTimeout(r,1200*(i+1)))}
-  if(a.error||c.error){pintaHeader();return}   // falló la red: se conserva lo último que se sabía, no se oculta el botón
+  if(a.error||c.error){pintaHeader();notifAuto();return}   // falló la red: se conserva lo último que se sabía, no se oculta el botón
   esAdmin=!!(a.data&&a.data.length);misCom=c.data||[];rolOK=true;
   try{localStorage.setItem("valle_rol_"+sesion.id,JSON.stringify({a:esAdmin,c:misCom}))}catch(e){}
   pintaHeader();escucharPedidos();escucharMisPedidos();notifAuto();
@@ -817,7 +817,7 @@ async function notifAuto(){
   try{
     if(!db||!sesion||!sesion.id)return;
     const staff=!!(esAdmin||misCom.length);
-    const txt=staff?"🔔 Activa los avisos para enterarte al instante de cada pedido nuevo, aunque tengas la app cerrada o el celular bloqueado.":"🔔 Activa los avisos para saber cuando tu pedido esté confirmado, en camino o entregado, aunque tengas la app cerrada o el celular bloqueado.";
+    const txt=staff?"🔔 Activa los avisos para enterarte al instante de cada pedido nuevo, aunque tengas la app cerrada o el celular bloqueado.":"🔔 Activa las notificaciones para recibir todos los avisos de Valle GO: cuando tu pedido esté confirmado, en camino o entregado, aunque tengas la app cerrada o el celular bloqueado.";
     if(!notifOK()){   // iPhone/iPad en Safari: las notificaciones solo funcionan con la app instalada en inicio
       if(!/iPhone|iPad|iPod/.test(navigator.userAgent)||$("bnotif"))return;
       try{if(sessionStorage.getItem("bnotifX"))return}catch(e){}
@@ -826,7 +826,7 @@ async function notifAuto(){
       d.innerHTML=v?'<span>'+MSG_IOS_VIEJO(v)+'</span><button id="bnotifX" aria-label="Cerrar">×</button>':'<span>🔔 Para recibir avisos en tu iPhone con la app cerrada: toca Compartir ⬆️ → «Agregar a pantalla de inicio» y abre Valle GO desde ese ícono.</span><button id="bnotifX" aria-label="Cerrar">×</button>';
       document.body.appendChild(d);$("bnotifX").onclick=()=>{try{sessionStorage.setItem("bnotifX","1")}catch(e){}d.remove()};return}
     if(!VAPID_PUBLIC)return;
-    if(Notification.permission==="granted"){await registrarPush();return}
+    if(Notification.permission==="granted"){if(Date.now()-(window._pushT||0)<120000)return;window._pushT=Date.now();await registrarPush();return}
     if(Notification.permission==="denied"&&staff&&!$("bnotif")){
       try{if(sessionStorage.getItem("bnotifX"))return}catch(e){}
       const d=document.createElement("div");d.id="bnotif";
@@ -1313,7 +1313,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v110";
+const BUILD="valle-go-v111";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
