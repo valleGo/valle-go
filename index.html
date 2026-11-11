@@ -595,7 +595,7 @@ function toggleDirectorio(){
   $("dirQ").oninput=e=>{dirQ=e.target.value;$("dirL").innerHTML=lista()};
   d.addEventListener("click",async e=>{const a=e.target.closest('a[href^="#/"]');if(!a)return;e.preventDefault();const h=a.getAttribute("href");await cierraTodasCapas();location.hash=h});
 }
-document.addEventListener("click",e=>{const b=e.target.closest("#bDir");if(b){e.preventDefault();toggleDirectorio()}});
+document.addEventListener("click",e=>{const b=e.target.closest("#bDir");if(b){e.preventDefault();toggleDirectorio();return}if($("dirPanel")&&!e.target.closest("#dirPanel")&&e.target.isConnected)cierraCapa()});
 function vistaTienda(id){
   const t=tienda(id); if(!t)return vistaInicio();
   if(t.plan==="simple"){
