@@ -880,7 +880,7 @@ async function vistaPedidos(silencio){
    <span>${p.lineas.join("<br>")}</span><span class="tot">${din(p.total)}</span>
    <span class="suave">${p.entrega==="domicilio"?"A domicilio":"Recoger en tienda"} · ${NPAGO[p.pago]||p.pago}${p.estado_pago?" · "+p.estado_pago:""}</span>
    ${pasos(p)}<span class="estado">${p.estado}</span>${p.id&&p.pago==="en_linea"&&p.estado_pago==="Pendiente"?`<button class="btn" data-pagar="${p.id}">Pagar ahora</button>`:""}
-   ${p.recibido_en?`<span class="suave">✅ Recibido · ${new Date(p.recibido_en).toLocaleString("es-MX")}</span>`:(p.id&&(p.estado==="En camino"||p.estado==="Entregado")?`<b class="recl">Confirma tu pedido aquí:</b><button class="btn btnrec" data-recib="${p.id}"><img src="va-llego.png" alt="Ya recibí mi pedido: Va, llegó" width="170" height="35"></button>`:"")}</div></div>`).join(""):"<p>Aún no tienes pedidos.</p>");
+   ${p.recibido_en?`<span class="suave">✅ Recibido · ${new Date(p.recibido_en).toLocaleString("es-MX")}</span>`:(p.id&&(p.estado==="En camino"||p.estado==="Entregado")?`<b class="recl">Confirma tu pedido recibido aquí</b><button class="btn btnrec" data-recib="${p.id}"><img src="va-llego.png" alt="Ya recibí mi pedido: Va, llegó" width="170" height="35"></button>`:"")}</div></div>`).join(""):"<p>Aún no tienes pedidos.</p>");
   if(db&&notifOK()&&Notification.permission==="granted")registrarPush();
 }
 document.addEventListener("click",async e=>{
