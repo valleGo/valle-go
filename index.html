@@ -277,11 +277,83 @@ async function leerForm(cs,raiz,v){const o={};
     else if(c.t==="file")o[c.k]=el.files[0]?await subirFoto(el.files[0],c.carpeta):(v[c.k]||null);
     else if(c.t==="select")o[c.k]=el.value||null; else if(c.t==="check")o[c.k]=el.checked; else if(c.t==="number")o[c.k]=Number(el.value||0); else o[c.k]=el.value.trim();}
   return o;}
+// ---- Monitoreo y gráficas mensuales (solo admin) ----
+const MESES_C=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"],MESES_L=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const COSTO_FIJO=1219,MEM_PLAN={simple:299,basico:599};
+const mkey=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"), r2m=x=>Math.round(x*100)/100, mxn=x=>(Number(x)<0?"-":"")+"$"+Math.abs(Number(x||0)).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+const mxk=x=>x>=1000?"$"+(x/1000).toFixed(x>=10000?0:1)+"k":"$"+Math.round(x), memBase=pl=>MEM_PLAN[pl==="simple"?"simple":"basico"], memConIva=pl=>r2m(memBase(pl)*1.16);
+const nomMes=k=>{const[y,m]=k.split("-").map(Number);return MESES_L[m-1]+" "+y}, etMes=k=>MESES_C[Number(k.split("-")[1])-1];
+async function calcMonitoreo(mes){
+  const[Y,M]=mes.split("-").map(Number),keys=[];for(let i=5;i>=0;i--)keys.push(mkey(new Date(Y,M-1-i,1)));
+  const d0=new Date(Y,M-6,1).toISOString(),d1=new Date(Y,M,1).toISOString();
+  const rc=await db.from("comercios").select("id,nombre,activo,plan,creado,mp_conectado,whatsapp").order("nombre");if(rc.error)throw rc.error;const cs=rc.data||[];
+  let P=[],desde=0;
+  for(;;){const r=await db.from("pedidos").select("comercio_id,total,pago,estado,estado_pago,creado").gte("creado",d0).lt("creado",d1).order("creado").range(desde,desde+999);
+    if(r.error)throw r.error;P=P.concat(r.data||[]);if((r.data||[]).length<1000)break;desde+=1000}
+  const rp=await db.from("cobros_pagos").select("comercio_id,mes,monto").in("mes",keys),PG=rp.error?[]:(rp.data||[]);
+  const ag={};let sinPagar=0;
+  P.forEach(p=>{const online=p.pago==="en_linea"||p.pago==="tarjeta",k=mkey(new Date(p.creado)),sel=k===mes;
+    if(p.estado==="Cancelado")return;if(online&&p.estado_pago!=="Pagado"){if(sel)sinPagar++;return}
+    const a=((ag[p.comercio_id]=ag[p.comercio_id]||{})[k]=(ag[p.comercio_id][k]||{n:0,linea:0,otro:0})),v=Number(p.total)||0;a.n++;if(online)a.linea+=v;else a.otro+=v});
+  const C={},Mes={};
+  keys.forEach((k,i)=>{const[y,m]=k.split("-").map(Number),fin=new Date(y,m,1);C[k]={};const T={n:0,linea:0,otro:0,tot:0,com:0,mem:0,cobrar:0,pag:0,saldo:0};
+    cs.forEach(c=>{const a=(ag[c.id]||{})[k]||{n:0,linea:0,otro:0};const activo=(c.activo!==false||a.n>0)&&(!c.creado||new Date(c.creado)<fin);if(!activo&&!a.n)return;
+      const tot=a.linea+a.otro,com=r2m(tot*0.01),mem=activo?memBase(c.plan):0,memI=activo?memConIva(c.plan):0,cobrar=r2m(com+memI),
+        pag=r2m(PG.filter(x=>x.comercio_id===c.id&&x.mes===k).reduce((t,x)=>t+Number(x.monto),0)),saldo=Math.max(0,r2m(cobrar-pag));
+      C[k][c.id]={id:c.id,nombre:c.nombre,plan:c.plan==="simple"?"simple":"basico",n:a.n,linea:a.linea,otro:a.otro,tot,com,mem,memI,cobrar,pag,saldo};
+      T.n+=a.n;T.linea+=a.linea;T.otro+=a.otro;T.tot+=tot;T.com+=com;T.mem+=mem;T.cobrar+=cobrar;T.pag+=pag;T.saldo+=saldo});
+    T.ing=r2m(T.com+T.mem);T.gan=r2m(T.ing-COSTO_FIJO);Mes[k]=T});
+  const ant=keys[keys.length-2],alertas=[];
+  cs.filter(c=>c.plan!=="simple"&&c.activo!==false&&!c.mp_conectado).forEach(c=>alertas.push("Sin Mercado Pago conectado: "+c.nombre));
+  if(sinPagar)alertas.push(sinPagar+" pedido(s) en línea de este mes sin pagar (no cuentan en el reporte).");
+  Object.values(C[ant]||{}).filter(r=>r.saldo>0).forEach(r=>alertas.push("Saldo pendiente de "+nomMes(ant)+": "+r.nombre+" ("+mxn(r.saldo)+")"));
+  return{mes,keys,cs,C,M:Mes,alertas,sinPagar}}
+function svgBarras(x,y,w,h,titulo,labels,series){
+  const max=Math.max(1,...series.flatMap(s=>s.vals)),n=labels.length,left=52,gw=(w-left-8)/n,bw=Math.min(30,(gw-12)/series.length),top=y+34,base=y+h-26,ch=base-top;
+  let g=`<text x="${x}" y="${y+16}" font-size="15" font-weight="700" fill="#2B2D22">${esc(titulo)}</text>`;
+  series.forEach((s,j)=>{const lx=x+w-8-(series.length-j)*118;g+=`<rect x="${lx}" y="${y+6}" width="10" height="10" rx="2" fill="${s.color}"/><text x="${lx+14}" y="${y+15}" font-size="11" fill="#555">${esc(s.nombre)}</text>`});
+  for(let i=0;i<=4;i++){const yy=base-ch*i/4;g+=`<line x1="${x+left}" y1="${yy}" x2="${x+w}" y2="${yy}" stroke="#e4e6dc"/><text x="${x+left-6}" y="${yy+4}" font-size="10" text-anchor="end" fill="#777">${mxk(max*i/4)}</text>`}
+  labels.forEach((l,i)=>{const gx=x+left+i*gw+(gw-bw*series.length)/2;
+    series.forEach((s,j)=>{const v=s.vals[i],bh=ch*v/max;g+=`<rect x="${gx+j*bw}" y="${base-bh}" width="${bw-2}" height="${Math.max(bh,v>0?1:0)}" rx="3" fill="${s.color}"/>`;
+      if(v>0&&series.length===1)g+=`<text x="${gx+j*bw+(bw-2)/2}" y="${base-bh-4}" font-size="9.5" text-anchor="middle" fill="#444">${mxk(v)}</text>`});
+    g+=`<text x="${x+left+i*gw+gw/2}" y="${base+16}" font-size="11" text-anchor="middle" fill="#555">${esc(l)}</text>`});
+  return g}
+const svgWrap=(w,h,inner)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" font-family="Arial,Helvetica,sans-serif"><rect width="${w}" height="${h}" fill="#ffffff"/>${inner}</svg>`;
+const AZ="#6fa8d6",NA="#da9c48",VE="#5C7648",GR="#9aa58a";
+const SG={ventas:(D)=>[{nombre:"Total vendido",color:VE,vals:D.keys.map(k=>D.M[k].tot)}],
+  ing:(D)=>[{nombre:"Membresías",color:AZ,vals:D.keys.map(k=>D.M[k].mem)},{nombre:"Comisión 1%",color:NA,vals:D.keys.map(k=>D.M[k].com)}],
+  pagos:(D)=>[{nombre:"Cobrado",color:VE,vals:D.keys.map(k=>D.M[k].pag)},{nombre:"Por cobrar",color:NA,vals:D.keys.map(k=>D.M[k].saldo)}]};
+function kpiBox(x,y,w,t,v){return `<rect x="${x}" y="${y}" width="${w}" height="62" rx="10" fill="#f3f6ec" stroke="#dde5cf"/><text x="${x+12}" y="${y+22}" font-size="11" fill="#667">${esc(t)}</text><text x="${x+12}" y="${y+48}" font-size="19" font-weight="700" fill="#2B2D22">${esc(v)}</text>`}
+function svgInformeAdmin(D){
+  const T=D.M[D.mes],et=D.keys.map(etMes),W=820;
+  let g=`<rect width="${W}" height="72" fill="${VE}"/><text x="24" y="34" font-size="22" font-weight="700" fill="#fff">Valle GO · Informe de ${esc(nomMes(D.mes))}</text><text x="24" y="56" font-size="12" fill="#e8efdc">Monitoreo mensual de ventas, pagos y ganancias</text>`;
+  const K=[["Pedidos",String(T.n)],["Total vendido",mxn(T.tot)],["Comisión 1% Valle GO",mxn(T.com)],["Membresías (sin IVA)",mxn(T.mem)],["Ingresos Valle GO",mxn(T.ing)],["Ganancia estimada",mxn(T.gan)],["Cobrado",mxn(T.pag)],["Por cobrar",mxn(T.saldo)]];
+  K.forEach((k,i)=>{g+=kpiBox(24+(i%4)*194,92+Math.floor(i/4)*74,184,k[0],k[1])});
+  g+=svgBarras(24,250,W-48,220,"Ventas por mes (todos los pedidos)",et,SG.ventas(D))+svgBarras(24,490,W-48,220,"Ingresos de Valle GO por mes (sin IVA)",et,SG.ing(D))+svgBarras(24,730,W-48,220,"Pagos por mes: cobrado y por cobrar (con IVA)",et,SG.pagos(D));
+  g+=`<text x="24" y="976" font-size="10" fill="#888">Ganancia estimada = ingresos − costos fijos de ${mxn(COSTO_FIJO)} al mes. Generado el ${new Date().toLocaleDateString("es-MX")}.</text>`;
+  return svgWrap(W,992,g)}
+function svgInformeComercio(D,id){
+  const R=D.C[D.mes][id],W=820,et=D.keys.map(etMes);
+  const hist=D.keys.map(k=>(D.C[k][id]||{tot:0}).tot);
+  let g=`<rect width="${W}" height="72" fill="${VE}"/><text x="24" y="34" font-size="22" font-weight="700" fill="#fff">${esc(R.nombre)}</text><text x="24" y="56" font-size="12" fill="#e8efdc">Valle GO · Informe de ${esc(nomMes(D.mes))}</text>`;
+  const K=[["Pedidos",String(R.n)],["Total vendido",mxn(R.tot)],["Pagos en línea",mxn(R.linea)],["Transf./efectivo",mxn(R.otro)],["1% Valle GO",mxn(R.com)],["Membresía con IVA",mxn(R.memI)],["Total del mes",mxn(R.cobrar)],["Saldo por pagar",mxn(R.saldo)]];
+  K.forEach((k,i)=>{g+=kpiBox(24+(i%4)*194,92+Math.floor(i/4)*74,184,k[0],k[1])});
+  g+=svgBarras(24,250,W-48,230,"Tus ventas por mes",et,[{nombre:"Total vendido",color:VE,vals:hist}]);
+  g+=`<text x="24" y="504" font-size="10" fill="#888">1% de uso y mantenimiento de la app sobre el total de tus pedidos, más membresía. Pagado este mes: ${esc(mxn(R.pag))}.</text>`;
+  return svgWrap(W,520,g)}
+function svgAPng(svg,w,h){return new Promise((ok,no)=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");c.width=w*2;c.height=h*2;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):no(new Error("No se pudo crear la imagen")),"image/png")};img.onerror=()=>no(new Error("No se pudo crear la imagen"));img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)})}
+function bajarBlob(blob,nombre){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000)}
+async function compartirInforme(blob,nombre,texto,tel){
+  const f=new File([blob],nombre,{type:"image/png"});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:"Informe Valle GO",text:texto});return}catch(e){if(e&&e.name==="AbortError")return}}
+  bajarBlob(blob,nombre);const t=String(tel||"").replace(/\D/g,"");
+  window.open("https://wa.me/"+(t?(t.length===10?"52"+t:t):"")+"?text="+encodeURIComponent(texto),"_blank");
+  aviso("Se descargó la imagen: adjúntala en el chat de WhatsApp que se abrió.")}
 async function vistaAdmin(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   if(!esAdmin)await cargarRol();
   if(!esAdmin){$("vista").innerHTML="<h2>Acceso restringido</h2><p>Esta sección es solo para el administrador.</p>";return}
-  const T={anuncios:"Publicidad",comercios:"Comercios",categorias:"Categorías",menu:"Menús",cobros:"Cobros 1%",pedidos:"Pedidos",usuarios:"Usuarios",admins:"Administradores",perfil:"Mi perfil"};
+  const T={anuncios:"Publicidad",comercios:"Comercios",categorias:"Categorías",menu:"Menús",monitoreo:"Monitoreo",cobros:"Cobros 1%",pedidos:"Pedidos",usuarios:"Usuarios",admins:"Administradores",perfil:"Mi perfil"};
   $("vista").innerHTML=`<h2>Administración</h2>${notifBtnHTML()}<div class="cats">${Object.keys(T).map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
   await admTab();
 }
@@ -323,6 +395,27 @@ async function admTab(){
   if(t==="perfil"){
     box.innerHTML=`<p class="suave">${esc(sesion.email)} · Administrador</p>`+perfilHTML();
     bindPerfil(admTab);
+  }
+  if(t==="monitoreo"){
+    const hoy=new Date();if(!adm.mesM)adm.mesM=mkey(hoy);
+    box.innerHTML="<p>Calculando…</p>";let D;
+    try{D=await calcMonitoreo(adm.mesM)}catch(err){box.innerHTML="<p>No se pudo cargar el monitoreo: "+esc(err.message||String(err))+"</p>";return}
+    adm.mon=D;const T=D.M[D.mes],et=D.keys.map(etMes);
+    const card=(t,v,sub)=>`<div class="aviso" style="margin:0"><span class="suave">${t}</span><br><b style="font-size:1.15rem">${v}</b>${sub?`<br><span class="suave">${sub}</span>`:""}</div>`;
+    const chart=(tit,ser)=>`<div style="margin:12px 0;background:#fff;border-radius:14px;padding:6px;border:1px solid var(--borde)"><svg viewBox="0 0 640 250" style="width:100%;height:auto" font-family="Arial,Helvetica,sans-serif">${svgBarras(6,2,628,244,tit,et,ser)}</svg></div>`;
+    const bas=Object.values(D.C[D.mes]).filter(r=>r.plan==="basico");
+    box.innerHTML=`<label>Mes<input type="month" id="mMes" value="${D.mes}"></label>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0">
+      ${card("Pedidos",T.n,"")}${card("Total vendido",mxn(T.tot),"En línea "+mxn(T.linea)+" · Otros "+mxn(T.otro))}${card("Comisión 1%",mxn(T.com),"")}
+      ${card("Membresías (sin IVA)",mxn(T.mem),"")}${card("Ingresos Valle GO",mxn(T.ing),"Sin IVA")}${card("Ganancia estimada",mxn(T.gan),"Costos fijos "+mxn(COSTO_FIJO))}
+      ${card("Cobrado",mxn(T.pag),"Pagos registrados")}${card("Por cobrar",mxn(T.saldo),"Con IVA")}</div>
+    ${chart("Ventas por mes (todos los pedidos)",SG.ventas(D))}${chart("Ingresos de Valle GO por mes (sin IVA)",SG.ing(D))}${chart("Pagos por mes: cobrado y por cobrar",SG.pagos(D))}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px"><button class="btn" data-mdl>Descargar informe (imagen)</button><button class="btn sec" data-mcsv>Descargar datos (CSV)</button><button class="btn sec" data-mshare>Compartir informe</button></div>
+    <h3>Alertas</h3>${D.alertas.length?D.alertas.map(a=>`<div class="aviso">⚠️ ${esc(a)}</div>`).join(""):'<p class="suave">Sin alertas.</p>'}
+    <h3>Compartir con comerciantes (plan Básico)</h3><p class="suave">Cada comercio recibe su propio informe del mes: sus ventas, el 1%, su membresía y su saldo. El plan Simple no tiene informe.</p>
+    ${bas.map(r=>`<div class="item"><div class="in"><b>${esc(r.nombre)}</b><span class="suave">${r.n} pedidos · ${mxn(r.tot)} · saldo ${mxn(r.saldo)}</span>
+      <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" data-mcd="${r.id}">Descargar</button><button class="btn" data-mcs="${r.id}">Compartir</button></span></div></div>`).join("")||'<p class="suave">No hay comercios Básico este mes.</p>'}`;
+    $("mMes").onchange=e=>{if(e.target.value){adm.mesM=e.target.value;admTab()}};
   }
   if(t==="admins"){
     const r=await db.rpc("admin_lista_admins");
@@ -403,6 +496,14 @@ function formAdm(tabla,cs,v){
 document.addEventListener("click",async e=>{
   const d=e.target.dataset; if(!esAdmin)return;
   if(d.tab){adm.tab=d.tab;adm.uh=null;await cierraTodasCapas();return vistaAdmin()}
+  if(d.mdl!==undefined||d.mshare!==undefined){const D=adm.mon;if(!D)return;try{const b=await svgAPng(svgInformeAdmin(D),820,992),n="valle-go-informe-"+D.mes+".png";
+      if(d.mdl!==undefined)bajarBlob(b,n);else await compartirInforme(b,n,"Informe Valle GO de "+nomMes(D.mes),"")}catch(err){alert(err.message)}return}
+  if(d.mcsv!==undefined){const D=adm.mon;if(!D)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Mes","Pedidos","Total vendido","Pagos en linea","Transferencia/efectivo","Comision 1%","Membresias sin IVA","Ingresos","Ganancia estimada","Cobrado","Por cobrar"]];
+    D.keys.forEach(k=>{const T=D.M[k];L.push([k,T.n,T.tot.toFixed(2),T.linea.toFixed(2),T.otro.toFixed(2),T.com.toFixed(2),T.mem.toFixed(2),T.ing.toFixed(2),T.gan.toFixed(2),T.pag.toFixed(2),T.saldo.toFixed(2)])});
+    bajarBlob(new Blob(["﻿"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),"valle-go-monitoreo-"+D.mes+".csv");return}
+  if(d.mcd||d.mcs){const D=adm.mon;if(!D)return;const R=(D.C[D.mes]||{})[d.mcd||d.mcs];if(!R||R.plan!=="basico"){alert("Solo los comercios del plan Básico reciben informe.");return}
+    try{const b=await svgAPng(svgInformeComercio(D,R.id),820,520),n="informe-"+R.nombre.replace(/[^a-z0-9]+/gi,"-").toLowerCase()+"-"+D.mes+".png";
+      if(d.mcd)bajarBlob(b,n);else{const c=D.cs.find(x=>x.id===R.id)||{};await compartirInforme(b,n,"Informe Valle GO · "+R.nombre+" · "+nomMes(D.mes)+"\nPedidos: "+R.n+" · Ventas: "+mxn(R.tot)+"\n1% Valle GO: "+mxn(R.com)+" · Membresía: "+mxn(R.memI)+"\nTotal del mes: "+mxn(R.cobrar)+" · Saldo: "+mxn(R.saldo),c.whatsapp)}}catch(err){alert(err.message)}return}
   if(d.aadd!==undefined){const c=($("aCorreo").value||"").trim();if(!c){$("aMsg").textContent=" Escribe un correo.";return}
     if(!confirm("¿Dar permisos de administrador a "+c+"?"))return;
     const r=await db.rpc("admin_agregar_admin",{correo:c});if(r.error){$("aMsg").textContent=" "+r.error.message;return}return admTab()}
