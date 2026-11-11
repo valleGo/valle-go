@@ -234,11 +234,22 @@ function iniAds(){
 }
 
 // ---- Roles ----
-async function cargarRol(){
-  esAdmin=false;misCom=[];
-  if(!db||!sesion||!sesion.id){pintaHeader();return}
-  const a=await db.from("admins").select("user_id").eq("user_id",sesion.id); esAdmin=!!(a.data&&a.data.length);
-  const c=await db.from("comercios").select("id,nombre,mp_conectado,plan").eq("dueno_id",sesion.id); misCom=c.data||[];
+let rolP=null,rolOK=false;
+function cargarRol(){   // una sola consulta a la vez, aunque varias partes de la app la pidan
+  if(!rolP)rolP=cargarRolReal().finally(()=>{rolP=null});return rolP}
+async function cargarRolReal(){
+  if(!db||!sesion||!sesion.id){esAdmin=false;misCom=[];rolOK=false;pintaHeader();return}
+  if(!rolOK){   // muestra de inmediato el último rol conocido (así el botón Panel no parpadea ni desaparece)
+    esAdmin=false;misCom=[];
+    try{const g=JSON.parse(localStorage.getItem("valle_rol_"+sesion.id)||"null");if(g){esAdmin=!!g.a;misCom=g.c||[]}}catch(e){}
+    pintaHeader()}
+  let a,c;
+  for(let i=0;i<3;i++){
+    try{[a,c]=await Promise.all([db.from("admins").select("user_id").eq("user_id",sesion.id),db.from("comercios").select("id,nombre,mp_conectado,plan").eq("dueno_id",sesion.id)])}catch(e){a=c={error:e}}
+    if(!a.error&&!c.error)break;await new Promise(r=>setTimeout(r,1200*(i+1)))}
+  if(a.error||c.error){pintaHeader();return}   // falló la red: se conserva lo último que se sabía, no se oculta el botón
+  esAdmin=!!(a.data&&a.data.length);misCom=c.data||[];rolOK=true;
+  try{localStorage.setItem("valle_rol_"+sesion.id,JSON.stringify({a:esAdmin,c:misCom}))}catch(e){}
   pintaHeader();escucharPedidos();escucharMisPedidos();notifAuto();
 }
 
@@ -1006,7 +1017,7 @@ function vistaCuenta(){
      if(r.error)return alert("No se pudo cambiar: "+r.error.message);
      $("np1").value="";$("np2").value="";alert("Contraseña actualizada. Úsala la próxima vez que entres.");
    };
-   $("salir").onclick=async()=>{await cerrarAvisos();if(db)db.auth.signOut();esAdmin=false;misCom=[];sesion=null;$s("sesion",null);pintaHeader();location.hash="#/"};return;}
+   $("salir").onclick=async()=>{await cerrarAvisos();if(db)db.auth.signOut();esAdmin=false;misCom=[];rolOK=false;sesion=null;$s("sesion",null);pintaHeader();location.hash="#/"};return;}
   $("vista").innerHTML=`<h2>Crea tu cuenta Valle GO:</h2><p class="aviso">📧 <b>Importante:</b> al crear tu cuenta te enviaremos un correo de confirmación. Debes abrirlo en tu bandeja de entrada (revisa también Spam o Promociones) y tocar el enlace para poder entrar. Aplica para usuarios y comercios.</p><div id="gBox"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
    <div class="caja" style="position:static;width:auto;padding:0">
     <label>Nombre<input id="rn" autocomplete="name"></label><label>Correo<input id="re" type="email" autocomplete="email"></label>
@@ -1245,7 +1256,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#bCont");if(b){e
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v89";
+const BUILD="valle-go-v90";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
