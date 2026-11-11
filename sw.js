@@ -1,5 +1,5 @@
 // Service worker de Valle GO: abre sin internet, siempre intenta traer la versión nueva y recibe notificaciones.
-const CACHE = "valle-go-v63";
+const CACHE = "valle-go-v64";
 const ARCHIVOS = ["./", "./index.html", "./config.js", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-180.png"];
 
 self.addEventListener("install", e => {
