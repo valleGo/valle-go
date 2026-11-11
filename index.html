@@ -583,8 +583,8 @@ function vistaDirectorio(){
   const norm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   const lista=()=>{const q=norm(dirQ).trim(),F=q?L.filter(t=>norm(t.nombre+" "+t.giro+" "+t.direccion).includes(q)):L;
     return F.length?`<div class="grid gcom">${F.map(tarjetaCom).join("")}</div>`:"<p>No encontramos comercios con esa búsqueda.</p>"};
-  $("vista").innerHTML=`<h2>Directorio</h2><p class="suave">Todos los comercios del Valle: con menú y pedidos, y los que solo tienen perfil de presentación.</p>
-   <label>Buscar<input id="dirQ" type="search" placeholder="Nombre, giro o domicilio" value="${esc(dirQ)}"></label><div id="dirL">${lista()}</div>`;
+  $("vista").innerHTML=`<h2>Directorio</h2>
+   <label style="font-size:1.25rem;font-weight:800">Buscar<input id="dirQ" type="search" placeholder="Nombre, giro o domicilio" value="${esc(dirQ)}" style="font-size:1.2rem;padding:16px 18px;margin-top:8px;margin-bottom:14px"></label><div id="dirL">${lista()}</div>`;
   $("dirQ").oninput=e=>{dirQ=e.target.value;$("dirL").innerHTML=lista()};
 }
 function vistaTienda(id){
