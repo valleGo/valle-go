@@ -909,7 +909,7 @@ const logoHTML=(t,g)=>t.logo?`<img class="logo-c${g?" g":""}" src="${esc(t.logo)
 function ruta(){
   clearInterval(adT);
   const [,r,id]=location.hash.split("/");
-  const bp=$("bPanel");if(bp)bp.classList.toggle("on",r==="panel"||r==="admin");
+  const bp=$("bPanel");if(bp)bp.classList.toggle("on",r==="panel"||r==="admin");bp.setAttribute("aria-pressed",String(r==="panel"||r==="admin"));
 
   if(r==="t")return vistaTienda(id);
   if(r==="cuenta")return vistaCuenta();
@@ -1235,7 +1235,7 @@ document.addEventListener("click",e=>{const d=e.target.dataset;
   if(d.mas)cambia(d.mas,1); if(d.menos)cambia(d.menos,-1); if(d.cerrar!==undefined){if(capas.length)cierraCapa();else $("pCarrito").classList.remove("on")}});
 $("bCarrito").onclick=()=>{pintaCarrito();const p=$("pCarrito");if(!p.classList.contains("on")){p.classList.add("on");abreCapa(()=>p.classList.remove("on"))}};
 $("bCuenta").onclick=()=>location.hash="#/cuenta";
-$("bPanel").onclick=()=>location.hash=esAdmin?"#/admin":"#/panel";
+$("bPanel").onclick=()=>{const h=location.hash;location.hash=(h.startsWith("#/admin")||h.startsWith("#/panel"))?"#/":(esAdmin?"#/admin":"#/panel")};   // clic: abre el panel; otro clic: regresa al inicio
 window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
 
 
@@ -1289,7 +1289,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v94";
+const BUILD="valle-go-v95";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
