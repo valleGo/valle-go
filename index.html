@@ -421,6 +421,59 @@ function pdfMembresias(mes,F,S,PGM,nomC){
     ops.push({t:"x",x:574-wd(mx(Number(x.monto)))*9,y,v:mx(Number(x.monto)),s:9,b:1,c:NEG});y+=16});
   pags.forEach((p,i)=>p.push({t:"x",x:40,y:772,v:"Generado el "+new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})+" · Valle GO · Página "+(i+1)+" de "+pags.length,s:8,c:GRIS}));
   return pdfSimple(pags)}
+
+// ---- Kit para PDFs de reportes (usa pdfSimple) ----
+function pdfKit(mes,subt){
+  const NEG=[.17,.17,.13],GRIS=[.4,.42,.35],VERDE=[.36,.46,.28],CLARO=[.93,.95,.89],BLANCO=[1,1,1],K={pags:[],NEG,GRIS,VERDE,CLARO,BLANCO};
+  K.mx=x=>"$"+Number(x).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+  K.wd=t=>[...String(t)].reduce((a,ch)=>a+(/[0-9$]/.test(ch)?.556:/[.,]/.test(ch)?.278:.5),0);
+  K.nueva=()=>{K.ops=[];K.pags.push(K.ops);const o=K.ops;
+    o.push({t:"r",x:0,y:0,w:612,h:78,c:VERDE},{t:"x",x:40,y:38,v:"Valle GO",s:22,b:1,c:BLANCO},{t:"x",x:40,y:58,v:subt+" · "+nomMes(mes),s:12,c:BLANCO},{t:"x",x:512,y:38,v:"Va, llegó",s:12,b:1,c:BLANCO});K.y=104};
+  K.txt=(x,v,s,b,c,der)=>{const w=der?K.wd(v)*s:0;K.ops.push({t:"x",x:x-w,y:K.y,v,s:s||9,b,c:c||NEG})};
+  K.enc=cols=>{K.ops.push({t:"r",x:36,y:K.y-14,w:540,h:22,c:CLARO});cols.forEach(c=>K.txt(c.x,c.n,8.5,1,NEG,c.d));K.y+=20};
+  K.linea=()=>{K.y+=6;K.ops.push({t:"l",x1:36,x2:576,y:K.y,c:[.85,.87,.8]});K.y+=16};
+  K.barras=(x,w,h,titulo,labels,series)=>{
+    const max=Math.max(1,...series.flatMap(s=>s.vals)),left=44,top=K.y+34,base=K.y+h-18,ch=base-top,gw=(w-left)/labels.length,bw=Math.min(22,(gw-8)/series.length),o=K.ops,col=h=>[parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255];
+    o.push({t:"x",x,y:K.y+4,v:titulo,s:10,b:1,c:NEG});
+    series.forEach((s,j)=>{const lx=x+left+j*110;o.push({t:"r",x:lx,y:K.y+14,w:8,h:8,c:col(s.color)},{t:"x",x:lx+12,y:K.y+21,v:s.nombre,s:8,c:GRIS})});
+    for(let i=0;i<=4;i++){const yy=base-ch*i/4;o.push({t:"l",x1:x+left,x2:x+w,y:yy,c:[.88,.9,.84]},{t:"x",x:x+left-4-K.wd(mxk(max*i/4))*7,y:yy+3,v:mxk(max*i/4),s:7,c:GRIS})}
+    labels.forEach((l,i)=>{const gx=x+left+i*gw+(gw-bw*series.length)/2;
+      series.forEach((s,j)=>{const v=s.vals[i],bh=ch*v/max;if(bh>0)o.push({t:"r",x:gx+j*bw,y:base-bh,w:bw-2,h:Math.max(bh,1),c:col(s.color)})});
+      o.push({t:"x",x:x+left+i*gw+gw/2-K.wd(l)*4,y:base+11,v:l,s:8,c:GRIS})});
+    K.y+=h+14};
+  K.fin=()=>{K.pags.forEach((p,i)=>p.push({t:"x",x:40,y:772,v:"Generado el "+new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})+" · Valle GO · Página "+(i+1)+" de "+K.pags.length,s:8,c:GRIS}));return pdfSimple(K.pags)};
+  K.nueva();return K}
+function pdfCobros1(mes,F,S,PGC,nomC){
+  const K=pdfKit(mes,"Reporte de cobros del 1%"),mx=K.mx,cols=[{n:"Comercio",x:40},{n:"Plan",x:150},{n:"Pedidos",x:222,d:1},{n:"En línea",x:282,d:1},{n:"Transf./efvo.",x:346,d:1},{n:"Total vendido",x:416,d:1},{n:"1% Valle GO",x:476,d:1},{n:"Pagado",x:526,d:1},{n:"Saldo",x:574,d:1}];
+  K.txt(40,"El 1% se calcula sobre el total de todos los pedidos del mes (en línea, transferencia, depósito o efectivo), sin IVA.",8.5,0,K.GRIS);K.y+=24;K.enc(cols);
+  const fila=(f,b)=>{[f.nombre.length>20?f.nombre.slice(0,19)+"...":f.nombre,f.plan,String(f.n),mx(f.linea),mx(f.otro),mx(f.tot),mx(f.com),mx(f.pag),f.saldo<=0.004&&!b?"Pagado":mx(f.saldo)].forEach((v,i)=>K.txt(cols[i].x,v,8.5,b||i===6||i===8,K.NEG,cols[i].d))};
+  F.forEach(f=>{if(K.y>730){K.nueva();K.enc(cols)}fila(f);K.linea()});
+  if(K.y>700)K.nueva();K.ops.push({t:"r",x:36,y:K.y-14,w:540,h:22,c:K.CLARO});fila({nombre:"Total",plan:"",n:S.n,linea:S.linea,otro:S.otro,tot:S.tot,com:S.com,pag:S.pag,saldo:S.saldo},1);K.y+=34;
+  if(K.y>690)K.nueva();K.txt(40,"Pagos del 1% registrados en el mes",11,1);K.y+=18;
+  if(!PGC.length){K.txt(40,"Aún no hay pagos del 1% registrados este mes.",9,0,K.GRIS);K.y+=16}
+  PGC.forEach(x=>{if(K.y>740)K.nueva();const det=new Date(x.pagado_en).toLocaleDateString("es-MX")+(x.metodo?" · "+x.metodo:"")+(x.nota?" · "+x.nota:"");
+    K.txt(40,(nomC[x.comercio_id]||"Comercio").slice(0,28),9,1);K.txt(196,det.slice(0,60),9,0,K.GRIS);K.txt(574,mx(Number(x.monto)),9,1,K.NEG,1);K.y+=16});
+  return K.fin()}
+function pdfMonitoreo(D){
+  const K=pdfKit(D.mes,"Reporte de monitoreo"),mx=K.mx,T=D.M[D.mes],et=D.keys.map(etMes);
+  K.txt(40,"Resumen del mes",12,1);K.y+=18;
+  const items=[["Pedidos",String(T.n)],["Total vendido",mx(T.tot)],["Comisión 1%",mx(T.com)],["Membresías (sin IVA)",mx(T.mem)],["Ingresos Valle GO (sin IVA)",mx(T.ing)],["Ganancia estimada",mx(T.gan)],
+    ["1% cobrado",mx(T.pagC)],["1% por cobrar",mx(T.saldoC)],["Membresías cobradas",mx(T.pagM)],["Membresías por cobrar",mx(T.saldoM)],["IVA cobrado (membresías)",mx(T.ivaC)],["Gastos del mes",mx(T.gast)],["IVA de gastos (acreditable)",mx(T.ivaG)],[T.ivaP<0?"IVA a favor":"IVA por pagar",mx(Math.abs(T.ivaP))]];
+  for(let i=0;i<items.length;i+=2){[0,1].forEach(j=>{const it=items[i+j];if(!it)return;const x=40+j*270;K.ops.push({t:"r",x:x-4,y:K.y-13,w:262,h:20,c:j?[1,1,1]:K.CLARO});K.txt(x,it[0],9,0,K.GRIS);K.txt(x+250,it[1],9.5,1,K.NEG,1)});K.y+=22}
+  K.y+=10;K.txt(40,"Últimos 6 meses",12,1);K.y+=18;
+  const cols=[{n:"Mes",x:40},{n:"Pedidos",x:120,d:1},{n:"Vendido",x:190,d:1},{n:"1%",x:250,d:1},{n:"Membresías",x:320,d:1},{n:"Ingresos",x:390,d:1},{n:"IVA cobrado",x:462,d:1},{n:"IVA gastos",x:525,d:1},{n:"IVA x pagar",x:576,d:1}];
+  K.enc(cols);D.keys.forEach(k=>{const m=D.M[k];[etMes(k)+" "+k.slice(0,4),String(m.n),mx(m.tot),mx(m.com),mx(m.mem),mx(m.ing),mx(m.ivaC),mx(m.ivaG),mx(m.ivaP)].forEach((v,i)=>K.txt(cols[i].x,v,8,i===5,K.NEG,cols[i].d));K.linea()});
+  K.nueva();K.y=100;
+  K.barras(40,536,190,"Ventas por mes (todos los pedidos)",et,SG.ventas(D));
+  K.barras(40,536,190,"Ingresos de Valle GO por mes (sin IVA)",et,SG.ing(D));
+  K.barras(40,536,190,"Membresías por mes: cobrado y por cobrar",et,SG.pagosM(D));
+  K.nueva();K.y=100;
+  K.barras(40,536,190,"1% de comisión por mes: cobrado y por cobrar",et,SG.pagosC(D));
+  K.barras(40,536,190,"IVA por mes: cobrado, de gastos y por pagar",et,SG.iva(D));
+  K.txt(40,"Alertas",12,1);K.y+=16;
+  if(!D.alertas.length)K.txt(40,"Sin alertas.",9,0,K.GRIS);
+  D.alertas.forEach(a=>{if(K.y>740)K.nueva();K.txt(40,"- "+a.slice(0,100),9);K.y+=14});
+  return K.fin()}
 function bajarBlob(blob,nombre){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000)}
 async function compartirInforme(blob,nombre,texto,tel){
   const f=new File([blob],nombre,{type:"image/png"});
@@ -501,7 +554,7 @@ async function admTab(){
     <h3>Gastos de ${esc(nomMes(D.mes))}</h3><p class="suave">Registra aquí lo que Valle GO paga (Supabase, Vercel, dominio, publicidad…). Si el gasto incluye IVA, déjalo marcado: se calcula el IVA acreditable.</p>
     ${D.GA.filter(x=>x.mes===D.mes).map(x=>`<div class="item"><div class="in" style="flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap"><b style="flex:1">${esc(x.concepto)}</b><span>${mxn(Number(x.monto))}</span><span class="suave">${x.con_iva?"con IVA":"sin IVA"}</span><button class="btn sec" data-gdel="${x.id}">Quitar</button></div></div>`).join("")||'<p class="suave">Aún no hay gastos este mes.</p>'}
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:8px 0 14px"><label style="flex:2;min-width:150px">Concepto<input id="gCon" placeholder="Ej. Supabase Pro"></label><label style="flex:1;min-width:110px">Monto (MXN)<input id="gMon" type="number" step="0.01" min="0" placeholder="0.00"></label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="gIva" checked style="width:auto"> Incluye IVA</label><button class="btn" data-gadd>Agregar gasto</button></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px"><button class="btn" data-mdl>Descargar informe (imagen)</button><button class="btn sec" data-mcsv>Descargar datos (CSV)</button><button class="btn sec" data-mshare>Compartir informe</button><button class="btn sec" data-mrec>Actualizar</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px"><button class="btn" data-mpdf>Descargar PDF</button><button class="btn sec" data-mdl>Descargar informe (imagen)</button><button class="btn sec" data-mcsv>Descargar datos (CSV)</button><button class="btn sec" data-mshare>Compartir informe</button><button class="btn sec" data-mrec>Actualizar</button></div>
     <h3>Alertas</h3>${D.alertas.length?D.alertas.map(a=>`<div class="aviso">⚠️ ${esc(a)}</div>`).join(""):'<p class="suave">Sin alertas.</p>'}
     <h3>Compartir con comerciantes (plan Básico)</h3><p class="suave">Cada comercio recibe su propio informe del mes: sus ventas, el 1%, su membresía y su saldo. El plan Simple no tiene informe.</p>
     ${bas.map(r=>`<div class="item"><div class="in"><b>${esc(r.nombre)}</b><span class="suave">${r.n} pedidos · ${mxn(r.tot)} · saldo ${mxn(r.saldo)}</span>
@@ -561,7 +614,8 @@ async function admTab(){
     <p class="suave">Cuentan los pedidos del mes que no están cancelados; los pagos en línea solo si están marcados como Pagado. Los de transferencia y efectivo cuentan aunque se cobren fuera de la app: revisa que estén registrados. ${excl?excl+" pedido(s) no se cuentan (cancelados o pago en línea sin pagar). ":""}</p>
     <h3>Pagos del 1% registrados del mes</h3>${pgErr?'<p class="suave">No se pudo cargar el registro de pagos: '+esc(pgErr)+'</p>':""}
     ${PGC.length?PGC.map(x=>`<div class="aviso" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span><b>${esc(nomC[x.comercio_id]||"Comercio")}</b> · ${mx(Number(x.monto))}<br><span class="suave">${new Date(x.pagado_en).toLocaleDateString("es-MX")}${x.metodo?" · "+esc(x.metodo):""}${x.nota?" · "+esc(x.nota):""}</span></span><button class="btn sec" data-cpdel="${x.id}">Quitar</button></div>`).join(""):'<p class="suave">Aún no hay pagos del 1% registrados este mes.</p>'}
-    <button class="btn" id="cCsv">Descargar CSV</button>`;
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="cPdf">Descargar PDF</button><button class="btn sec" id="cCsv">Descargar CSV</button></div>`;
+    $("cPdf").onclick=()=>bajarBlob(pdfCobros1(adm.mes,F,S,PGC,nomC),"valle-go-cobros-1porciento-"+adm.mes+".pdf");
     $("cMes").onchange=e=>{if(e.target.value){adm.mes=e.target.value;admTab()}};
     $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Plan","Pedidos","Pagos en linea","Transferencia/efectivo","Total vendido","1% Valle GO","Pagado","Saldo"]].concat(F.map(f=>[f.nombre,f.plan,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.pag.toFixed(2),f.saldo.toFixed(2)])).concat([["Total","",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.pag.toFixed(2),S.saldo.toFixed(2)]]);
       const b=new Blob(["\ufeff"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="valle-go-cobros-1porciento-"+adm.mes+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
@@ -615,6 +669,7 @@ document.addEventListener("click",async e=>{
   if(d.mrec!==undefined){adm.monForzar=true;return admTab()}
   if(d.mdl!==undefined||d.mshare!==undefined){const D=adm.mon;if(!D)return;try{const b=await svgAPng(svgInformeAdmin(D),820,992),n="valle-go-informe-"+D.mes+".png";
       if(d.mdl!==undefined)bajarBlob(b,n);else await compartirInforme(b,n,"Informe Valle GO de "+nomMes(D.mes),"")}catch(err){alert(err.message)}return}
+  if(d.mpdf!==undefined){const D=adm.mon;if(!D)return;try{bajarBlob(pdfMonitoreo(D),"valle-go-monitoreo-"+D.mes+".pdf")}catch(err){alert(err.message)}return}
   if(d.mcsv!==undefined){const D=adm.mon;if(!D)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Mes","Pedidos","Total vendido","Pagos en linea","Transferencia/efectivo","Comision 1%","Membresias sin IVA","Ingresos","Ganancia estimada","1% cobrado","1% por cobrar","Membresias cobradas","Membresias por cobrar","IVA cobrado","Gastos","IVA de gastos","IVA por pagar"]];
     D.keys.forEach(k=>{const T=D.M[k];L.push([k,T.n,T.tot.toFixed(2),T.linea.toFixed(2),T.otro.toFixed(2),T.com.toFixed(2),T.mem.toFixed(2),T.ing.toFixed(2),T.gan.toFixed(2),T.pagC.toFixed(2),T.saldoC.toFixed(2),T.pagM.toFixed(2),T.saldoM.toFixed(2),T.ivaC.toFixed(2),T.gast.toFixed(2),T.ivaG.toFixed(2),T.ivaP.toFixed(2)])});
     bajarBlob(new Blob(["﻿"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),"valle-go-monitoreo-"+D.mes+".csv");return}
@@ -1183,7 +1238,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#bCont");if(b){e
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v84";
+const BUILD="valle-go-v85";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
