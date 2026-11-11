@@ -567,7 +567,7 @@ const notifBtnHTML=()=>notifOK()
   ?(Notification.permission==="granted"
     ?`<p class="aviso">🔔 Avisos de pedidos activados en este dispositivo. <button class="btn sec" id="bNotif">Reactivar</button></p>`
     :`<p class="aviso">Recibe un aviso en tu celular cuando entre un pedido nuevo. <button class="btn" id="bNotif">Activar notificaciones</button></p>`)
-  :`<p class="aviso">Para recibir avisos en iPhone, instala primero la app (Compartir → Agregar a inicio), ábrela desde su ícono y vuelve aquí.</p>`;
+  :`<p class="aviso">Para recibir avisos en iPhone: 1) abre esta página en Safari, 2) toca Compartir ⬆️ → «Agregar a pantalla de inicio», 3) abre Valle GO desde ese ícono nuevo (no desde Safari) y 4) toca «Activar notificaciones». Requiere iOS 16.4 o más nuevo.</p>`;
 function aviso(t){const x=$("toast");x.textContent=t;x.style.display="block";setTimeout(()=>x.style.display="none",6000)}
 function sonido(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.2;o.start();o.stop(a.currentTime+.4)}catch(e){}}
 async function registrarPush(){   // crea (o renueva) la suscripción de este dispositivo y la guarda; no pide permiso
@@ -610,7 +610,7 @@ async function notifAuto(){
 function escucharPedidos(){
   if(!db||canal||!(esAdmin||misCom.length))return;
   canal=db.channel("pedidos-nuevos").on("postgres_changes",{event:"INSERT",schema:"public",table:"pedidos"},p=>{
-    sonido();aviso("🛎️ Nuevo pedido por "+din(Number(p.new.total)));
+    vistos.add(p.new.id);sonido();aviso("🛎️ Nuevo pedido por "+din(Number(p.new.total)));
     if(location.hash==="#/panel"||location.hash==="#/admin")ruta();
   }).on("postgres_changes",{event:"UPDATE",schema:"public",table:"pedidos"},p=>{
     const n=p.new||{};
@@ -832,17 +832,44 @@ function vistaCuenta(){
     b.innerHTML=`<button class="btn" id="gBtn" style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#1f1f1f;border:1px solid #dadce0"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continuar con Google</button><p class="suave">o usa tu correo:</p>`;
     $("gBtn").onclick=entrarGoogle});
 }
+// ---- Respaldo: revisa cambios cada 8 s (por si la conexión en tiempo real se corta, común en iPhone) ----
+const vistos=new Set();let firmaCli="",firmaCom="",sondeoInit=false,sondeando=false;
+async function sondeo(){
+  if(!db||!sesion||!sesion.id||document.hidden||sondeando)return;
+  sondeando=true;
+  try{
+    if(location.hash==="#/pedidos"){
+      const r=await db.from("pedidos").select("id,estado,estado_pago,recibido_en").eq("comprador_id",sesion.id);
+      if(r.data){const f=r.data.map(x=>x.id+x.estado+x.estado_pago+x.recibido_en).sort().join("|");
+        if(f!==firmaCli){const prim=firmaCli==="";firmaCli=f;
+          r.data.forEach(x=>{if(ultEst[x.id]&&ultEst[x.id]!==x.estado&&AVISO_EST[x.estado]){sonido();aviso(AVISO_EST[x.estado])}ultEst[x.id]=x.estado});
+          if(!prim)await vistaPedidos(true)}}
+    }
+    if((esAdmin||misCom.length)&&(location.hash==="#/panel"||location.hash==="#/admin")){
+      const r=await db.from("pedidos").select("id,estado,estado_pago,recibido_en,total").order("creado",{ascending:false}).limit(30);
+      if(r.data){const f=r.data.map(x=>x.id+x.estado+x.estado_pago+x.recibido_en).join("|");
+        const nuevos=r.data.filter(x=>!vistos.has(x.id));r.data.forEach(x=>vistos.add(x.id));
+        if(sondeoInit&&nuevos.length){sonido();aviso("🛎️ Nuevo pedido por "+din(Number(nuevos[0].total)))}
+        if(sondeoInit&&f!==firmaCom)ruta();
+        firmaCom=f;sondeoInit=true}
+    }
+  }catch(e){}
+  sondeando=false;
+}
+setInterval(sondeo,8000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)sondeo()});
+window.addEventListener("focus",sondeo);
 const PASOS=["Enviado al comercio","Preparando","En camino","Entregado"];
 async function vistaPedidos(silencio){
   if(!sesion){location.hash="#/cuenta";return}
   let ps=$$("pedidos",[]).filter(p=>p.email===sesion.email).reverse();
   if(db&&sesion.id){const r=await db.from("pedidos").select("*, comercios(nombre)").eq("comprador_id",sesion.id).order("creado",{ascending:false});
     if(r.data)ps=r.data.map(p=>({id:p.id,tienda:p.comercios?p.comercios.nombre:"",fecha:new Date(p.creado).toLocaleString("es-MX"),lineas:(p.lineas||[]).map(esc),total:Number(p.total),entrega:p.entrega,pago:p.pago,estado_pago:p.estado_pago,estado:p.estado,recibido_en:p.recibido_en}));}
-  ps.forEach(p=>{if(p.id)ultEst[p.id]=p.estado});
+  ps.forEach(p=>{if(p.id)ultEst[p.id]=p.estado});firmaCli=ps.filter(x=>x.id).map(x=>x.id+x.estado+x.estado_pago+x.recibido_en).sort().join("|");
   const hora=new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
   const pasos=p=>{if(p.estado==="Cancelado")return`<div class="pasos"><span class="paso mal">❌ Cancelado</span></div>`;
     const i=PASOS.indexOf(p.estado);return`<div class="pasos">${PASOS.map((x,k)=>`<span class="paso${k<=i?" ok":""}${k===i?" act":""}">${k<=i?"●":"○"} ${x}</span>`).join("")}</div>`};
-  const pushBtn=notifOK()&&VAPID_PUBLIC&&Notification.permission==="default"?`<p class="aviso">🔔 Activa los avisos para enterarte aunque tengas la app cerrada. <button class="btn sec" id="bNotif">Activar avisos</button></p>`:"";
+  const pushBtn=!notifOK()?notifBtnHTML():(VAPID_PUBLIC&&Notification.permission==="default"?`<p class="aviso">🔔 Activa los avisos para enterarte aunque tengas la app cerrada. <button class="btn" id="bNotif">Activar avisos</button></p>`:(Notification.permission==="denied"?`<p class="aviso">Las notificaciones están bloqueadas. Actívalas en Ajustes → Notificaciones → Valle GO.</p>`:""));
   $("vista").innerHTML=`<h2>Mis pedidos</h2><p class="suave"><button class="btn sec" id="bActPed">🔄 Actualizar</button> En tiempo real · última actualización ${hora}</p>${pushBtn}`+(ps.length?ps.map(p=>`<div class="item"><div class="in">
    <b>${p.tienda}</b><span class="suave">${p.fecha}</span>
    <span>${p.lineas.join("<br>")}</span><span class="tot">${din(p.total)}</span>

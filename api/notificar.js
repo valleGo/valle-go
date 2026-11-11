@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
     const [com] = await sb(`comercios?id=eq.${encodeURIComponent(ped.comercio_id)}&select=nombre,dueno_id`);
     const admins = await sb("admins?select=user_id");
     const staff = [...new Set([com && com.dueno_id, ...admins.map(a => a.user_id)].filter(Boolean))];
-    if (p.type === "INSERT" && ped.pago !== "en_linea") { prefijo = "🛎️ Nuevo pedido"; ids = staff; }
+    if (p.type === "INSERT") { prefijo = ped.pago === "en_linea" ? "🛎️ Nuevo pedido (en línea, pago pendiente)" : "🛎️ Nuevo pedido"; ids = staff; }
     else if (p.type === "UPDATE" && ped.pago === "en_linea" && ped.estado_pago === "Pagado" && old.estado_pago !== "Pagado") { prefijo = "💳 Pedido pagado"; ids = staff; }
     else if (p.type === "UPDATE" && ped.recibido_en && !old.recibido_en) { prefijo = "✅ Cliente confirmó recibido"; ids = staff; }
     else if (p.type === "UPDATE" && ped.estado !== old.estado && ped.comprador_id && !(ped.recibido_en && !old.recibido_en)) {
