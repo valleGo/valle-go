@@ -34,6 +34,7 @@ header a{color:var(--verde);text-decoration:none;font-size:1.3rem;font-weight:80
 .logo{display:flex;align-items:center;gap:10px}.logo img{width:66px;height:66px;flex:none;display:block}
 .hb{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 header .logo{flex-shrink:0}header .hb{margin-left:auto;flex:0 1 auto;min-width:0}header{flex-wrap:wrap;row-gap:4px}.marca{flex:0 0 100%;order:3;display:flex;justify-content:center;align-items:center}.marca a{display:flex;justify-content:center;max-width:100%}.marca img{display:block;max-width:100%;width:auto;height:auto;max-height:26px;object-fit:contain}
+.dirbar{max-width:1180px;margin:0 auto;padding:8px 10px 0}.dirbar a{display:inline-block;background:var(--verde);color:var(--on-verde);border-radius:999px;padding:7px 16px;font-weight:800;letter-spacing:.08em;font-size:.78rem;text-decoration:none;border:1px solid var(--verde)}.dirbar a.on{background:var(--acento);color:var(--on-acento);border-color:var(--acento)}
 .hb button{background:var(--tarjeta);color:var(--texto);border:1px solid var(--borde);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.85rem}
 .hb #bCarrito{background:var(--acento);color:var(--on-acento);border-color:var(--acento);font-weight:700}
 .hb #bPanel{background:var(--verde);color:var(--on-verde);border-color:var(--verde)}
@@ -134,6 +135,7 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
   <div class="marca"><a href="#/" aria-label="Va, llegó — ir al inicio"><img src="marca.png" alt="Va, llegó" width="450" height="92"></a></div>
   <div class="hb"><button id="bPanel" style="display:none">Panel</button><button id="bCuenta"></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div>
 </header>
+<div class="dirbar"><a href="#/directorio" id="bDir">DIRECTORIO</a></div>
 <main id="vista"></main>
 <footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><a href="privacidad.html">Política de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
 <div class="panel" id="pCarrito"><div class="caja" id="cCarrito"></div></div>
@@ -539,6 +541,8 @@ const logoHTML=(t,g)=>t.logo?`<img class="logo-c${g?" g":""}" src="${esc(t.logo)
 function ruta(){
   clearInterval(adT);
   const [,r,id]=location.hash.split("/");
+  const bd=$("bDir");if(bd)bd.classList.toggle("on",r==="directorio");
+  if(r==="directorio")return vistaDirectorio();
   if(r==="t")return vistaTienda(id);
   if(r==="cuenta")return vistaCuenta();
   if(r==="panel")return vistaPanel();
@@ -554,11 +558,12 @@ const tarjetaCom=t=>`
    ${t.plan==="simple"?`${t.whatsapp?`<span class="suave">📞 ${esc(t.whatsapp)}</span>`:""}<a class="btn" href="#/t/${t.id}">Ver perfil</a>`:`<span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
    <a class="btn" href="#/t/${t.id}">Ver menú</a>`}</div></div>`;
 function vistaInicio(){
-  const usadas=CATEGORIAS.filter(k=>COMERCIANTES.some(t=>t.cat===k.id));
-  const sinCat=COMERCIANTES.filter(t=>!usadas.some(k=>k.id===t.cat));
+  const PRINC=COMERCIANTES.filter(t=>t.plan!=="simple");
+  const usadas=CATEGORIAS.filter(k=>PRINC.some(t=>t.cat===k.id));
+  const sinCat=PRINC.filter(t=>!usadas.some(k=>k.id===t.cat));
   const grid=L=>`<div class="grid gcom">${L.map(tarjetaCom).join("")}</div>`;
   let cuerpo;
-  if(!usadas.length)cuerpo=grid(COMERCIANTES);
+  if(!usadas.length)cuerpo=grid(PRINC);
   else{
     if(catCom!=="Todos"&&catCom!=="otros"&&!usadas.some(k=>k.id===catCom))catCom="Todos";
     if(catCom==="otros"&&!sinCat.length)catCom="Todos";
@@ -566,11 +571,21 @@ function vistaInicio(){
     const sec=(titulo,L)=>L.length?`<h3 class="seccat">${titulo}</h3>${grid(L)}`:"";
     const nom=k=>`${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}`;
     cuerpo=`<div class="cats">${chip("Todos","Todos")}${usadas.map(k=>chip(k.id,nom(k))).join("")}${sinCat.length?chip("otros","Otros"):""}</div>`+
-      (catCom==="Todos"?`<div class="todos">`+usadas.map(k=>sec(nom(k),COMERCIANTES.filter(t=>t.cat===k.id))).join("")+sec("Otros",sinCat)+`</div>`
+      (catCom==="Todos"?`<div class="todos">`+usadas.map(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id))).join("")+sec("Otros",sinCat)+`</div>`
        :catCom==="otros"?sec("Otros",sinCat)
-       :(k=>sec(nom(k),COMERCIANTES.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
+       :(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
   }
   $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2>`+cuerpo;iniAds();
+}
+let dirQ="";
+function vistaDirectorio(){
+  const L=COMERCIANTES.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+  const norm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const lista=()=>{const q=norm(dirQ).trim(),F=q?L.filter(t=>norm(t.nombre+" "+t.giro+" "+t.direccion).includes(q)):L;
+    return F.length?`<div class="grid gcom">${F.map(tarjetaCom).join("")}</div>`:"<p>No encontramos comercios con esa búsqueda.</p>"};
+  $("vista").innerHTML=`<h2>Directorio</h2><p class="suave">Todos los comercios del Valle: con menú y pedidos, y los que solo tienen perfil de presentación.</p>
+   <label>Buscar<input id="dirQ" type="search" placeholder="Nombre, giro o domicilio" value="${esc(dirQ)}"></label><div id="dirL">${lista()}</div>`;
+  $("dirQ").oninput=e=>{dirQ=e.target.value;$("dirL").innerHTML=lista()};
 }
 function vistaTienda(id){
   const t=tienda(id); if(!t)return vistaInicio();
