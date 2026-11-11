@@ -80,6 +80,7 @@ main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .ca
 .suave{color:var(--suave);font-size:.85rem;font-weight:500}.precio{color:var(--verde);font-weight:700}
 .btn{background:var(--verde);color:var(--on-verde);border:0;border-radius:999px;padding:10px 16px;text-decoration:none;text-align:center;font-weight:600;font-size:.9rem;display:inline-block;transition:transform .12s,opacity .12s}
 .btn:hover{opacity:.92}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.55;cursor:default}
+.hor{display:flex;align-items:center;gap:8px}.hor select{flex:1}.fg{display:grid;gap:10px}.num{display:flex;align-items:center;gap:12px}.num input[type=number]{flex:1}.sn{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:.8rem;font-weight:600}
 .svbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.svbtns .btn.mini{display:inline-block}
 .dirbar{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:44px}   /* deja espacio para el segundo botón: no tapa la publicidad */.dirbar #bAg{background:#da9c48!important;color:#2a1a05!important;border-color:#c0802f!important}.dirbar #bAg.on{background:#a2cce5!important;color:#1f2a33!important;border-color:#7fb3d6!important}
 #bCq{position:fixed;left:50%;margin-left:-19px;top:calc(var(--hh,100px) + 8px);z-index:4;width:38px;height:38px;border-radius:50%;border:2px solid #46593a;background:#5C7648;color:#fff;display:grid;place-items:center;padding:0;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.28);transition:transform .15s,box-shadow .15s,background .15s;-webkit-tap-highlight-color:transparent}#bCq:hover{transform:translateY(-2px);box-shadow:0 7px 16px rgba(0,0,0,.32)}#bCq:active{transform:scale(.92)}#bCq.on{background:#da9c48;border-color:#c0802f;color:#2a1a05}
@@ -348,11 +349,22 @@ let adm={tab:"anuncios",com:null};
 try{const g=JSON.parse(localStorage.getItem("valle_adm")||"null");if(g&&typeof g.tab==="string")Object.assign(adm,{tab:g.tab,mes:g.mes,mesM:g.mesM})}catch(e){}   // recuerda la pestaña del panel de administración al recargar
 
 const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
-const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Plan del comercio",t:"plan"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"ofrece_citas",l:"Ofrece agenda de servicios (solo plan Básico)",t:"check"},{k:"ofrece_consulta",l:"Ofrece consulta de stock con foto y texto (solo plan Básico)",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Plan del comercio",t:"plan"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario",t:"horario"},{k:"direccion",l:"Domicilio del comercio",t:"direccion"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"ofrece_citas",l:"Ofrece agenda de servicios (solo plan Básico)",t:"check"},{k:"ofrece_consulta",l:"Ofrece consulta de stock con foto y texto (solo plan Básico)",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
 const CF_CAT=[{k:"nombre",l:"Nombre de la categoría (Comida, Cafeterías, Servicios...)"},{k:"emoji",l:"Emoji (opcional)"},{k:"orden",l:"Orden de aparición (1, 2, 3...)",t:"number"}];
 const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
 const DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
-const formHTML=(cs,v)=>cs.map(c=>c.t==="dias"?`<label>${c.l}<span class="dias">${DIAS.map(d=>`<span class="dia"><input type="checkbox" data-dia="${d}" ${(v[c.k]||"").split(",").includes(d)?"checked":""} style="width:auto"> ${d}</span>`).join("")}</span><input type="hidden" data-f="${c.k}"></label>`
+const HORAS=(()=>{const a=[];for(let h=0;h<24;h++)for(const m of["00","30"])a.push((h%12||12)+":"+m+" "+(h<12?"am":"pm"));return a})();
+const normHora=x=>{const m=/^\s*(\d{1,2}):(\d{2})\s*([ap])\.?m\.?\s*$/i.exec(x||"");return m?(+m[1])+":"+m[2]+" "+m[3].toLowerCase()+"m":""};
+const parseHor=v=>{const p=String(v||"").split(/\s*[-–]\s*|\s+a\s+/i);return p.length===2&&normHora(p[0])&&normHora(p[1])?[normHora(p[0]),normHora(p[1])]:["",""]};
+const parseDir=v=>{const m=/^(.*?)(?:\s+#(\S+))?(?:,\s*Col\.\s*(.*))?$/.exec(String(v||"").trim());return m?{c:(m[1]||"").trim(),n:m[2]||"",l:(m[3]||"").trim()}:{c:String(v||""),n:"",l:""}};
+const coloniasConocidas=()=>[...new Set(["Centro",...COMERCIANTES.map(t=>parseDir(t.direccion).l).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,"es"));
+const formHTML=(cs,v)=>cs.map(c=>c.t==="horario"?(()=>{const[a,b]=parseHor(v[c.k]),op=x=>`<option value="">—</option>`+HORAS.map(h=>`<option ${h===x?"selected":""}>${h}</option>`).join("");
+    return `<label>${c.l}<span class="hor"><select data-hor="a" aria-label="Abre">${op(a)}</select><span>a</span><select data-hor="b" aria-label="Cierra">${op(b)}</select></span><input type="hidden" data-f="${c.k}" data-orig="${esc(v[c.k]||"")}"><small class="suave">Elige la hora de apertura y la de cierre.</small></label>`})()
+  :c.t==="direccion"?(()=>{const d=parseDir(v[c.k]),sn=d.n==="S/N";
+    return `<div class="fg"><b style="font-size:.85rem">${c.l}</b><label>Calle<input data-dc placeholder="Ej. Hidalgo" value="${esc(d.c)}"></label>
+     <label>Número<span class="num"><input data-dn type="number" inputmode="numeric" min="0" step="1" placeholder="Ej. 123" value="${sn?"":esc(d.n)}" ${sn?"disabled":""}><span class="sn"><input type="checkbox" data-dsn ${sn?"checked":""} style="width:auto"> Sin número</span></span></label>
+     <label>Colonia<input data-dl list="dl_cols" placeholder="Elige o escribe" value="${esc(d.l)}"><datalist id="dl_cols">${coloniasConocidas().map(x=>`<option value="${esc(x)}">`).join("")}</datalist></label><input type="hidden" data-f="${c.k}"></div>`})()
+  :c.t==="dias"?`<label>${c.l}<span class="dias">${DIAS.map(d=>`<span class="dia"><input type="checkbox" data-dia="${d}" ${(v[c.k]||"").split(",").includes(d)?"checked":""} style="width:auto"> ${d}</span>`).join("")}</span><input type="hidden" data-f="${c.k}"></label>`
   :c.t==="file"?`<label>${c.l}<input type="file" accept="image/*" data-f="${c.k}">${v[c.k]?`<img src="${esc(v[c.k])}" alt="" style="height:60px;border-radius:8px">`:""}</label>`
   :c.t==="srvtipo"?`<label>${c.l}<select data-f="${c.k}">${["transporte"].map(k=>`<option value="${k}" ${(v[c.k]||"transporte")===k?"selected":""}>${({transporte:"Transporte (taxistas, transportistas)",consulta:"Consulta de stock (comercio con mucho inventario)"})[k]}</option>`).join("")}</select></label>`
   :c.t==="check"?`<label><span><input type="checkbox" data-f="${c.k}" ${v[c.k]?"checked":""} style="width:auto"> ${c.l}</span></label>`
@@ -361,7 +373,9 @@ const formHTML=(cs,v)=>cs.map(c=>c.t==="dias"?`<label>${c.l}<span class="dias">$
   :`<label>${c.l}<input data-f="${c.k}" type="${c.t||"text"}" value="${esc(v[c.k]??"")}"></label>`).join("");
 async function leerForm(cs,raiz,v){const o={};
   for(const c of cs){const el=raiz.querySelector(`[data-f="${c.k}"]`);
-    if(c.t==="dias")o[c.k]=[...el.closest("label").querySelectorAll("[data-dia]")].filter(x=>x.checked).map(x=>x.dataset.dia).join(",");
+    if(c.t==="horario"){const L=el.closest("label"),a=L.querySelector('[data-hor="a"]').value,b=L.querySelector('[data-hor="b"]').value;o[c.k]=(a&&b)?a+" - "+b:(!a&&!b?(el.dataset.orig||""):(()=>{throw new Error("Elige la hora de apertura y la de cierre.")})())}
+    else if(c.t==="direccion"){const F=el.closest(".fg"),sn=F.querySelector("[data-dsn]").checked;o[c.k]=dirTxt(F.querySelector("[data-dc]").value.trim(),sn?"S/N":F.querySelector("[data-dn]").value.trim(),F.querySelector("[data-dl]").value.trim())}
+    else if(c.t==="dias")o[c.k]=[...el.closest("label").querySelectorAll("[data-dia]")].filter(x=>x.checked).map(x=>x.dataset.dia).join(",");
     else if(c.t==="file")o[c.k]=el.files[0]?await subirFoto(el.files[0],c.carpeta):(v[c.k]||null);
     else if(c.t==="select"||c.t==="srvtipo")o[c.k]=el.value||null; else if(c.t==="check")o[c.k]=el.checked; else if(c.t==="number")o[c.k]=Number(el.value||0); else o[c.k]=el.value.trim();}
   return o;}
@@ -717,19 +731,33 @@ async function admTab(){
     box.innerHTML=L.map(p=>ped2html(p,true)).join("")||"<p>Aún no hay pedidos.</p>";
   }
 }
+// Borrador automático: lo escrito en un formulario sobrevive a recargas, cambios de pestaña o de app (las fotos se vuelven a elegir)
+const borrKey=k=>"valle_borrador_"+k;
+function borrCampos(raiz){return[...raiz.querySelectorAll("input,select,textarea")].filter(x=>x.type!=="file"&&x.type!=="hidden")}
+function borrGuardar(raiz,k){try{localStorage.setItem(borrKey(k),JSON.stringify(borrCampos(raiz).map(x=>x.type==="checkbox"?x.checked:x.value)))}catch(e){}}
+function borrBorrar(k){try{localStorage.removeItem(borrKey(k))}catch(e){}}
+function borrActivar(raiz,k){
+  let rest=false;try{const g=JSON.parse(localStorage.getItem(borrKey(k))||"null"),cs=borrCampos(raiz);
+    if(g&&g.length===cs.length){cs.forEach((x,i)=>{if(x.type==="checkbox")x.checked=!!g[i];else x.value=g[i]});raiz.querySelectorAll("[data-dsn]").forEach(c=>c.dispatchEvent(new Event("change",{bubbles:true})));rest=true}}catch(e){}
+  const g=()=>borrGuardar(raiz,k);raiz.addEventListener("input",g);raiz.addEventListener("change",g);
+  return rest}
+const formAbierto=()=>!!document.querySelector("#gF,#gSF");
 function formAdm(tabla,cs,v){
   const extra=(tabla==="comercios"||tabla==="servicios_perfiles")?`<label>Correo del ${tabla==="comercios"?"comerciante":"prestador"}, para su panel (vacío = no cambiar)<input id="dueno" type="email"></label>`:"";
   $("adm").innerHTML=`<div class="aviso"><b>${v.id?"Editar":"Nuevo"}</b></div>`+formHTML(cs,v)+extra+`<br><button class="btn" id="gF">Guardar</button> <button class="btn sec" id="cF">Cancelar</button>`;
   abreCapa(admTab);
-  $("cF").onclick=cierraCapa;
+  const bk=tabla+"_"+(v.id||"nuevo");
+  if(borrActivar($("adm"),bk)){const av=document.createElement("div");av.className="aviso";av.innerHTML='📝 Recuperamos lo que habías escrito. <button class="btn sec mini" id="bDesc">Descartar borrador</button>';$("adm").prepend(av);$("bDesc").onclick=()=>{borrBorrar(bk);formAdm(tabla,cs,v)}}
+  $("cF").onclick=()=>{borrBorrar(bk);cierraCapa()};
   $("gF").onclick=async()=>{$("gF").disabled=true;$("gF").textContent="Guardando...";
     try{const o=await leerForm(cs,$("adm"),v); if(!o.nombre)throw new Error("Falta el nombre.");
       if(tabla==="menu_items")o.comercio_id=v.comercio_id;
       if((tabla==="comercios"||tabla==="servicios_perfiles")&&$("dueno").value.trim()){const r=await db.rpc("usuario_por_correo",{correo:$("dueno").value.trim()});if(!r.data)throw new Error("Ese correo no está registrado en la app.");o.dueno_id=r.data}
       const r=await (v.id?db.from(tabla).update(o).eq("id",v.id):db.from(tabla).insert(o)); if(r.error)throw r.error;
-      cargarDatos(); cierraCapa();
+      borrBorrar(bk);cargarDatos(); cierraCapa();
     }catch(err){alert(err.message);$("gF").disabled=false;$("gF").textContent="Guardar"}};
 }
+document.addEventListener("change",e=>{if(e.target.matches&&e.target.matches("[data-dsn]")){const n=e.target.closest(".fg").querySelector("[data-dn]");n.disabled=e.target.checked;if(e.target.checked)n.value=""}});
 document.addEventListener("click",async e=>{
   const d=e.target.dataset; if(!esAdmin)return;
   if(d.tab){adm.tab=d.tab;adm.uh=null;await cierraTodasCapas();return vistaAdmin()}
@@ -867,11 +895,11 @@ function escucharPedidos(){
   if(!db||canal||!(esAdmin||misCom.length))return;
   canal=db.channel("pedidos-nuevos").on("postgres_changes",{event:"INSERT",schema:"public",table:"pedidos"},p=>{
     vistos.add(p.new.id);sonido();aviso("🛎️ Nuevo pedido por "+din(Number(p.new.total)));
-    if(location.hash==="#/panel"||location.hash==="#/admin")ruta();
+    if((location.hash==="#/panel"||location.hash==="#/admin")&&!formAbierto())ruta();
   }).on("postgres_changes",{event:"UPDATE",schema:"public",table:"pedidos"},p=>{
     const n=p.new||{};
     if(n.recibido_en&&Date.now()-new Date(n.recibido_en)<20000){sonido();aviso("✅ El cliente confirmó que recibió su pedido ("+din(Number(n.total))+")")}
-    if(location.hash==="#/panel"||location.hash==="#/admin")ruta();
+    if((location.hash==="#/panel"||location.hash==="#/admin")&&!formAbierto())ruta();
   }).subscribe();
 }
 // ---- Cliente: avisos en tiempo real de sus pedidos ----
@@ -949,7 +977,7 @@ const SV={agenda:{e:"📅",t:"Agenda y citas",d:"Servicios por cita: doctores, t
   transporte:{e:"🚕",t:"Transporte",d:"Taxistas, fletes, mudanzas y transportistas del Valle: llama o escribe directo por WhatsApp."},
   consulta:{e:"🔎",t:"Consulta de stock",d:"Manda una foto y un texto al comercio para saber si lo tiene en existencia y a qué precio."}};
 let svTab="agenda",misSrv=[],canalSrv=null;
-const cfSrv=carp=>[{k:"tipo",l:"Tipo de prestador",t:"srvtipo"},{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Dentista, Tatuajes, Taxi, Papelería...)"},{k:"descripcion",l:"Descripción"},{k:"zona",l:"Zona o colonias donde atiende"},{k:"horario",l:"Horario (ej. 9:00 am - 6:00 pm)"},{k:"dias_abiertos",l:"Días que atiende",t:"dias"},{k:"telefono",l:"Teléfono"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"vehiculo",l:"Vehículo (solo transporte: marca, modelo, color)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:carp},{k:"logo_url",l:"Logotipo (opcional)",t:"file",carpeta:carp},{k:"activo",l:"Visible en la app",t:"check"}];
+const cfSrv=carp=>[{k:"tipo",l:"Tipo de prestador",t:"srvtipo"},{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Dentista, Tatuajes, Taxi, Papelería...)"},{k:"descripcion",l:"Descripción"},{k:"zona",l:"Zona o colonias donde atiende"},{k:"horario",l:"Horario",t:"horario"},{k:"dias_abiertos",l:"Días que atiende",t:"dias"},{k:"telefono",l:"Teléfono"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"vehiculo",l:"Vehículo (solo transporte: marca, modelo, color)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:carp},{k:"logo_url",l:"Logotipo (opcional)",t:"file",carpeta:carp},{k:"activo",l:"Visible en la app",t:"check"}];
 const CF_SITEM=[{k:"nombre",l:"Nombre del servicio"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio (0 = a consultar)",t:"number"},{k:"duracion_min",l:"Duración en minutos (opcional)",t:"number"},{k:"activo",l:"Disponible",t:"check"}];
 const waUrl=n=>"https://wa.me/"+String(n||"").replace(/\D/g,""),telUrl=n=>"tel:"+String(n||"").replace(/[^\d+]/g,"");
 const hoyISO=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
@@ -1067,9 +1095,9 @@ async function vistaMisServicios(){
 // --- Panel del prestador ---
 function svForm(titulo,cs,v,guardar){
   $("vista").innerHTML=`<div class="aviso"><b>${titulo}</b></div>`+formHTML(cs,v)+`<br><button class="btn" id="gSF">Guardar</button> <button class="btn sec" id="cSF">Cancelar</button>`;
-  abreCapa(vistaPanelSrv);$("cSF").onclick=cierraCapa;
+  abreCapa(vistaPanelSrv);const bk="sv_"+titulo;borrActivar($("vista"),bk);$("cSF").onclick=()=>{borrBorrar(bk);cierraCapa()};
   $("gSF").onclick=async()=>{$("gSF").disabled=true;$("gSF").textContent="Guardando...";
-    try{const o=await leerForm(cs,$("vista"),v);if(!o.nombre)throw new Error("Falta el nombre.");await guardar(o);cierraCapa()}
+    try{const o=await leerForm(cs,$("vista"),v);if(!o.nombre)throw new Error("Falta el nombre.");await guardar(o);borrBorrar(bk);cierraCapa()}
     catch(err){alert(err.message);$("gSF").disabled=false;$("gSF").textContent="Guardar"}};
 }
 async function vistaPanelSrv(){
@@ -1314,7 +1342,7 @@ async function sondeo(){
       if(r.data){const f=r.data.map(x=>x.id+x.estado+x.estado_pago+x.recibido_en).join("|");
         const nuevos=r.data.filter(x=>!vistos.has(x.id));r.data.forEach(x=>vistos.add(x.id));
         if(sondeoInit&&nuevos.length){sonido();aviso("🛎️ Nuevo pedido por "+din(Number(nuevos[0].total)))}
-        if(sondeoInit&&f!==firmaCom)ruta();
+        if(sondeoInit&&f!==firmaCom&&!formAbierto())ruta();
         firmaCom=f;sondeoInit=true}
     }
   }catch(e){}
@@ -1538,7 +1566,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v119";
+const BUILD="valle-go-v120";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -1555,8 +1583,8 @@ setTimeout(revisaVersion,1200);setInterval(()=>{if(!document.hidden)revisaVersio
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)revisaVersion()});
 // ---- Actualización automática: al abrir la app (o volver a ella) se actualiza sola ----
 let sinFoco=document.hidden?Date.now():0;
-const ocupado=()=>document.querySelector(".panel.on,#dirPanel,.svpanel")!==null||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
-function nuevaVersion(){ if(document.hidden||!ocupado())location.reload(); else avisoNueva() }
+const ocupado=()=>document.querySelector(".panel.on,#dirPanel,.svpanel,#gF,#gSF")!==null||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+function nuevaVersion(){ if(!ocupado())location.reload(); else avisoNueva() }
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){sinFoco=Date.now();return}
   const fuera=sinFoco?Date.now()-sinFoco:0;sinFoco=0;
