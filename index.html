@@ -576,7 +576,12 @@ const notifBtnHTML=()=>notifOK()
     :`<p class="aviso">Recibe un aviso en tu celular cuando entre un pedido nuevo. <button class="btn" id="bNotif">Activar notificaciones</button></p>`)
   :iosViejo()?`<p class="aviso">${MSG_IOS_VIEJO(iosViejo())}</p>`:`<p class="aviso">Para recibir avisos en iPhone: 1) abre esta página en Safari, 2) toca Compartir ⬆️ → «Agregar a pantalla de inicio», 3) abre Valle GO desde ese ícono nuevo (no desde Safari) y 4) toca «Activar notificaciones». Requiere iOS 16.4 o más nuevo.</p>`;
 function aviso(t){const x=$("toast");x.textContent=t;x.style.display="block";setTimeout(()=>x.style.display="none",6000)}
-function sonido(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.2;o.start();o.stop(a.currentTime+.4)}catch(e){}}
+function sonido(){   // timbre largo (unos 4 s) + vibración, para que no pase desapercibido
+  try{navigator.vibrate&&navigator.vibrate([400,150,400,150,400,150,800])}catch(e){}
+  try{const a=new(window.AudioContext||window.webkitAudioContext)();if(a.state==="suspended")a.resume();
+    const nota=(f,t,d)=>{const o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.value=f;o.connect(g);g.connect(a.destination);
+      g.gain.setValueAtTime(0,a.currentTime+t);g.gain.linearRampToValueAtTime(.35,a.currentTime+t+.03);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+t+d);o.start(a.currentTime+t);o.stop(a.currentTime+t+d+.05)};
+    for(let i=0;i<4;i++){nota(880,i*1,.4);nota(1175,i*1+.45,.45)}}catch(e){}}
 async function registrarPush(){   // crea (o renueva) la suscripción de este dispositivo y la guarda; no pide permiso
   const reg=await navigator.serviceWorker.ready;
   const llave=b64u(VAPID_PUBLIC);
@@ -1051,7 +1056,7 @@ window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v72";
+const BUILD="valle-go-v73";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{

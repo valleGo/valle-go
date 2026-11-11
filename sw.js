@@ -1,5 +1,5 @@
 // Service worker de Valle GO: abre sin internet, siempre intenta traer la versión nueva y recibe notificaciones.
-const CACHE = "valle-go-v72";
+const CACHE = "valle-go-v73";
 const ARCHIVOS = ["./", "./index.html", "./config.js", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-180.png"];
 
 self.addEventListener("install", e => {
@@ -27,7 +27,8 @@ self.addEventListener("push", e => {
   try { d = e.data.json(); } catch (x) {}
   e.waitUntil(self.registration.showNotification(d.titulo || "Valle GO", {
     body: d.cuerpo || "", icon: "icon-192.png", badge: "icon-192.png",
-    tag: d.tag, renotify: true, vibrate: [200, 100, 200], data: { url: d.url || "./index.html#/panel" }
+    tag: d.tag, renotify: true, requireInteraction: true, silent: false,
+    vibrate: [500, 200, 500, 200, 500, 200, 900, 300, 900], timestamp: Date.now(), data: { url: d.url || "./index.html#/panel" }
   }));
 });
 self.addEventListener("notificationclick", e => {

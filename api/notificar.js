@@ -29,10 +29,10 @@ module.exports = async (req, res) => {
     else if (p.type === "UPDATE" && ped.pago === "en_linea" && ped.estado_pago === "Pagado" && old.estado_pago !== "Pagado") { prefijo = "💳 Pedido pagado"; ids = staff; }
     else if (p.type === "UPDATE" && ped.recibido_en && !old.recibido_en) { prefijo = "✅ Cliente confirmó recibido"; ids = staff; }
     else if (p.type === "UPDATE" && ped.estado !== old.estado && ped.comprador_id && !(ped.recibido_en && !old.recibido_en)) {
-      const T = { "Preparando": ["👨‍🍳 Pedido confirmado", "El comercio confirmó tu pedido y lo está preparando."],
-        "En camino": ["🛵 Tu pedido va en camino", "Tu pedido ya salió. ¡Pronto llegará!"],
-        "Entregado": ["📦 Pedido entregado", "Tu pedido fue marcado como entregado. Confirma que lo recibiste."],
-        "Cancelado": ["❌ Pedido cancelado", "El comercio canceló tu pedido."] }[ped.estado];
+      const T = { "Preparando": ["👨‍🍳 Pedido confirmado", "El comercio confirmó tu pedido y ya lo está preparando. Te avisaremos cuando salga. Toca para ver el seguimiento."],
+        "En camino": ["🛵 Tu pedido va en camino", "Tu pedido ya salió y va rumbo a ti. ¡Pronto llegará! Toca para ver el seguimiento."],
+        "Entregado": ["📦 Pedido entregado", "Tu pedido fue marcado como entregado. Toca aquí y confirma que lo recibiste con el botón Va, llegó."],
+        "Cancelado": ["❌ Pedido cancelado", "El comercio canceló tu pedido. Toca para ver los detalles o comunícate con el comercio."] }[ped.estado];
       if (!T) return res.status(200).json({ ok: true, omitido: true });
       prefijo = T[0]; cuerpoX = T[1]; ids = [ped.comprador_id]; urlX = "./index.html#/pedidos";
     } else return res.status(200).json({ ok: true, omitido: true });
@@ -44,7 +44,14 @@ module.exports = async (req, res) => {
     const pago = { efectivo: "Efectivo", transferencia: "Transferencia", en_linea: "Pagado en línea", tarjeta: "Tarjeta" }[ped.pago] || ped.pago;
     const msg = JSON.stringify({
       titulo: `${prefijo} · ${com ? com.nombre : ""}`,
-      cuerpo: cuerpoX || `$${Number(ped.total).toFixed(2)} · ${pago} · ${ped.entrega === "domicilio" ? "A domicilio" : "Recoger"}`,
+      cuerpo: cuerpoX || [
+        `Cliente: ${ped.cliente_nombre || "—"}${ped.cliente_tel ? " · " + ped.cliente_tel : ""}`,
+        ...(Array.isArray(ped.lineas) ? ped.lineas.slice(0, 6) : []),
+        `Total: $${Number(ped.total).toFixed(2)} · ${pago}`,
+        ped.entrega === "domicilio" ? `A domicilio: ${ped.direccion || ""}` : "Recoger en tienda",
+        ped.notas ? `Notas: ${ped.notas}` : null,
+        "Toca para abrir el pedido y confirmarlo."
+      ].filter(Boolean).join("\n"),
       url: urlX || "./index.html#/panel", tag: ped.id + (cuerpoX ? ped.estado : "")
     });
 
