@@ -58,7 +58,8 @@ module.exports = async (req, res) => {
     let enviados = 0;
     await Promise.all(subs.map(async s => {
       try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, msg);
+        // urgency "high" + TTL: Android en reposo (Doze) entrega al instante y no retrasa el aviso
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, msg, { urgency: "high", TTL: 3600 });
         enviados++;
       } catch (e) {
         if (e.statusCode === 404 || e.statusCode === 410)
