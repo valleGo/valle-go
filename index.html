@@ -37,6 +37,11 @@ header a{color:var(--verde);text-decoration:none;font-size:1.3rem;font-weight:80
 .logo{display:flex;align-items:center;gap:10px}.logo img{width:66px;height:66px;flex:none;display:block}
 .hb{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 header .logo{flex-shrink:0}header .hb{margin-left:auto;flex:0 1 auto;min-width:0}header{flex-wrap:wrap;row-gap:4px}.marca{flex:0 0 100%;order:3;display:flex;justify-content:center;align-items:center}.marca a{display:flex;justify-content:center;max-width:100%}.marca img{display:block;max-width:100%;width:auto;height:auto;max-height:26px;object-fit:contain}
+.admtop{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:12px;margin-bottom:14px}.admtop h2{margin:0;text-align:center;align-self:center}.admtop .monstack{min-width:0;margin:0}.admtop .izq{justify-self:start}.admtop .der{justify-self:end}
+@media(max-width:720px){.admtop{grid-template-columns:1fr 1fr;grid-template-areas:"t t" "l r"}.admtop h2{grid-area:t}.admtop .izq{grid-area:l}.admtop .der{grid-area:r}.admtop .monbtn{padding:10px 12px;font-size:.88rem;gap:8px}.admtop .monbtn svg{width:20px;height:20px;flex:none}}
+.admcats{justify-content:center;flex-wrap:wrap;overflow:visible}.admcats button{background:#da9c48!important;color:#2a1a05!important;border:1px solid #c0802f!important;font-weight:800!important;box-shadow:0 3px 9px rgba(192,128,47,.4);transition:transform .15s,box-shadow .15s,background .15s}
+.admcats button:hover{transform:translateY(-2px);box-shadow:0 7px 16px rgba(192,128,47,.5)}.admcats button:active{transform:scale(.95)}
+.admcats button.on{background:#a2cce5!important;color:#1f2a33!important;border-color:#7fb3d6!important;box-shadow:0 3px 9px rgba(111,168,214,.5)}
 .admhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.admhead h2{margin:0}
 .monstack{display:flex;flex-direction:column;gap:10px;align-items:stretch;margin-left:auto;min-width:210px}
 .monbtn{display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:13px 22px;border:1px solid #c0802f;border-radius:16px;background:#da9c48;color:#2a1a05;font-weight:800;font-size:1.08rem;letter-spacing:.02em;cursor:pointer;box-shadow:0 6px 16px rgba(192,128,47,.42),0 1px 3px rgba(0,0,0,.2);transition:transform .15s,box-shadow .15s,background .15s,border-color .15s}
@@ -489,7 +494,9 @@ async function vistaAdmin(){
   const icoCob='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-7 7"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/></svg>';
   const icoMem='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>';
   const icoMon='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg>';
-  $("vista").innerHTML=`<div class="admhead"><h2>Administración</h2><div class="monstack"><button class="monbtn${adm.tab==="cobros"?" on":""}" data-tab="cobros">${icoCob}<span>Cobros 1%</span></button><button class="monbtn${adm.tab==="membresias"?" on":""}" data-tab="membresias">${icoMem}<span>Membresías</span></button><button class="monbtn${adm.tab==="monitoreo"?" on":""}" data-tab="monitoreo">${icoMon}<span>Monitoreo</span></button></div></div>${notifBtnHTML()}<div class="cats">${Object.keys(T).filter(k=>k!=="monitoreo"&&k!=="cobros"&&k!=="membresias").map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
+  const IC={perfil:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.6-4 3.6-6 7-6s6.4 2 7 6"/></svg>',admins:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.4-3.1 8-7.5 9.5-4.4-1.5-7.5-5.1-7.5-9.5V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>',usuarios:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.5-3.4 3-5 6-5s5.5 1.6 6 5"/><circle cx="17" cy="9.5" r="2.5"/><path d="M16.5 14.7c2.6.2 4.2 1.7 4.5 4.3"/></svg>'};
+  const mb=k=>`<button class="monbtn${adm.tab===k?" on":""}" data-tab="${k}">${IC[k]||({cobros:icoCob,membresias:icoMem,monitoreo:icoMon})[k]}<span>${T[k]}</span></button>`;
+  $("vista").innerHTML=`<div class="admtop"><div class="monstack izq">${["perfil","admins","usuarios"].map(mb).join("")}</div><h2>Administración</h2><div class="monstack der">${["cobros","membresias","monitoreo"].map(mb).join("")}</div></div>${notifBtnHTML()}<div class="cats admcats">${["anuncios","comercios","categorias","menu","pedidos"].map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
   await admTab();
 }
 async function admTab(){
@@ -1238,7 +1245,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#bCont");if(b){e
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v85";
+const BUILD="valle-go-v87";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
