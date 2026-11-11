@@ -114,6 +114,15 @@ header .hb #bCuenta{gap:5px;padding:0 7px!important;font-size:.7rem!important;ov
 header #bCuenta .hav{width:20px!important;height:20px!important;margin:0!important;flex:0 0 auto}
 header #bCuenta .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
 @media(min-width:800px){header #bCuenta .hav{width:24px!important;height:24px!important}header .hb #bCuenta{font-size:.82rem!important}}
+/* v6: Perfil blanco y Redes naranja, mismo tamaño, contenido centrado */
+header .hb #bCuenta,header .lcol #bCont{display:flex!important;align-items:center!important;justify-content:center!important;width:104px!important;max-width:104px!important;height:30px!important;padding:0 8px!important;gap:6px!important}
+header .lcol #bCont{flex-direction:row!important;background:#da9c48!important;color:#2a1a05!important;border:1px solid #c0802f!important;box-shadow:0 2px 7px rgba(192,128,47,.45)!important}
+header .lcol #bCont .lbl{color:#2a1a05!important;text-align:left!important;font-weight:800;font-size:.54rem!important;line-height:1.1!important;flex:0 0 auto}
+header .lcol #bCont .dot{order:-1;width:auto!important;height:auto!important;background:none!important;border:0!important;box-shadow:none!important;color:#2a1a05!important;border-radius:0}
+header .lcol #bCont .dot svg{width:16px!important;height:16px!important;stroke-width:2.6}
+header .lcol #bCont:hover .dot,header .lcol #bCont:active .dot,header .lcol #bCont.on .dot{transform:none!important;background:none!important;box-shadow:none!important}
+header .lcol #bCont.on{background:#a2cce5!important;border-color:#7fb3d6!important;color:#1f2a33!important}header .lcol #bCont.on .lbl,header .lcol #bCont.on .dot{color:#1f2a33!important}
+@media(min-width:800px){header .hb #bCuenta,header .lcol #bCont{width:156px!important;max-width:156px!important;height:36px!important}header .lcol #bCont .dot svg{width:18px!important;height:18px!important}header .lcol #bCont .lbl{font-size:.68rem!important}}
 @media(max-width:379px){header{grid-template-areas:"l c r"!important}header .hc .marca img{width:100px!important}header .logo img{width:76px!important;height:76px!important}header .hb #bPedidos .pm{display:none}}
 @media(min-width:800px){header{padding:16px 40px!important}header .logo img{width:116px!important;height:116px!important}header .hc{gap:18px!important}header .hc .marca img{width:230px!important}header .hb.lcol{gap:16px}header .hbcol{gap:10px}header .lcol #bCont .lbl{font-size:.7rem}header .plbl{font-size:.7rem}header .hb #bCuenta{height:34px!important;font-size:.82rem!important}header .lcol .dot{width:32px;height:32px}}
 .hb #bCarrito{background:var(--acento);color:var(--on-acento);border-color:var(--acento);font-weight:700}
@@ -204,10 +213,10 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 #bCont:hover .dot{transform:translateY(-1px) scale(1.08);box-shadow:0 6px 14px rgba(0,0,0,.32)}#bCont:active .dot{transform:scale(.92)}
 #bCont.on .dot{background:#a2cce5;border-color:#7fb3d6;color:#1f2a33;transform:rotate(-8deg) scale(1.08)}
 @media(min-width:800px){header{padding:14px 32px}header .marca img{width:min(100%,300px)}header .logo img{width:72px;height:72px}header .hb{gap:14px}header .hb.lcol{gap:10px}header .hb button:not(#bCont){height:38px;font-size:.88rem;padding:0 20px}#bCont .lbl{font-size:.7rem}}
-#contPanel{position:fixed;right:12px;top:calc(var(--hh,120px) + 58px);z-index:4;width:min(260px,calc(100vw - 24px));padding:14px;border-radius:18px;background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);box-shadow:0 12px 30px rgba(0,0,0,.25);animation:contIn .18s ease-out;transform-origin:top right}
+#contPanel{position:fixed;left:12px;right:auto;top:calc(var(--hh,120px) + 6px);z-index:4;width:min(260px,calc(100vw - 24px));padding:14px;border-radius:18px;background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);box-shadow:0 12px 30px rgba(0,0,0,.25);animation:contIn .18s ease-out;transform-origin:top left}
 @keyframes contIn{from{opacity:0;transform:scale(.9) translateY(-6px)}to{opacity:1;transform:none}}
 #contPanel h3{margin:0 0 10px;font-size:1rem}#contPanel a{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-top:8px;border-radius:12px;text-decoration:none;font-weight:700;color:#1f2a14;background:rgba(165,181,116,.35);border:1px solid rgba(138,154,88,.5);transition:transform .12s,background .15s}
-#contPanel a:hover{background:rgba(236,146,67,.35);transform:translateX(-2px)}#contPanel a svg{flex:none}#contPanel p{margin:6px 0 0;font-size:.85rem}
+#contPanel a:hover{background:rgba(236,146,67,.35);transform:translateX(2px)}#contPanel a svg{flex:none}#contPanel p{margin:6px 0 0;font-size:.85rem}
 /* Efectos sutiles y dinámicos en botones (sin cambiar colores) */
 .btn,.hb button:not(#bPanel),.monbtn,.admcats button,.cats button{position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent}
 .btn,.hb button:not(#bPanel){transition:transform .18s cubic-bezier(.2,.8,.3,1),box-shadow .18s,filter .18s}
@@ -1735,7 +1744,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v138";
+const BUILD="valle-go-v140";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
