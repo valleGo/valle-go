@@ -945,18 +945,19 @@ function pintaCarrito(){
   $("n").textContent=Object.values(carrito.items).reduce((a,b)=>a+b,0);
   if(!t){$("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>Tu carrito</h2><p>Está vacío. Elige un comercio y agrega platillos.</p>`;return}
   const sub=subtotal(t), dom=t.domicilio&&($("entrega")?$("entrega").value==="domicilio":true), env=dom?t.envio:0;
-  const keep=["entrega","pago","ck_c","ck_n","ck_l","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});
+  const keep=["entrega","pago","ck_c","ck_n","ck_l","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});keep.gdom=$("gdom")?$("gdom").checked:undefined;
   $("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>${t.nombre}</h2>`+
    ids.map(id=>{const m=t.menu.find(x=>x.id===id);return `<div class="linea"><span>${m.emoji} ${m.nombre}<br><small>${din(m.precio)}</small></span>
     <span class="q"><button data-menos="${id}">−</button> ${carrito.items[id]} <button data-mas="${id}">+</button></span></div>`}).join("")+
    `<label>¿Cómo lo quieres?<select id="entrega">${t.domicilio?`<option value="domicilio">Entrega a domicilio</option>`:""}<option value="recoger">Recoger en tienda</option></select></label>
-    <div id="dirBox" style="display:grid;gap:12px"><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("ck",null)}</div>
+    <div id="dirBox" style="display:grid;gap:12px"><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("ck",null)}${db&&sesion&&sesion.id?`<label style="display:flex;gap:8px;align-items:center;font-size:.85rem"><input type="checkbox" id="gdom" style="width:auto"> 💾 Guardar este domicilio para mis próximos pedidos</label>`:""}</div>
     <label>¿Cómo pagas?<select id="pago"><option value="efectivo">Efectivo al recibir</option><option value="transferencia">Transferencia bancaria</option>${db?`<option value="en_linea">Pago en línea (Mercado Pago)</option>`:""}</select></label>
     <label>Notas<textarea id="notas" rows="2" placeholder="Sin cebolla, tocar el timbre..."></textarea></label>
     <div class="fila"><span>Subtotal</span><span>${din(sub)}</span></div>
     <div class="fila"><span>Envío</span><span id="env">${din(env)}</span></div>
     <div class="fila tot"><span>Total</span><span id="tot">${din(sub+env)}</span></div>
     <button class="btn" id="pedir">Confirmar pedido</button>`;
+  const gd0=document.getElementById("gdom");if(gd0){const tenia=!!(sesion&&(sesion.dir_calle||sesion.dir_num||sesion.dir_col||sesion.dir));gd0.checked=keep.gdom!==undefined?keep.gdom:!tenia}
   $("entrega").value=keep.entrega||(t.domicilio?"domicilio":"recoger");$("pago").value=keep.pago||"efectivo";
   const dd=sesion?((sesion.dir_calle||sesion.dir_num||sesion.dir_col)?sesion:{dir_calle:sesion.dir||"",dir_num:"",dir_col:""}):{};
   $("ck_c").value=keep.ck_c||dd.dir_calle||"";$("ck_n").value=keep.ck_n||dd.dir_num||"";$("ck_l").value=keep.ck_l||dd.dir_col||"";$("notas").value=keep.notas;
@@ -969,6 +970,8 @@ async function confirmar(t,sub){
   if(sub<t.minimo)return alert("El pedido mínimo de este comercio es "+din(t.minimo)+".");
   const dom=$("entrega").value==="domicilio", D=dom?leeDir("ck"):null, dir=dom?D.dir:"";
   if(dom&&!(D.dir_calle&&D.dir_num&&D.dir_col))return alert("Escribe tu calle, número y colonia para la entrega.");
+  if(dom&&db&&sesion.id&&$("gdom")&&$("gdom").checked&&(D.dir_calle!==sesion.dir_calle||D.dir_num!==sesion.dir_num||D.dir_col!==sesion.dir_col)){
+    try{const g=await db.auth.updateUser({data:D});if(!g.error){Object.assign(sesion,D);$s("sesion",sesion)}}catch(e){}}
   const env=dom?t.envio:0, total=sub+env, pago=$("pago").value;
   const lineas=Object.entries(carrito.items).map(([id,c])=>{const m=t.menu.find(x=>x.id===id);return `${c} x ${m.nombre} - ${din(m.precio*c)}`});
   const items=Object.entries(carrito.items).map(([id,cant])=>({id,cant}));
