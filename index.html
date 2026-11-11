@@ -1035,7 +1035,7 @@ if($("fPerfil"))$("fPerfil").onchange=async e=>{const f=e.target.files[0];if(!f)
 }
 function vistaCuenta(){
   if(sesion){ $("vista").innerHTML=`<h2>Hola, ${esc(sesion.nombre)}</h2><p class="suave">${esc(sesion.email)}</p><br>
-   <a class="btn" href="#/pedidos">Ver mis pedidos</a> <button class="btn sec" id="salir">Cerrar sesión</button><br><br>${notifBtnHTML()}`+
+   <button class="btn sec" id="salir">Cerrar sesión</button><br><br>${notifBtnHTML()}`+
    (db&&sesion.id?"<br><br>"+perfilHTML():"")+
    (db&&sesion.id?`<br><br><div class="aviso" style="display:grid;gap:8px;max-width:360px"><b>Cambiar contraseña</b>
     <label>Nueva contraseña (mínimo 8)<input id="np1" type="password" autocomplete="new-password"></label>
@@ -1307,7 +1307,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v104";
+const BUILD="valle-go-v105";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
