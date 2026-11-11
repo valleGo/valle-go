@@ -288,7 +288,8 @@ async function cargarRolReal(){
     try{[a,c,sv]=await Promise.all([db.from("admins").select("user_id").eq("user_id",sesion.id),db.from("comercios").select("id,nombre,mp_conectado,plan,ofrece_citas,ofrece_consulta").eq("dueno_id",sesion.id),db.from("servicios_perfiles").select("id,nombre,tipo").eq("dueno_id",sesion.id)])}catch(e){a=c=sv={error:e}}
     if(!a.error&&!c.error&&!sv.error)break;await new Promise(r=>setTimeout(r,1200*(i+1)))}
   if(a.error||c.error||sv.error){pintaHeader();notifAuto();return}   // falló la red: se conserva lo último que se sabía, no se oculta el botón
-  esAdmin=!!(a.data&&a.data.length);misCom=c.data||[];misSrv=sv.data||[];rolOK=true;
+  esAdmin=!!(a.data&&a.data.length);misCom=(c.data||[]).map(x=>x.plan==="simple"?{...x,ofrece_citas:false,ofrece_consulta:false}:x);misSrv=sv.data||[];rolOK=true;   // agenda y consulta de stock: solo plan Básico
+  
   try{localStorage.setItem("valle_rol_"+sesion.id,JSON.stringify({a:esAdmin,c:misCom,s:misSrv}))}catch(e){}
   pintaHeader();escucharPedidos();escucharMisPedidos();escucharServicios();notifAuto();
 }
@@ -328,7 +329,7 @@ async function vistaPanel(){
   if(!misCom.length&&esAdmin){location.hash="#/admin";return}
   if(!misCom.length){$("vista").innerHTML=`<h2>Panel de comerciante</h2><p>Esta cuenta aún no está vinculada a un comercio. Pide al administrador de Valle GO que la vincule con tu correo.</p>`;return}
   if(misCom.every(c=>c.plan==="simple")&&(misSrv.length||misCom.some(c=>c.ofrece_citas||c.ofrece_consulta))){location.hash="#/panel-servicios";return}
-  if(misCom.every(c=>c.plan==="simple")){$("vista").innerHTML=`<h2>Mi panel</h2><div class="aviso"><b>Plan Simple</b><br>Tu comercio tiene un perfil de presentación en Valle GO: logo, portada, nombre, domicilio, horarios, días disponibles y teléfono. Este plan no incluye menú ni pedidos. Para cambiar tus datos o pasar al plan Básico, contacta al administrador de Valle GO.</div>`;return}
+  if(misCom.every(c=>c.plan==="simple")){$("vista").innerHTML=`<h2>Mi panel</h2><div class="aviso"><b>Plan Simple</b><br>Tu comercio tiene un perfil de presentación en Valle GO: logo, portada, nombre, domicilio, horarios, días disponibles y teléfono. Este plan no incluye menú, pedidos, agenda de servicios, consulta de stock ni transporte. Para cambiar tus datos o pasar al plan Básico, contacta al administrador de Valle GO.</div>`;return}
   const ids=misCom.map(c=>c.id);
   const [pe,me]=await Promise.all([
     db.from("pedidos").select("*, comercios(nombre)").in("comercio_id",ids).order("creado",{ascending:false}).limit(100),
@@ -347,7 +348,7 @@ let adm={tab:"anuncios",com:null};
 try{const g=JSON.parse(localStorage.getItem("valle_adm")||"null");if(g&&typeof g.tab==="string")Object.assign(adm,{tab:g.tab,mes:g.mes,mesM:g.mesM})}catch(e){}   // recuerda la pestaña del panel de administración al recargar
 
 const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
-const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Plan del comercio",t:"plan"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"ofrece_citas",l:"Ofrece agenda de citas de servicios (planes Básico y Simple)",t:"check"},{k:"ofrece_consulta",l:"Ofrece consulta de stock con foto y texto (planes Básico y Simple)",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Plan del comercio",t:"plan"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario (ej. 1:00 pm - 10:00 pm)"},{k:"direccion",l:"Domicilio del comercio (calle, número, colonia)"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"ofrece_citas",l:"Ofrece agenda de servicios (solo plan Básico)",t:"check"},{k:"ofrece_consulta",l:"Ofrece consulta de stock con foto y texto (solo plan Básico)",t:"check"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
 const CF_CAT=[{k:"nombre",l:"Nombre de la categoría (Comida, Cafeterías, Servicios...)"},{k:"emoji",l:"Emoji (opcional)"},{k:"orden",l:"Orden de aparición (1, 2, 3...)",t:"number"}];
 const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
 const DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
@@ -355,7 +356,7 @@ const formHTML=(cs,v)=>cs.map(c=>c.t==="dias"?`<label>${c.l}<span class="dias">$
   :c.t==="file"?`<label>${c.l}<input type="file" accept="image/*" data-f="${c.k}">${v[c.k]?`<img src="${esc(v[c.k])}" alt="" style="height:60px;border-radius:8px">`:""}</label>`
   :c.t==="srvtipo"?`<label>${c.l}<select data-f="${c.k}">${["transporte"].map(k=>`<option value="${k}" ${(v[c.k]||"transporte")===k?"selected":""}>${({transporte:"Transporte (taxistas, transportistas)",consulta:"Consulta de stock (comercio con mucho inventario)"})[k]}</option>`).join("")}</select></label>`
   :c.t==="check"?`<label><span><input type="checkbox" data-f="${c.k}" ${v[c.k]?"checked":""} style="width:auto"> ${c.l}</span></label>`
-  :c.t==="plan"?`<label>${c.l}<select data-f="${c.k}"><option value="basico" ${(v[c.k]||"basico")==="basico"?"selected":""}>Básico: menú, pedidos, agenda de citas y consulta de stock ($24 al día, $720 al mes IVA incluido)</option><option value="simple" ${v[c.k]==="simple"?"selected":""}>Simple: perfil, agenda de citas y consulta de stock ($12 al día, $360 al mes IVA incluido)</option></select></label>`
+  :c.t==="plan"?`<label>${c.l}<select data-f="${c.k}"><option value="basico" ${(v[c.k]||"basico")==="basico"?"selected":""}>Básico: menú, pedidos, agenda de servicios, consulta de stock y transporte ($24 al día, $720 al mes IVA incluido)</option><option value="simple" ${v[c.k]==="simple"?"selected":""}>Simple: solo perfil de presentación en el directorio ($12 al día, $360 al mes IVA incluido)</option></select></label>`
   :c.t==="select"?`<label>${c.l}<select data-f="${c.k}"><option value="">Sin categoría</option>${CATEGORIAS.map(k=>`<option value="${k.id}" ${v[c.k]===k.id?"selected":""}>${esc((k.emoji?k.emoji+" ":"")+k.nombre)}</option>`).join("")}</select></label>`
   :`<label>${c.l}<input data-f="${c.k}" type="${c.t||"text"}" value="${esc(v[c.k]??"")}"></label>`).join("");
 async function leerForm(cs,raiz,v){const o={};
@@ -581,7 +582,7 @@ async function admTab(){
   }
   if(t==="servicios"){
     const L=(await db.from("servicios_perfiles").select("*").order("tipo").order("nombre")).data||[];
-    box.innerHTML=`<p class="suave">Transportistas y taxistas. La agenda de citas y la consulta de stock se activan en cada comercio (planes Básico y Simple): Comercios → Editar → «Ofrece agenda de citas» y «Ofrece consulta de stock». Al crear un transportista, escribe el correo de su dueño (debe estar registrado en la app).</p><button class="btn" data-svnew>+ Nuevo transportista</button><br><br>`+
+    box.innerHTML=`<p class="suave">Transportistas y taxistas. La agenda de servicios y la consulta de stock se activan en cada comercio del plan Básico (el plan Simple solo tiene perfil en el directorio): Comercios → Editar → «Ofrece agenda de citas» y «Ofrece consulta de stock». Al crear un transportista, escribe el correo de su dueño (debe estar registrado en la app).</p><button class="btn" data-svnew>+ Nuevo transportista</button><br><br>`+
       (L.map(p=>`<div class="item"><div class="foto" ${foto({foto:p.foto_url})}>${p.foto_url?"":SV[p.tipo].e}</div><div class="in"><b>${esc(p.nombre)}</b><span class="suave">${SV[p.tipo].t} · ${esc(p.giro||"")} · ${p.activo?"Visible":"Oculto"} · ${p.dueno_id?"Con dueño":"Sin dueño"}</span><span class="svbtns"><button class="btn sec mini" data-sved="${p.id}">Editar</button><button class="btn sec mini" data-svdel="${p.id}">Eliminar</button></span></div></div>`).join("")||"<p>Aún no hay transportistas.</p>");
   }
   if(t==="menu"){
@@ -936,7 +937,7 @@ async function cargarDatos(){
   const {data,error}=await db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre");
   if(error||!data||!data.length)return;
   COMERCIANTES=data.map(c=>({id:c.id,plan:c.plan==="simple"?"simple":"basico",nombre:c.nombre,giro:c.giro||"",cat:c.categoria_id||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
-    desc:c.descripcion||"",citas:!!c.ofrece_citas,consulta:!!c.ofrece_consulta,whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
+    desc:c.descripcion||"",citas:c.plan!=="simple"&&!!c.ofrece_citas,consulta:c.plan!=="simple"&&!!c.ofrece_consulta,whatsapp:c.whatsapp,envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
     menu:(c.menu_items||[]).filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
       desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}))}));
 }
@@ -1092,7 +1093,7 @@ async function vistaPanelSrv(){
   $("vista").innerHTML=`<h2>Mi panel de servicios</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)}</p>${misCom.some(c=>c.plan!=="simple")?`<p><a class="btn sec mini" href="#/panel">← Mi panel de comercio</a></p>`:""}${notifBtnHTML()}`+
    P.map(p=>{const mi=I.filter(i=>i.perfil_id===p.id),mc=C.filter(c=>c.perfil_id===p.id),mq=Q.filter(q=>q.perfil_id===p.id);
     return `<div class="perfil" style="padding:14px;margin-top:16px"><h3 style="margin:0">${SV[p.tipo].e} ${esc(p.nombre)} <span class="suave" style="font-size:.8rem">· ${SV[p.tipo].t}${p.activo?"":" · Oculto"}</span></h3>
-     ${p._com?`<p class="suave" style="font-size:.85rem">${p.plan==="simple"?"Plan Simple: incluye tu perfil de presentación, la agenda de citas y la consulta de stock. ":""}Tu perfil de comercio lo edita el administrador de Valle GO.</p>`:`<p><button class="btn sec mini" data-sped="${p.id}">Editar mi perfil</button></p>`}`+
+     ${p._com?`<p class="suave" style="font-size:.85rem">Tu perfil de comercio lo edita el administrador de Valle GO.</p>`:`<p><button class="btn sec mini" data-sped="${p.id}">Editar mi perfil</button></p>`}`+
      (p.tipo==="agenda"?`<h3>Mis servicios</h3>`+(mi.map(i=>`<div class="linea"><span><b>${esc(i.nombre)}</b>${i.activo?"":" (oculto)"}<br><small>${Number(i.precio)>0?din(Number(i.precio)):"A consultar"}${i.duracion_min?" · "+i.duracion_min+" min":""}</small></span><span><button class="btn mini sec" data-siedit="${i.id}">Editar</button> <button class="btn mini sec" data-sidel="${i.id}">Quitar</button></span></div>`).join("")||"<p class='suave'>Aún no agregas servicios.</p>")+
        `<p><button class="btn mini" data-sinew="${p.id}">+ Agregar servicio</button></p><h3>Citas</h3>`+(mc.map(citaHTML).join("")||"<p>Aún no hay citas.</p>")
       :p.tipo==="consulta"?`<h3>Consultas de clientes</h3>`+(mq.map(consHTML).join("")||"<p>Aún no hay consultas.</p>")
@@ -1537,7 +1538,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v118";
+const BUILD="valle-go-v119";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
