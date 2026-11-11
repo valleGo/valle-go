@@ -285,6 +285,34 @@ header .hb #bCuenta,header .lcol #bCont{width:100%!important;max-width:none!impo
 header{--bh:30px}@media(min-width:800px){header{--bh:36px}}
 header .hb #bCuenta,header .lcol #bCont{height:var(--bh)!important;min-height:var(--bh)!important}
 header .lcol #bCont{position:relative!important;left:auto!important;right:auto!important;top:auto!important}
+
+/* ===== Barra superior minimalista: un botón a cada lado con submenú ===== */
+header .hz{position:relative;display:flex;align-items:center;gap:8px;align-self:center}
+header .hl{grid-area:l;justify-self:start}header .hr2{grid-area:r;justify-self:end}
+header .rbw{position:relative;display:block}
+.rb{position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#2a1a05;box-shadow:0 4px 12px rgba(0,0,0,.28);transition:transform .15s,box-shadow .15s,background .15s;-webkit-tap-highlight-color:transparent;overflow:visible}
+.rb-l{background:#da9c48;border:2px solid #c0802f}.rb-r{background:var(--acento);border:2px solid #d9aa28;color:var(--on-acento)}
+.rb svg{pointer-events:none}.rb:hover{transform:translateY(-2px);box-shadow:0 7px 16px rgba(0,0,0,.32)}.rb:active{transform:scale(.92)}
+.hz.open>.rb,.hz.open .rbw>.rb{background:#a2cce5;border-color:#7fb3d6;color:#1f2a33}
+.bdg{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#2B2D22;color:#fff;font-size:.68rem;font-weight:800;display:grid;place-items:center;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.35)}.bdg[hidden]{display:none}
+.pop{position:absolute;top:calc(100% + 10px);z-index:30;min-width:176px;padding:10px;display:none;flex-direction:column;gap:8px;border-radius:18px;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.85);box-shadow:0 12px 30px rgba(0,0,0,.25)}
+.hl .pop{left:0;transform-origin:top left}.rbw .pop{right:0;transform-origin:top right}
+.hz.open .pop{display:flex;animation:popIn .2s cubic-bezier(.34,1.4,.64,1)}
+@keyframes popIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+.pop button{position:relative;overflow:hidden;width:100%;height:38px;min-height:0;padding:0 14px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;font-weight:700;font-size:.82rem;line-height:1;white-space:nowrap;cursor:pointer;box-shadow:0 2px 7px rgba(0,0,0,.14);transition:transform .18s cubic-bezier(.2,.8,.3,1),box-shadow .18s,filter .18s;-webkit-tap-highlight-color:transparent}
+.pop button:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(0,0,0,.2)}.pop button:active{transform:scale(.96)}
+.pop #bCuenta{background:#fff;color:var(--texto);border:1px solid rgba(0,0,0,.08)}
+.pop #bCuenta .hav{width:22px;height:22px;margin:0;flex:0 0 auto}.pop #bCuenta .nm{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pop #bCont{position:relative;right:auto;top:auto;background:#da9c48;color:#2a1a05;border:1px solid #c0802f}
+.pop #bCont .lbl{font-size:.72rem;letter-spacing:.05em;color:#2a1a05}.pop #bCont .dot{order:-1;width:auto;height:auto;background:none;border:0;box-shadow:none;border-radius:0;transform:none!important}.pop #bCont .dot svg{width:17px;height:17px}
+.pop #bCont.on{background:#a2cce5;border-color:#7fb3d6;color:#1f2a33}.pop #bCont.on .lbl{color:#1f2a33}
+.pop #bPedidos{background:#d9aa28;color:var(--on-acento);border:1px solid #c39419}
+.pop #bCarrito{display:block;line-height:38px;background:var(--acento);color:var(--on-acento);border:1px solid var(--acento);text-align:center}
+body.sinCarro .rbw{display:none}body.sinCarro #bCarrito{display:none}
+header #bPanel{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 16px;border-radius:999px;background:#A5B574;color:#1f2a14;border:1px solid #8a9a58;font-family:inherit;font-weight:800;font-size:.78rem;letter-spacing:.06em;box-shadow:0 4px 12px rgba(138,154,88,.45);cursor:pointer;transition:transform .15s,box-shadow .15s}
+header #bPanel *{pointer-events:none}header #bPanel:hover{transform:translateY(-2px)}header #bPanel:active{transform:scale(.95)}header #bPanel.on{background:#5C7648;border-color:#46593a;color:#fff}
+@media(min-width:800px){.rb{width:50px;height:50px}.pop{min-width:200px}.pop button{height:42px;font-size:.9rem}.pop #bCarrito{line-height:42px}}
+@media(max-width:379px){.rb{width:40px;height:40px}header #bPanel{padding:0 11px;font-size:.72rem}}
 </style>
 </head>
 <body>
@@ -296,9 +324,9 @@ function intenta(){var w=Math.max(0,2000-(Date.now()-t0));setTimeout(quitar,w)}
 if(document.readyState==="complete")intenta();else window.addEventListener("load",intenta);setTimeout(quitar,4500)})();
 </script>
 <header>
-  <div class="hb lcol"><div class="pf"><span class="plbl">PERFIL:</span><button id="bCuenta"></button></div><button id="bCont" type="button" aria-label="Contáctanos" aria-expanded="false" aria-controls="contPanel"><span class="lbl">REDES<br class="lb"> VALLE GO</span><span class="dot"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M15.6 8.4v5.1a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.4 6.9"/></svg></span></button></div>
+  <div class="hz hl"><button class="rb rb-l" id="bMenuL" type="button" aria-label="Perfil y redes" aria-expanded="false" aria-haspopup="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.6-4.2 3.6-6.5 7.5-6.5s6.9 2.3 7.5 6.5"/></svg></button><div class="pop" id="popL"><button id="bCuenta"></button><button id="bCont" type="button" aria-label="Contáctanos" aria-expanded="false" aria-controls="contPanel"><span class="lbl">REDES VALLE GO</span><span class="dot"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M15.6 8.4v5.1a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.4 6.9"/></svg></span></button></div></div>
   <div class="hc"><a href="#/" class="logo" aria-label="Valle GO"><img src="logo.png" alt="Valle GO" width="66" height="66"></a><div class="marca"><a href="#/" aria-label="Va, llegó — ir al inicio"><img src="marca.png" alt="Va, llegó" width="450" height="92"></a></div></div>
-  <div class="hr"><div class="hb"><div class="hbcol"><button id="bPanel" style="display:none"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg><span>PANEL</span></button><button id="bPedidos" style="display:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span class="pl">Ver mis pedidos</span><span class="ps"><span class="pm">Mis </span>pedidos</span></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div></div></div>
+  <div class="hz hr2"><button id="bPanel" style="display:none"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg><span>PANEL</span></button><span class="rbw"><button class="rb rb-r" id="bMenuR" type="button" aria-label="Pedidos y carrito" aria-expanded="false" aria-haspopup="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l1 12.5h-15z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg><span class="bdg" id="bBadge" hidden>0</span></button><div class="pop" id="popR"><button id="bPedidos" style="display:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span class="pl">Ver mis pedidos</span></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div></span></div>
 </header>
 <div class="dirbar"><div class="dock"><a class="dk" href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a><a class="dk" href="#" id="bAg" role="button" aria-expanded="false" aria-controls="agPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2.2 2.2 4.3-4.4"/></svg>AGENDA SERVICIOS</a><button class="dk" id="bCq" type="button" aria-label="Consulta de stock" aria-expanded="false" aria-controls="cqPanel" title="Consulta de stock"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="11.5" cy="11.5" r="3.5"/><path d="M14.2 14.2L17 17"/></svg>CONSULTA DE STOCK</button></div></div>
 <main id="vista" style="padding-top:48px"></main>
@@ -1725,7 +1753,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#bCont");if(b){e
 document.addEventListener("click",e=>{const o=document.querySelector(".catmenu.open");if(o&&!e.target.closest(".catmenu"))o.classList.remove("open")});
 document.addEventListener("input",e=>{if(e.target.id==="hQ"){homeQ=e.target.value;aplicaBusq()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const o=document.querySelector(".catmenu.open");if(o)o.classList.remove("open")}});
-document.addEventListener("pointerdown",e=>{const b=e.target.closest&&e.target.closest(".btn,.hb button,.monbtn,.admcats button,.cats button");if(!b||b.disabled)return;
+document.addEventListener("pointerdown",e=>{const b=e.target.closest&&e.target.closest(".btn,.hb button,.pop button,.monbtn,.admcats button,.cats button");if(!b||b.disabled)return;
   const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*2,x=e.clientX-r.left-d/2,y=e.clientY-r.top-d/2,el=document.createElement("span");
   el.className="rip";el.style.cssText=`width:${d}px;height:${d}px;left:${x}px;top:${y}px`;b.appendChild(el);setTimeout(()=>el.remove(),650)},{passive:true});
 (()=>{const n=document.getElementById("n"),c=document.getElementById("bCarrito");if(!n||!c)return;let u=n.textContent;
@@ -1752,7 +1780,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v142";
+const BUILD="valle-go-v143";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -1832,6 +1860,19 @@ pintaHeader();pintaCarrito();ruta();
   await cargarDatos();
   if(carrito.tienda&&!tienda(carrito.tienda)){carrito={tienda:null,items:{}};gcar();}
   pintaHeader();pintaCarrito();ruta();
+})();
+
+// Menús laterales de la barra superior (perfil/redes a la izquierda, pedidos/carrito a la derecha)
+(function(){
+  const cierra=(salvo)=>document.querySelectorAll(".hz.open").forEach(z=>{if(z!==salvo){z.classList.remove("open");const b=z.querySelector(".rb");if(b)b.setAttribute("aria-expanded","false")}});
+  document.addEventListener("click",e=>{
+    const t=e.target.closest&&e.target.closest(".rb");
+    if(t){const z=t.closest(".hz"),ab=!z.classList.contains("open");cierra(z);z.classList.toggle("open",ab);t.setAttribute("aria-expanded",String(ab));return}
+    if(e.target.closest&&e.target.closest(".pop button")){setTimeout(()=>cierra(null),0);return}
+    if(!(e.target.closest&&e.target.closest(".pop")))cierra(null)});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")cierra(null)});
+  const n=document.getElementById("n"),bd=document.getElementById("bBadge");
+  if(n&&bd){const sync=()=>{const v=parseInt(n.textContent,10)||0;bd.textContent=v>99?"99+":v;bd.hidden=v<=0};sync();new MutationObserver(sync).observe(n,{childList:true,characterData:true,subtree:true})}
 })();
 </script>
 </body>
