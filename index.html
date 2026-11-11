@@ -1260,13 +1260,12 @@ function ruta(){
   if(r==="panel-servicios")return vistaPanelSrv();
   vistaInicio();
 }
-let dirTarj=false;
 const tarjetaCom=t=>`
    <div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
    ${(k=>k?`<span class="ctag">${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}</span>`:"")(CATEGORIAS.find(k=>k.id===t.cat))}<b>${esc(t.nombre)}</b><span class="suave">${t.giro} · ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
    ${t.dias?`<span class="suave">📅 ${diasTxt(t.dias)}</span>`:""}
-   ${t.plan==="simple"?`${t.whatsapp?`<span class="suave">📞 ${esc(t.whatsapp)}</span>`:""}${t.correo?`<span class="suave">✉️ ${esc(t.correo)}</span>`:""}<a class="btn" href="#/t/${t.id}">Ver perfil</a>`:`${dirTarj&&t.whatsapp?`<span class="suave">📞 ${esc(t.whatsapp)}</span>`:""}${dirTarj&&t.correo?`<span class="suave">✉️ ${esc(t.correo)}</span>`:""}<span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
+   ${t.plan==="simple"?`${t.whatsapp?`<span class="suave">📞 ${esc(t.whatsapp)}</span>`:""}${t.correo?`<span class="suave">✉️ ${esc(t.correo)}</span>`:""}<a class="btn" href="#/t/${t.id}">Ver perfil</a>`:`<span class="suave">${t.domicilio?"Envío "+din(t.envio):"Solo recoger en tienda"}</span>
    <a class="btn" href="#/t/${t.id}">Ver menú</a>`}</div></div>`;
 function vistaInicio(){
   const PRINC=COMERCIANTES.filter(t=>t.plan!=="simple");
@@ -1292,20 +1291,28 @@ function vistaInicio(){
   $("vista").innerHTML=adsHTML()+`<h2>Lugares del Valle Hoy:</h2>`+cuerpo;iniAds();
 }
 let dirQ="";
+// Directorio: solo perfiles de presentación (información visible, sin botones ni enlaces)
+const dirCard=t=>`<div class="card"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t)}</div><div class="in${t.logo?" cl":""}">
+   <b>${esc(t.nombre)}</b><span class="suave">${esc(t.giro||"")}${t.horario?" · "+esc(t.horario):""}</span>
+   ${t.desc?`<span>${esc(t.desc)}</span>`:""}${t.dias?`<span class="suave">📅 ${diasTxt(t.dias)}</span>`:""}${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
+   ${t.vehiculo?`<span class="suave">🚗 ${esc(t.vehiculo)}</span>`:""}${t.whatsapp?`<span class="suave">📞 ${esc(t.whatsapp)}</span>`:""}${t.correo?`<span class="suave">✉️ ${esc(t.correo)}</span>`:""}</div></div>`;
+const transDir=p=>({id:p.id,nombre:p.nombre,giro:p.giro||"Transporte",horario:p.horario,desc:p.descripcion,dias:p.dias_abiertos,direccion:p.zona,vehiculo:p.vehiculo,whatsapp:p.telefono||p.whatsapp,foto:p.foto_url,logo:p.logo_url,emoji:"🚕",cat:""});
+let dirTr=null;
 function cierraDirectorio(){const d=$("dirPanel");if(d)d.remove();const b=$("bDir");if(b){b.classList.remove("on");b.setAttribute("aria-expanded","false")}}
 function toggleDirectorio(){
   if($("dirPanel")){cierraCapa();return}
   if($("agPanel")||$("cqPanel")){cierraTodasCapas().then(toggleDirectorio);return}
-  const L=COMERCIANTES.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+  const todos=()=>COMERCIANTES.concat(dirTr||[]).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));let L=todos();
   const norm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   const lista=()=>{const q=norm(dirQ).trim(),F=q?L.filter(t=>norm(t.nombre+" "+((CATEGORIAS.find(k=>k.id===t.cat)||{}).nombre||"")+" "+t.giro).includes(q)):L;
-    dirTarj=true;const h=F.length?`<div class="grid gcom">${F.map(tarjetaCom).join("")}</div>`:"<p>No encontramos comercios con esa búsqueda.</p>";dirTarj=false;return h};
+    return F.length?`<div class="grid gcom">${F.map(dirCard).join("")}</div>`:"<p>No encontramos comercios con esa búsqueda.</p>"};
   const d=document.createElement("div");d.id="dirPanel";d.setAttribute("role","dialog");d.setAttribute("aria-label","Directorio");
   d.innerHTML=`<h2>Directorio</h2><label style="font-size:1.25rem;font-weight:800">BUSCAR:<input id="dirQ" type="search" placeholder="NOMBRE O CATEGORIA" value="${esc(dirQ)}" style="font-size:1.2rem;padding:16px 18px;margin-top:8px;margin-bottom:14px"></label><div id="dirL">${lista()}</div>`;
   document.body.appendChild(d);
   const b=$("bDir");b.classList.add("on");b.setAttribute("aria-expanded","true");
   abreCapa(cierraDirectorio);
   $("dirQ").oninput=e=>{dirQ=e.target.value;$("dirL").innerHTML=lista()};
+  if(db)db.from("servicios_perfiles").select("*").eq("activo",true).eq("tipo","transporte").then(r=>{dirTr=(r.data||[]).map(transDir);L=todos();if($("dirL"))$("dirL").innerHTML=lista()});
   d.addEventListener("click",async e=>{const a=e.target.closest('a[href^="#/"]');if(!a)return;e.preventDefault();const h=a.getAttribute("href");await cierraTodasCapas();location.hash=h});
 }
 document.addEventListener("click",e=>{const g=e.target.closest("#bAg,#bCq");if(g){e.preventDefault();g.id==="bAg"?toggleAgenda():toggleConsulta();return}
@@ -1647,7 +1654,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v125";
+const BUILD="valle-go-v126";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
