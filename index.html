@@ -86,14 +86,14 @@ main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .ca
 .item{display:flex;gap:12px;background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);padding:12px;margin-bottom:12px;box-shadow:var(--sombra)}
 .item .foto{width:92px;height:92px;border-radius:12px;font-size:2.3rem;flex:none}
 .item .in{flex:1;display:grid;gap:4px;align-content:start}
-.panel{position:fixed;inset:0;background:rgba(93,119,74,.28);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);display:none;z-index:10}.panel.on{display:block}
+.panel{position:fixed;inset:0;background:rgba(93,119,74,.38);display:none;z-index:10}.panel.on{display:block}
 .panel{height:100vh;height:100dvh}   /* en el celular 100vh incluye las barras del navegador y cortaba el final */
 .caja{position:absolute;right:0;top:0;bottom:0;width:min(440px,100%);background:var(--fondo);padding:18px;display:grid;gap:12px;align-content:start;overflow:auto;box-shadow:-8px 0 30px rgba(93,119,74,.18);-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .caja{height:100vh;height:100dvh;bottom:auto}
 .caja{touch-action:pan-y;grid-auto-rows:max-content}.caja>*{min-height:min-content}   /* evita que los botones y campos se aplasten cuando el formulario es largo */
 .linea{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--borde);padding:9px 0;gap:8px}
 .q button{width:30px;height:30px;border-radius:50%;border:1px solid var(--borde);background:var(--tarjeta);color:var(--texto);font-weight:700}
-input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta);color:var(--texto);font-weight:500}
+input,select,textarea{font-size:16px;width:100%;padding:11px 12px;border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta);color:var(--texto);font-weight:500}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--verde);outline-offset:0;border-color:var(--verde)}
 label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .fila{display:flex;justify-content:space-between}.tot{font-weight:800;font-size:1.1rem}
@@ -1305,7 +1305,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v102";
+const BUILD="valle-go-v103";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
