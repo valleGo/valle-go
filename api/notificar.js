@@ -35,7 +35,7 @@ async function enviar(ids, msgObj) {
 const fechaMX = f => { const [y, m, d] = String(f).split("-"); return `${d}/${m}/${y}`; };
 async function servicios(p, res) {
   const r = p.record, old = p.old_record || {};
-  const [per] = await sb(`comercios?id=eq.${encodeURIComponent(r.perfil_id)}&select=nombre,dueno_id`);   // citas y consultas son de comercios (planes Básico y Simple)
+  const [per] = await sb(`${p.table === "viajes" ? "servicios_perfiles" : "comercios"}?id=eq.${encodeURIComponent(r.perfil_id)}&select=nombre,dueno_id`);   // citas y consultas son de comercios (planes Básico y Simple)
   if (!per) return res.status(200).json({ ok: true, omitido: true });
   const admins = (await sb("admins?select=user_id")).map(a => a.user_id);
   const dueño = per.dueno_id ? [per.dueno_id] : admins;   // si aún no tiene dueño asignado, avisa a los administradores
@@ -53,6 +53,23 @@ async function servicios(p, res) {
         Reprogramada: ["🔁 Nueva hora propuesta", `${per.nombre} propone: ${cuando}. Toca para aceptarla o cancelar.`],
         Cancelada: ["❌ Cita cancelada", `${per.nombre} canceló tu cita del ${cuando}.`],
         Completada: ["🎉 Cita completada", `Gracias por tu visita a ${per.nombre}.`] }[r.estado];
+      if (!T) return res.status(200).json({ ok: true, omitido: true });
+      ids = [r.cliente_id]; titulo = `${T[0]} · ${per.nombre}`; cuerpo = T[1] + (r.respuesta ? `\nMensaje: ${r.respuesta}` : ""); url = "./index.html#/mis-servicios";
+    } else return res.status(200).json({ ok: true, omitido: true });
+  } else if (p.table === "viajes") {
+    const cuando = r.fecha ? ` · ${fechaMX(r.fecha)}${r.hora ? " " + r.hora : ""}` : "";
+    const ruta = `${r.origen} → ${r.destino}${cuando}`;
+    if (p.type === "INSERT") { ids = dueño; titulo = `🚕 Nueva solicitud de ${r.tipo === "agenda" ? "viaje" : "cotización"} · ${per.nombre}`; cuerpo = `${r.cliente_nombre || "Cliente"}${r.cliente_tel ? " · " + r.cliente_tel : ""}\n${ruta}${r.detalle ? "\n" + String(r.detalle).slice(0, 120) : ""}\nToca para responder.`; url = "./index.html#/panel-servicios"; }
+    else if (r.cambio_por && r.cambio_por === r.cliente_id) {
+      if (r.estado === "Cancelada" && old.estado !== "Cancelada") { ids = dueño; titulo = `❌ Solicitud cancelada · ${per.nombre}`; cuerpo = `${r.cliente_nombre || "El cliente"} canceló: ${ruta}.`; url = "./index.html#/panel-servicios"; }
+      else if (r.estado === "Confirmada" && old.estado === "Cotizada") { ids = dueño; titulo = `✅ Cotización aceptada · ${per.nombre}`; cuerpo = `${r.cliente_nombre || "El cliente"} aceptó${r.precio ? " " + r.precio : ""}: ${ruta}.`; url = "./index.html#/panel-servicios"; }
+      else return res.status(200).json({ ok: true, omitido: true });
+    }
+    else if (r.estado !== old.estado || r.precio !== old.precio || r.respuesta !== old.respuesta) {
+      const T = { Cotizada: ["💲 Cotización recibida", `${per.nombre} cotiza${r.precio ? ": " + r.precio : ""}. Toca para aceptarla o cancelar.`],
+        Confirmada: ["✅ Viaje confirmado", `${per.nombre} confirmó: ${ruta}.`],
+        Cancelada: ["❌ Solicitud cancelada", `${per.nombre} canceló: ${ruta}.`],
+        Completada: ["🎉 Viaje completado", `Gracias por viajar con ${per.nombre}.`] }[r.estado];
       if (!T) return res.status(200).json({ ok: true, omitido: true });
       ids = [r.cliente_id]; titulo = `${T[0]} · ${per.nombre}`; cuerpo = T[1] + (r.respuesta ? `\nMensaje: ${r.respuesta}` : ""); url = "./index.html#/mis-servicios";
     } else return res.status(200).json({ ok: true, omitido: true });
@@ -76,7 +93,7 @@ module.exports = async (req, res) => {
     const ped = p && p.record;
     if (!ped) return res.status(200).json({ ok: true, omitido: true });
 
-    if (p.table === "citas" || p.table === "consultas_stock") return await servicios(p, res);   // citas y consultas de la sección SERVICIOS
+    if (p.table === "citas" || p.table === "consultas_stock" || p.table === "viajes") return await servicios(p, res);   // citas y consultas de la sección SERVICIOS
 
     const old = p.old_record || {};
     let prefijo, ids, cuerpoX, urlX;

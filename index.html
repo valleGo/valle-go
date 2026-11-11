@@ -982,7 +982,7 @@ const CF_SITEM=[{k:"nombre",l:"Nombre del servicio"},{k:"descripcion",l:"Descrip
 const waUrl=n=>"https://wa.me/"+String(n||"").replace(/\D/g,""),telUrl=n=>"tel:"+String(n||"").replace(/[^\d+]/g,"");
 const hoyISO=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const fMX=f=>{const[y,m,d]=String(f).split("-");return d+"/"+m+"/"+y};
-const EST_CLS={Solicitada:"⏳",Confirmada:"✅",Reprogramada:"🔁",Cancelada:"❌",Completada:"🎉",Pendiente:"⏳",Hay:"✅","No hay":"😕",Consultar:"ℹ️"};
+const EST_CLS={Solicitada:"⏳",Confirmada:"✅",Cotizada:"💲",Reprogramada:"🔁",Cancelada:"❌",Completada:"🎉",Pendiente:"⏳",Hay:"✅","No hay":"😕",Consultar:"ℹ️"};
 const estTag=e=>`<span class="ctag">${EST_CLS[e]||""} ${esc(e)}</span>`;
 
 // --- Paneles flotantes: AGENDA SERVICIOS (citas y transporte) y consulta de stock (círculo de búsqueda) ---
@@ -991,7 +991,7 @@ const adaptaCom=(t,tipo="agenda")=>({id:t.id,tipo,nombre:t.nombre,giro:t.giro,ho
 const svCard=p=>`<div class="card"><div class="foto-w"><div class="foto" ${p.foto_url?`style="background-image:url('${esc(p.foto_url)}')"`:""}>${p.foto_url?"":SV[p.tipo].e}</div>${p.logo_url?`<img class="logo-c" src="${esc(p.logo_url)}" alt="" loading="lazy">`:""}</div><div class="in${p.logo_url?" cl":""}">
   <b>${esc(p.nombre)}</b><span class="suave">${esc(p.giro||"")}${p.horario?" · "+esc(p.horario):""}</span>
   ${p.zona?`<span class="suave">📍 ${esc(p.zona)}</span>`:""}${p.tipo==="transporte"&&p.vehiculo?`<span class="suave">🚗 ${esc(p.vehiculo)}</span>`:""}${p.dias_abiertos?`<span class="suave">📅 ${diasTxt(p.dias_abiertos)}</span>`:""}
-  ${p.tipo==="transporte"?`<span class="svbtns">${(p.telefono||p.whatsapp)?`<a class="btn mini" href="${telUrl(p.telefono||p.whatsapp)}">📞 Llamar</a>`:""}${p.whatsapp?`<a class="btn mini" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:""}</span>`
+  ${p.tipo==="transporte"?`<span class="svbtns">${(p.telefono||p.whatsapp)?`<a class="btn mini" href="${telUrl(p.telefono||p.whatsapp)}">📞 Llamar</a>`:""}${p.whatsapp?`<a class="btn mini" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:""}</span><button class="btn" data-svopen="${p.id}" data-svt="transporte">🚕 Cotizar / Agendar viaje</button>`
    :`<button class="btn" data-svopen="${p.id}" data-svt="${p.tipo}">${p.tipo==="agenda"?"Agendar cita":"Consultar disponibilidad"}</button>`}</div></div>`;
 const cierraAg=()=>{const d=$("agPanel");if(d)d.remove();agSel=null;const b=$("bAg");if(b){b.classList.remove("on");b.setAttribute("aria-expanded","false")}};
 const cierraCq=()=>{const d=$("cqPanel");if(d)d.remove();cqSel=null;const b=$("bCq");if(b){b.classList.remove("on");b.setAttribute("aria-expanded","false")}};
@@ -1005,7 +1005,7 @@ function toggleConsulta(){if($("cqPanel")){cierraCapa();return}abrePanelSv("cqPa
 const svCab=(titulo,cod)=>`<div class="svph"><h2>${titulo}</h2><button class="x" data-svclose="${cod}" aria-label="Cerrar">×</button></div>`;
 async function svAgPinta(){
   const d=$("agPanel");if(!d)return;
-  if(agSel)return svDetalle(d,agSel,()=>{agSel=null;svAgPinta()},"ag");
+  if(agSel)return svDetalle(d,agSel,()=>{agSel=null;svAgPinta()},agTab==="transporte"?"tr":"ag");
   d.scrollTop=0;d.innerHTML=svCab("AGENDA SERVICIOS","ag")+`<div class="cats"><button class="${agTab==="agenda"?"on":""}" data-agtab="agenda">📅 Citas</button><button class="${agTab==="transporte"?"on":""}" data-agtab="transporte">🚕 Transporte</button>${sesion&&db?`<button data-svmis>🗂️ Mis solicitudes</button>`:""}</div>
    <p class="suave">${SV[agTab].d}</p><div id="agBody"><p>Cargando...</p></div>`;
   if(agTab==="agenda"){
@@ -1031,7 +1031,8 @@ async function svCqPinta(){
 async function svDetalle(root,id,volver,cod){
   root.innerHTML=svCab("","")+"<p>Cargando...</p>";
   let p,items=[];
-  const t=COMERCIANTES.find(x=>x.id===id);p=t?adaptaCom(t,cod==="ag"?"agenda":"consulta"):null;
+  if(cod==="tr"){const r=await db.from("servicios_perfiles").select("*").eq("id",id).eq("tipo","transporte").maybeSingle();p=r.data}
+  else{const t=COMERCIANTES.find(x=>x.id===id);p=t?adaptaCom(t,cod==="ag"?"agenda":"consulta"):null}
   if(p&&cod==="ag"){const it=await db.from("servicios_items").select("*").eq("perfil_id",id).eq("activo",true).order("nombre");items=it.data||[]}
   if(!root.isConnected)return;
   if(!p){root.innerHTML=`<p>No encontramos este servicio.</p><button class="btn" data-svback>Volver</button>`;root.querySelector("[data-svback]").onclick=volver;return}
@@ -1049,6 +1050,14 @@ async function svDetalle(root,id,volver,cod){
       <label>Fecha<input id="svF" type="date" min="${hoy}"></label><label>Hora<input id="svH" type="time"></label>
       <label>Notas (opcional)<textarea id="svN" rows="2" placeholder="Motivo, detalles, lugar de salida..."></textarea></label>
       <button class="btn" id="svEnv">Solicitar cita</button><span class="suave" style="font-size:.8rem">El prestador confirmará tu cita o te propondrá otra hora. Te avisaremos por notificación.</span></div>`;
+  }else if(p.tipo==="transporte"){
+    cuerpo=`<div class="aviso" style="display:grid;gap:10px;margin-top:14px"><b>Solicitar cotización o viaje</b>
+      <label>¿Qué necesitas?<select id="tvT"><option value="cotizacion">Cotización (quiero saber el precio)</option><option value="agenda">Agendar viaje (día y hora)</option></select></label>
+      <label>Origen (dónde te recogen)<input id="tvO" placeholder="Calle, número y colonia"></label>
+      <label>Destino<input id="tvD" placeholder="A dónde vas"></label>
+      <label>Fecha (opcional en cotización)<input id="tvF" type="date" min="${hoy}"></label><label>Hora (opcional en cotización)<input id="tvH" type="time"></label>
+      <label>Detalles (opcional)<textarea id="tvN" rows="2" placeholder="Personas, equipaje, flete, mudanza..."></textarea></label>
+      <button class="btn" id="tvEnv">Enviar solicitud</button><span class="suave" style="font-size:.8rem">El transportista te responderá con el precio o la confirmación. Te avisaremos por notificación.</span></div>`;
   }else cuerpo=`<div class="aviso" style="display:grid;gap:10px;margin-top:14px"><b>Consultar si hay en stock</b>
       <label>¿Qué producto buscas? Escribe marca, modelo, medida...<textarea id="cqT" rows="3"></textarea></label>
       <label>Foto del producto (opcional)<input id="cqF" type="file" accept="image/*"></label>
@@ -1066,6 +1075,16 @@ async function svDetalle(root,id,volver,cod){
     const r=await db.from("citas").insert({perfil_id:p.id,servicio_id:s?s.id:null,servicio_nombre:s?s.nombre:"Cita",cliente_id:sesion.id,cliente_nombre:sesion.nombre,cliente_tel:sesion.tel||null,fecha:f,hora:h,notas:$("svN").value.trim()||null});
     if(r.error){alert("No se pudo enviar: "+r.error.message);$("svEnv").disabled=false;return}
     alert("Listo: tu solicitud fue enviada. Te avisaremos cuando el prestador la confirme.");await cierraTodasCapas();location.hash="#/mis-servicios"};
+  if($("tvEnv"))$("tvEnv").onclick=async()=>{
+    if(!sesion||!sesion.id)return pideRegistro();
+    const tp=$("tvT").value,o=$("tvO").value.trim(),de=$("tvD").value.trim(),f=$("tvF").value,h=$("tvH").value;
+    if(o.length<3||de.length<3)return alert("Escribe el origen y el destino.");
+    if(tp==="agenda"&&(!f||!h))return alert("Para agendar un viaje elige la fecha y la hora.");
+    if(f&&f<hoy)return alert("Elige una fecha de hoy en adelante.");
+    $("tvEnv").disabled=true;
+    const r=await db.from("viajes").insert({perfil_id:p.id,cliente_id:sesion.id,cliente_nombre:sesion.nombre,cliente_tel:sesion.tel||null,tipo:tp,origen:o,destino:de,fecha:f||null,hora:h||null,detalle:$("tvN").value.trim()||null});
+    if(r.error){alert("No se pudo enviar: "+r.error.message);$("tvEnv").disabled=false;return}
+    alert("Listo: tu solicitud fue enviada. Te avisaremos cuando el transportista responda.");await cierraTodasCapas();location.hash="#/mis-servicios"};
   if($("cqEnv"))$("cqEnv").onclick=async()=>{
     if(!sesion||!sesion.id)return pideRegistro();
     const t=$("cqT").value.trim();if(t.length<3)return alert("Escribe qué producto buscas.");
@@ -1080,16 +1099,20 @@ async function svDetalle(root,id,volver,cod){
 // --- Mis solicitudes (cliente) ---
 async function vistaMisServicios(){
   if(!sesion||!db){location.hash="#/cuenta";return}
-  const [c,q]=await Promise.all([db.from("citas").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50),
-    db.from("consultas_stock").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50)]);
-  const C=c.data||[],Q=q.data||[];
+  const [c,q,vj]=await Promise.all([db.from("citas").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50),
+    db.from("consultas_stock").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50),
+    db.from("viajes").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50)]);
+  const C=c.data||[],Q=q.data||[],V=vj.data||[];
   const wa=p=>p&&p.whatsapp?` <a class="btn mini sec" target="_blank" rel="noopener" href="${waUrl(p.whatsapp)}">WhatsApp</a>`:"";
   $("vista").innerHTML=`<p><a href="#/">← Inicio</a></p><h2>Mis solicitudes</h2><p class="suave"><button class="btn sec mini" data-svref>🔄 Actualizar</button> En tiempo real</p>${notifBtnHTML()}
    <h3>Citas</h3>`+(C.map(x=>`<div class="item"><div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
     ${x.estado==="Reprogramada"?`<span class="aviso" style="padding:8px">🔁 El prestador propone esta nueva fecha y hora.</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <span class="svbtns">${x.estado==="Reprogramada"?`<button class="btn mini" data-svok="${x.id}">Aceptar nueva hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-svcan="${x.id}">Cancelar cita</button>`:""}${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no tienes citas.</p>")+
    `<h3>Consultas de stock</h3>`+(Q.map(x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
-    ${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}<span class="svbtns">${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no has enviado consultas.</p>");
+    ${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}<span class="svbtns">${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no has enviado consultas.</p>")+
+   `<h3>Viajes y cotizaciones</h3>`+(V.map(x=>`<div class="item"><div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${x.tipo==="agenda"?"Viaje agendado":"Cotización"}: ${esc(x.origen)} → ${esc(x.destino)}</span>
+    ${x.fecha?`<span class="suave">📅 ${fMX(x.fecha)}${x.hora?" · "+esc(x.hora):""}</span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
+    <span class="svbtns">${x.estado==="Cotizada"?`<button class="btn mini" data-vac="${x.id}">Aceptar cotización</button>`:""}${["Solicitada","Cotizada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-vcl="${x.id}">Cancelar</button>`:""}${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no has pedido viajes ni cotizaciones.</p>");
 }
 
 // --- Panel del prestador ---
@@ -1106,10 +1129,15 @@ async function vistaPanelSrv(){
   const agCom=misCom.filter(c=>c.ofrece_citas||c.ofrece_consulta);
   if(!misSrv.length&&!agCom.length){location.hash=esAdmin?"#/admin":"#/panel";return}
   const idsP=misSrv.map(x=>x.id),ids=[...idsP,...agCom.map(c=>c.id)];
-  const [pf,it,ci,co]=await Promise.all([db.from("servicios_perfiles").select("*").in("id",idsP).order("nombre"),db.from("servicios_items").select("*").in("perfil_id",ids).order("nombre"),
-    db.from("citas").select("*").in("perfil_id",ids).order("creado",{ascending:false}).limit(150),db.from("consultas_stock").select("*").in("perfil_id",ids).order("creado",{ascending:false}).limit(100)]);
+  const [pf,it,ci,co,vj]=await Promise.all([db.from("servicios_perfiles").select("*").in("id",idsP).order("nombre"),db.from("servicios_items").select("*").in("perfil_id",ids).order("nombre"),
+    db.from("citas").select("*").in("perfil_id",ids).order("creado",{ascending:false}).limit(150),db.from("consultas_stock").select("*").in("perfil_id",ids).order("creado",{ascending:false}).limit(100),
+    idsP.length?db.from("viajes").select("*").in("perfil_id",idsP).order("creado",{ascending:false}).limit(100):Promise.resolve({data:[]})]);
   const P=[...agCom.filter(c=>c.ofrece_citas).map(c=>({id:c.id,tipo:"agenda",nombre:c.nombre,activo:true,_com:true,plan:c.plan})),...agCom.filter(c=>c.ofrece_consulta).map(c=>({id:c.id,tipo:"consulta",nombre:c.nombre,activo:true,_com:true,plan:c.plan})),...(pf.data||[])],I=it.data||[],orden={Solicitada:0,Reprogramada:1,Confirmada:2,Completada:3,Cancelada:4};
-  const C=(ci.data||[]).sort((a,b)=>(orden[a.estado]-orden[b.estado])||((a.fecha+a.hora)<(b.fecha+b.hora)?-1:1)),Q=co.data||[];
+  const C=(ci.data||[]).sort((a,b)=>(orden[a.estado]-orden[b.estado])||((a.fecha+a.hora)<(b.fecha+b.hora)?-1:1)),Q=co.data||[],Vj=(vj.data||[]).sort((a,b)=>({Solicitada:0,Cotizada:1,Confirmada:2,Completada:3,Cancelada:4}[a.estado]-{Solicitada:0,Cotizada:1,Confirmada:2,Completada:3,Cancelada:4}[b.estado]));
+  const viajeHTML=x=>`<div class="item"><div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${x.tipo==="agenda"?"Viaje agendado":"Cotización"}: ${esc(x.origen)} → ${esc(x.destino)}</span>
+    ${x.fecha?`<span class="suave">📅 ${fMX(x.fecha)}${x.hora?" · "+esc(x.hora):""}</span>`:""}${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.detalle?`<span class="suave">📝 ${esc(x.detalle)}</span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
+    <span class="svbtns">${["Solicitada","Cotizada"].includes(x.estado)?`<button class="btn mini" data-vq="${x.id}">${x.estado==="Cotizada"?"Cambiar precio":"Cotizar"}</button>`:""}${x.estado==="Solicitada"&&x.tipo==="agenda"?`<button class="btn mini" data-vcf="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-vfn="${x.id}">Completado</button>`:""}${["Solicitada","Cotizada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-vrc="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
+    <div class="aviso" id="vq_${x.id}" style="display:none;gap:8px"><label>Precio<input id="vqP_${x.id}" value="${esc(x.precio||"")}" placeholder="$150"></label><label>Mensaje (opcional)<input id="vqM_${x.id}" placeholder="Llego en 10 minutos..."></label><button class="btn mini" data-vqok="${x.id}">Enviar cotización</button></div></div></div>`;
   const citaHTML=x=>`<div class="item"><div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
     ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.notas?`<span class="suave">📝 ${esc(x.notas)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <span class="svbtns">${x.estado==="Solicitada"?`<button class="btn mini" data-cok="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-cfin="${x.id}">Completada</button>`:""}${["Solicitada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-crep="${x.id}">Otra hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-ccan="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
@@ -1125,12 +1153,12 @@ async function vistaPanelSrv(){
      (p.tipo==="agenda"?`<h3>Mis servicios</h3>`+(mi.map(i=>`<div class="linea"><span><b>${esc(i.nombre)}</b>${i.activo?"":" (oculto)"}<br><small>${Number(i.precio)>0?din(Number(i.precio)):"A consultar"}${i.duracion_min?" · "+i.duracion_min+" min":""}</small></span><span><button class="btn mini sec" data-siedit="${i.id}">Editar</button> <button class="btn mini sec" data-sidel="${i.id}">Quitar</button></span></div>`).join("")||"<p class='suave'>Aún no agregas servicios.</p>")+
        `<p><button class="btn mini" data-sinew="${p.id}">+ Agregar servicio</button></p><h3>Citas</h3>`+(mc.map(citaHTML).join("")||"<p>Aún no hay citas.</p>")
       :p.tipo==="consulta"?`<h3>Consultas de clientes</h3>`+(mq.map(consHTML).join("")||"<p>Aún no hay consultas.</p>")
-      :`<p class="aviso">Los clientes te encuentran en el directorio de Transporte y te llaman o escriben por WhatsApp. Mantén tu teléfono, vehículo, zona y horario actualizados en <b>Editar mi perfil</b>.</p>`)+`</div>`}).join("");
+      :`<h3>Solicitudes de viaje y cotización</h3>`+(Vj.filter(v=>v.perfil_id===p.id).map(viajeHTML).join("")||"<p>Aún no hay solicitudes. Mantén tu teléfono, vehículo, zona y horario actualizados en <b>Editar mi perfil</b>.</p>"))+`</div>`}).join("");
 }
 
 // --- Acciones (clientes y prestadores) ---
 document.addEventListener("click",async e=>{
-  const b=e.target.closest&&e.target.closest("[data-svopen],[data-agtab],[data-svclose],[data-svmis],[data-svref],[data-svok],[data-svcan],[data-cok],[data-cfin],[data-crep],[data-crepok],[data-ccan],[data-cqr],[data-sped],[data-sinew],[data-siedit],[data-sidel]");
+  const b=e.target.closest&&e.target.closest("[data-svopen],[data-agtab],[data-svclose],[data-svmis],[data-svref],[data-svok],[data-svcan],[data-cok],[data-cfin],[data-crep],[data-crepok],[data-ccan],[data-cqr],[data-sped],[data-sinew],[data-siedit],[data-sidel],[data-vac],[data-vcl],[data-vq],[data-vqok],[data-vcf],[data-vfn],[data-vrc]");
   if(!b)return;const d=b.dataset;
   if(d.agtab){agTab=d.agtab;return svAgPinta()}
   if(d.svclose){return cierraCapa()}
@@ -1149,6 +1177,15 @@ document.addEventListener("click",async e=>{
   if(d.cqr){const[id,est]=d.cqr.split("|");b.disabled=true;
     const r=await db.from("consultas_stock").update({estado:est,precio:$("cqP_"+id).value.trim()||null,respuesta:$("cqM_"+id).value.trim()||null}).eq("id",id);
     if(r.error){alert("No se pudo responder: "+r.error.message);b.disabled=false;return}return vistaPanelSrv()}
+  const viaje=async(id,o)=>{b.disabled=true;const r=await db.from("viajes").update(o).eq("id",id);if(r.error){alert("No se pudo actualizar: "+r.error.message);b.disabled=false;return false}return true};
+  if(d.vac){if(await viaje(d.vac,{estado:"Confirmada"}))vistaMisServicios();return}
+  if(d.vcl){if(!confirm("¿Cancelar esta solicitud?"))return;if(await viaje(d.vcl,{estado:"Cancelada"}))vistaMisServicios();return}
+  if(d.vq){const r=$("vq_"+d.vq);if(r)r.style.display=r.style.display==="none"?"grid":"none";return}
+  if(d.vqok){const pr=$("vqP_"+d.vqok).value.trim();if(!pr)return alert("Escribe el precio de la cotización.");
+    if(await viaje(d.vqok,{estado:"Cotizada",precio:pr,respuesta:$("vqM_"+d.vqok).value.trim()||null}))vistaPanelSrv();return}
+  if(d.vcf){if(await viaje(d.vcf,{estado:"Confirmada",respuesta:null}))vistaPanelSrv();return}
+  if(d.vfn){if(await viaje(d.vfn,{estado:"Completada"}))vistaPanelSrv();return}
+  if(d.vrc){const m=prompt("Motivo para el cliente (opcional):");if(m===null)return;if(await viaje(d.vrc,{estado:"Cancelada",respuesta:m.trim()||null}))vistaPanelSrv();return}
   if(d.sped){const r=await db.from("servicios_perfiles").select("*").eq("id",d.sped).single();if(!r.data)return;
     return svForm("Editar mi perfil",cfSrv("servicios/"+sesion.id).filter(c=>c.k!=="tipo"),r.data,async o=>{const x=await db.from("servicios_perfiles").update(o).eq("id",d.sped);if(x.error)throw x.error;cargarRol()})}
   if(d.sinew)return svForm("Nuevo servicio",CF_SITEM.map(c=>({...c,l:c.l})),{activo:true,precio:0},async o=>{o.perfil_id=d.sinew;o.duracion_min=o.duracion_min||null;const x=await db.from("servicios_items").insert(o);if(x.error)throw x.error});
@@ -1162,10 +1199,10 @@ const refrescaSrv=()=>{const h=location.hash;if(h==="#/mis-servicios")vistaMisSe
 function escucharServicios(){
   if(!db||canalSrv||!sesion||!sesion.id)return;
   const ch=db.channel("servicios-"+sesion.id);
-  ["citas","consultas_stock"].forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},p=>{
-    const n=p.new||{},esCita=t==="citas";
-    if(p.eventType==="INSERT"&&n.cliente_id!==sesion.id){sonido();aviso(esCita?"📅 Nueva solicitud de cita":"🔎 Nueva consulta de stock")}
-    else if(p.eventType==="UPDATE"&&n.cliente_id===sesion.id&&n.cambio_por!==sesion.id&&(n.estado||"")!=="Pendiente"){sonido();aviso((esCita?"📅 Tu cita: ":"🔎 Tu consulta: ")+n.estado)}
+  ["citas","consultas_stock","viajes"].forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},p=>{
+    const n=p.new||{},esCita=t==="citas",esV=t==="viajes";
+    if(p.eventType==="INSERT"&&n.cliente_id!==sesion.id){sonido();aviso(esV?"🚕 Nueva solicitud de viaje":esCita?"📅 Nueva solicitud de cita":"🔎 Nueva consulta de stock")}
+    else if(p.eventType==="UPDATE"&&n.cliente_id===sesion.id&&n.cambio_por!==sesion.id&&(n.estado||"")!=="Pendiente"){sonido();aviso((esV?"🚕 Tu viaje: ":esCita?"📅 Tu cita: ":"🔎 Tu consulta: ")+n.estado)}
     refrescaSrv()}));
   canalSrv=ch.subscribe();
 }
@@ -1566,7 +1603,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v120";
+const BUILD="valle-go-v121";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
