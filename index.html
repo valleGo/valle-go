@@ -277,6 +277,14 @@ footer a{color:#7C9564}
 @keyframes spOut{from{clip-path:circle(150% at 50% 50%)}to{clip-path:circle(0% at 50% 50%)}}
 @keyframes spLg{to{transform:scale(1.25);opacity:0}}
 @media (prefers-reduced-motion:reduce){#splash *{animation:none!important}#splash.fuera{animation:spFade .3s forwards}@keyframes spFade{to{opacity:0}}}
+/* v7: columna izquierda con ancho fijo; Perfil y Redes con el mismo centro */
+header{--bw:104px}@media(min-width:800px){header{--bw:156px}}
+header .hb.lcol{width:var(--bw)!important;max-width:var(--bw)!important;align-items:center!important;justify-self:start;padding:0!important}
+header .lcol .pf{width:100%;display:flex;flex-direction:column;align-items:center}
+header .hb #bCuenta,header .lcol #bCont{width:100%!important;max-width:none!important;margin:0!important;align-self:center!important;box-sizing:border-box}
+header{--bh:30px}@media(min-width:800px){header{--bh:36px}}
+header .hb #bCuenta,header .lcol #bCont{height:var(--bh)!important;min-height:var(--bh)!important}
+header .lcol #bCont{position:relative!important;left:auto!important;right:auto!important;top:auto!important}
 </style>
 </head>
 <body>
@@ -1744,7 +1752,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v140";
+const BUILD="valle-go-v142";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
