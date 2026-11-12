@@ -525,7 +525,7 @@ const ped2html=(p,admin)=>`<div class="item"><div class="in"><b>${esc(p.comercio
 
 // ---- Panel del comerciante: confirma y actualiza sus pedidos; el menú y las fotos solo los edita el administrador ----
 const cobroHTML=()=>`<div class="aviso" style="display:grid;gap:8px"><b>💳 Cobros en línea</b>
-  <span class="suave">Conecta tu cuenta de Mercado Pago para que el dinero de los pedidos pagados en línea llegue directo a tu cuenta. Mercado Pago descuenta su comisión por procesar cada pago en línea. Aparte, Valle GO cobra 1% del total de todos los pedidos (en línea, transferencia, depósito o efectivo) por el uso y mantenimiento de la app, y se cobra al final de cada mes junto con tu membresía. Tu tarjeta de débito o tu cuenta bancaria se agregan dentro de tu cuenta de Mercado Pago, para retirar tu dinero cuando quieras.</span>
+  <span class="suave">Conecta tu cuenta de Mercado Pago para que el dinero de los pedidos pagados en línea llegue directo a tu cuenta. Mercado Pago descuenta su comisión por procesar cada pago en línea. Aparte, Valle GO cobra 1% del total de todos los pedidos (en línea, transferencia, depósito o efectivo) y de las citas atendidas por el uso y mantenimiento de la app; el 1% se paga al final de cada mes y tu membresía al inicio del mes. Tu tarjeta de débito o tu cuenta bancaria se agregan dentro de tu cuenta de Mercado Pago, para retirar tu dinero cuando quieras.</span>
   ${misCom.map(c=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span><b>${esc(c.nombre)}</b>: ${c.mp_conectado?"✅ cuenta conectada":"sin conectar"}</span>
    ${c.mp_conectado?`<button class="btn sec" data-mpd="${c.id}">Desconectar</button>`:`<button class="btn" data-mpc="${c.id}">Conectar mi Mercado Pago</button>`}</div>`).join("")}</div>`;
 async function llamaMp(cuerpo){const {data}=await db.auth.getSession();
@@ -598,20 +598,21 @@ async function calcMonitoreo(mes){
   const d0=new Date(Y,M-6,1).toISOString(),d1=new Date(Y,M,1).toISOString();
   const pedPag=async()=>{let P=[],desde=0;for(;;){const r=await db.from("pedidos").select("comercio_id,total,pago,estado,estado_pago,creado").gte("creado",d0).lt("creado",d1).order("creado").order("id").range(desde,desde+999);
       if(r.error)throw r.error;P=P.concat(r.data||[]);if((r.data||[]).length<1000)break;desde+=1000}return P};
-  const [rc,P,rp,rg]=await Promise.all([db.from("comercios").select("id,nombre,activo,plan,creado,mp_conectado,whatsapp").order("nombre"),pedPag(),db.from("cobros_pagos").select("comercio_id,mes,monto,concepto").in("mes",keys),db.from("gastos").select("id,mes,concepto,monto,con_iva").in("mes",keys).order("creado")]);
+  const [rc,P,rp,rg,rci]=await Promise.all([db.from("comercios").select("id,nombre,activo,plan,creado,mp_conectado,whatsapp").order("nombre"),pedPag(),db.from("cobros_pagos").select("comercio_id,mes,monto,concepto").in("mes",keys),db.from("gastos").select("id,mes,concepto,monto,con_iva").in("mes",keys).order("creado"),db.from("citas").select("perfil_id,monto,mes").eq("estado","Completada").in("mes",keys)]);
   if(rc.error)throw rc.error;const cs=rc.data||[],PG=rp.error?[]:(rp.data||[]),GA=rg.error?[]:(rg.data||[]);
   const ag={};let sinPagar=0;
   P.forEach(p=>{const online=p.pago==="en_linea"||p.pago==="tarjeta",k=mkey(new Date(p.creado)),sel=k===mes;
     if(p.estado==="Cancelado")return;if(online&&p.estado_pago!=="Pagado"){if(sel)sinPagar++;return}
-    const a=((ag[p.comercio_id]=ag[p.comercio_id]||{})[k]=(ag[p.comercio_id][k]||{n:0,linea:0,otro:0})),v=Number(p.total)||0;a.n++;if(online)a.linea+=v;else a.otro+=v});
+    const a=((ag[p.comercio_id]=ag[p.comercio_id]||{})[k]=(ag[p.comercio_id][k]||{n:0,linea:0,otro:0,nc:0,cit:0})),v=Number(p.total)||0;a.n++;if(online)a.linea+=v;else a.otro+=v});
+  (rci&&!rci.error?rci.data||[]:[]).forEach(x=>{const a=((ag[x.perfil_id]=ag[x.perfil_id]||{})[x.mes]=(ag[x.perfil_id][x.mes]||{n:0,linea:0,otro:0,nc:0,cit:0}));a.nc++;a.cit+=Number(x.monto)||0});
   const C={},Mes={};
-  keys.forEach((k,i)=>{const[y,m]=k.split("-").map(Number),fin=new Date(y,m,1);C[k]={};const T={n:0,linea:0,otro:0,tot:0,com:0,mem:0,memI:0,cobrar:0,pag:0,saldo:0,pagC:0,pagM:0,saldoC:0,saldoM:0};
-    cs.forEach(c=>{const a=(ag[c.id]||{})[k]||{n:0,linea:0,otro:0};const activo=(c.activo!==false||a.n>0)&&(!c.creado||new Date(c.creado)<fin);if(!activo&&!a.n)return;
-      const tot=a.linea+a.otro,com=r2m(tot*0.01),mem=activo?memBase(c.plan):0,memI=activo?memConIva(c.plan):0,cobrar=r2m(com+memI),
+  keys.forEach((k,i)=>{const[y,m]=k.split("-").map(Number),fin=new Date(y,m,1);C[k]={};const T={n:0,nc:0,cit:0,linea:0,otro:0,tot:0,com:0,mem:0,memI:0,cobrar:0,pag:0,saldo:0,pagC:0,pagM:0,saldoC:0,saldoM:0};
+    cs.forEach(c=>{const a=(ag[c.id]||{})[k]||{n:0,linea:0,otro:0,nc:0,cit:0};const activo=(c.activo!==false||a.n>0||a.nc>0)&&(!c.creado||new Date(c.creado)<fin);if(!activo&&!a.n&&!a.nc)return;
+      const tot=a.linea+a.otro+a.cit,com=r2m(tot*0.01),mem=activo?memBase(c.plan):0,memI=activo?memConIva(c.plan):0,cobrar=r2m(com+memI),
         pagC=r2m(PG.filter(x=>x.comercio_id===c.id&&x.mes===k&&(x.concepto||"comision")==="comision").reduce((t,x)=>t+Number(x.monto),0)),pagM=r2m(PG.filter(x=>x.comercio_id===c.id&&x.mes===k&&x.concepto==="membresia").reduce((t,x)=>t+Number(x.monto),0)),
         saldoC=Math.max(0,r2m(com-pagC)),saldoM=Math.max(0,r2m(memI-pagM)),pag=r2m(pagC+pagM),saldo=r2m(saldoC+saldoM);
-      C[k][c.id]={id:c.id,nombre:c.nombre,plan:c.plan==="simple"?"simple":"basico",n:a.n,linea:a.linea,otro:a.otro,tot,com,mem,memI,cobrar,pag,saldo,pagC,pagM,saldoC,saldoM};
-      T.n+=a.n;T.linea+=a.linea;T.otro+=a.otro;T.tot+=tot;T.com+=com;T.mem+=mem;T.memI+=memI;T.cobrar+=cobrar;T.pag+=pag;T.saldo+=saldo;T.pagC+=pagC;T.pagM+=pagM;T.saldoC+=saldoC;T.saldoM+=saldoM});
+      C[k][c.id]={id:c.id,nombre:c.nombre,plan:c.plan==="simple"?"simple":"basico",n:a.n,nc:a.nc,cit:a.cit,linea:a.linea,otro:a.otro,tot,com,mem,memI,cobrar,pag,saldo,pagC,pagM,saldoC,saldoM};
+      T.n+=a.n;T.nc+=a.nc;T.cit+=a.cit;T.linea+=a.linea;T.otro+=a.otro;T.tot+=tot;T.com+=com;T.mem+=mem;T.memI+=memI;T.cobrar+=cobrar;T.pag+=pag;T.saldo+=saldo;T.pagC+=pagC;T.pagM+=pagM;T.saldoC+=saldoC;T.saldoM+=saldoM});
     T.ing=r2m(T.com+T.mem);T.gan=r2m(T.ing-COSTO_FIJO);
     const gk=GA.filter(x=>x.mes===k);T.gast=r2m(gk.reduce((t,x)=>t+Number(x.monto),0));T.ivaG=r2m(gk.reduce((t,x)=>t+(x.con_iva?Number(x.monto)*16/116:0),0));
     T.ivaC=r2m(T.memI-T.mem);T.ivaP=r2m(T.ivaC-T.ivaG);Mes[k]=T});
@@ -651,10 +652,10 @@ function svgInformeComercio(D,id){
   const R=D.C[D.mes][id],W=820,et=D.keys.map(etMes);
   const hist=D.keys.map(k=>(D.C[k][id]||{tot:0}).tot);
   let g=`<rect width="${W}" height="72" fill="${VE}"/><text x="24" y="34" font-size="22" font-weight="700" fill="#fff">${esc(R.nombre)}</text><text x="24" y="56" font-size="12" fill="#e8efdc">Valle GO · Informe de ${esc(nomMes(D.mes))}</text>`;
-  const K=[["Pedidos",String(R.n)],["Total vendido",mxn(R.tot)],["Pagos en línea",mxn(R.linea)],["Transf./efectivo",mxn(R.otro)],["1% Valle GO",mxn(R.com)],["Membresía con IVA",mxn(R.memI)],["Total del mes",mxn(R.cobrar)],["Saldo por pagar",mxn(R.saldo)]];
+  const K=[["Pedidos · citas",R.n+" · "+R.nc],["Total vendido",mxn(R.tot)],["Pedidos",mxn(R.linea+R.otro)],["Citas atendidas",mxn(R.cit)],["1% Valle GO",mxn(R.com)],["Membresía con IVA",mxn(R.memI)],["Total del mes",mxn(R.cobrar)],["Saldo por pagar",mxn(R.saldo)]];
   K.forEach((k,i)=>{g+=kpiBox(24+(i%4)*194,92+Math.floor(i/4)*74,184,k[0],k[1])});
   g+=svgBarras(24,250,W-48,230,"Tus ventas por mes",et,[{nombre:"Total vendido",color:VE,vals:hist}]);
-  g+=`<text x="24" y="504" font-size="10" fill="#888">1% de uso y mantenimiento de la app sobre el total de tus pedidos, más membresía. Pagado este mes: ${esc(mxn(R.pag))}.</text>`;
+  g+=`<text x="24" y="504" font-size="10" fill="#888">1% de uso y mantenimiento de la app sobre tus pedidos y citas atendidas. La membresía se paga al inicio del mes y el 1% al final. Pagado este mes: ${esc(mxn(R.pag))}.</text>`;
   return svgWrap(W,520,g)}
 function svgAPng(svg,w,h){return new Promise((ok,no)=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");c.width=w*2;c.height=h*2;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):no(new Error("No se pudo crear la imagen")),"image/png")};img.onerror=()=>no(new Error("No se pudo crear la imagen"));img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)})}
 
@@ -726,11 +727,11 @@ function pdfKit(mes,subt){
   K.fin=()=>{K.pags.forEach((p,i)=>p.push({t:"x",x:40,y:772,v:"Generado el "+new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})+" · Valle GO · Página "+(i+1)+" de "+K.pags.length,s:8,c:GRIS}));return pdfSimple(K.pags)};
   K.nueva();return K}
 function pdfCobros1(mes,F,S,PGC,nomC){
-  const K=pdfKit(mes,"Reporte de cobros del 1%"),mx=K.mx,cols=[{n:"Comercio",x:40},{n:"Plan",x:150},{n:"Pedidos",x:222,d:1},{n:"En línea",x:282,d:1},{n:"Transf./efvo.",x:346,d:1},{n:"Total vendido",x:416,d:1},{n:"1% Valle GO",x:476,d:1},{n:"Pagado",x:526,d:1},{n:"Saldo",x:574,d:1}];
-  K.txt(40,"El 1% se calcula sobre el total de todos los pedidos del mes (en línea, transferencia, depósito o efectivo), sin IVA.",8.5,0,K.GRIS);K.y+=24;K.enc(cols);
-  const fila=(f,b)=>{[f.nombre.length>20?f.nombre.slice(0,19)+"...":f.nombre,f.plan,String(f.n),mx(f.linea),mx(f.otro),mx(f.tot),mx(f.com),mx(f.pag),f.saldo<=0.004&&!b?"Pagado":mx(f.saldo)].forEach((v,i)=>K.txt(cols[i].x,v,8.5,b||i===6||i===8,K.NEG,cols[i].d))};
+  const K=pdfKit(mes,"Reporte de cobros del 1%"),mx=K.mx,cols=[{n:"Comercio",x:40},{n:"Plan",x:128},{n:"Pedidos",x:182,d:1},{n:"En línea",x:236,d:1},{n:"Transf./efvo.",x:296,d:1},{n:"Citas",x:352,d:1},{n:"Total vendido",x:416,d:1},{n:"1% Valle GO",x:476,d:1},{n:"Pagado",x:526,d:1},{n:"Saldo",x:574,d:1}];
+  K.txt(40,"El 1% se calcula sobre el total de los pedidos del mes (en línea, transferencia, depósito o efectivo) y de las citas atendidas, sin IVA.",8.5,0,K.GRIS);K.y+=24;K.enc(cols);
+  const fila=(f,b)=>{[f.nombre.length>16?f.nombre.slice(0,15)+"...":f.nombre,f.plan,String(f.n),mx(f.linea),mx(f.otro),mx(f.cit||0),mx(f.tot),mx(f.com),mx(f.pag),f.saldo<=0.004&&!b?"Pagado":mx(f.saldo)].forEach((v,i)=>K.txt(cols[i].x,v,8.5,b||i===7||i===9,K.NEG,cols[i].d))};
   F.forEach(f=>{if(K.y>730){K.nueva();K.enc(cols)}fila(f);K.linea()});
-  if(K.y>700)K.nueva();K.ops.push({t:"r",x:36,y:K.y-14,w:540,h:22,c:K.CLARO});fila({nombre:"Total",plan:"",n:S.n,linea:S.linea,otro:S.otro,tot:S.tot,com:S.com,pag:S.pag,saldo:S.saldo},1);K.y+=34;
+  if(K.y>700)K.nueva();K.ops.push({t:"r",x:36,y:K.y-14,w:540,h:22,c:K.CLARO});fila({nombre:"Total",plan:"",n:S.n,linea:S.linea,otro:S.otro,cit:S.cit,tot:S.tot,com:S.com,pag:S.pag,saldo:S.saldo},1);K.y+=34;
   if(K.y>690)K.nueva();K.txt(40,"Pagos del 1% registrados en el mes",11,1);K.y+=18;
   if(!PGC.length){K.txt(40,"Aún no hay pagos del 1% registrados este mes.",9,0,K.GRIS);K.y+=16}
   PGC.forEach(x=>{if(K.y>740)K.nueva();const det=new Date(x.pagado_en).toLocaleDateString("es-MX")+(x.metodo?" · "+x.metodo:"")+(x.nota?" · "+x.nota:"");
@@ -841,11 +842,11 @@ async function admTab(){
     const bas=Object.values(D.C[D.mes]).filter(r=>r.plan==="basico");
     box.innerHTML=`<label>Mes<input type="month" id="mMes" value="${D.mes}"></label>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0">
-      ${card("Pedidos",T.n,"")}${card("Total vendido",mxn(T.tot),"En línea "+mxn(T.linea)+" · Otros "+mxn(T.otro))}${card("Comisión 1%",mxn(T.com),"")}
+      ${card("Pedidos · citas",T.n+" · "+T.nc,"Citas atendidas")}${card("Total vendido",mxn(T.tot),"En línea "+mxn(T.linea)+" · Otros "+mxn(T.otro)+" · Citas "+mxn(T.cit))}${card("Comisión 1%",mxn(T.com),"")}
       ${card("Membresías (sin IVA)",mxn(T.mem),"")}${card("Ingresos Valle GO",mxn(T.ing),"Sin IVA")}${card("Ganancia estimada",mxn(T.gan),"Costos fijos "+mxn(COSTO_FIJO))}
       ${card("1% cobrado",mxn(T.pagC),"Pagos registrados")}${card("1% por cobrar",mxn(T.saldoC),"Sin IVA")}${card("Membresías cobradas",mxn(T.pagM),"Pagos registrados")}${card("Membresías por cobrar",mxn(T.saldoM),"Con IVA")}
       ${card("IVA cobrado",mxn(T.ivaC),"De membresías")}${card("Gastos del mes",mxn(T.gast),"Registrados")}${card("IVA de gastos",mxn(T.ivaG),"Acreditable")}${card(T.ivaP<0?"IVA a favor":"IVA por pagar",mxn(Math.abs(T.ivaP)),"Cobrado − de gastos")}</div>
-    ${chart("Ventas por mes (todos los pedidos)",SG.ventas(D))}${chart("Ingresos de Valle GO por mes (sin IVA)",SG.ing(D))}${chart("Membresías por mes: cobrado y por cobrar",SG.pagosM(D))}${chart("1% de comisión por mes: cobrado y por cobrar",SG.pagosC(D))}${chart("IVA por mes: cobrado, de gastos y por pagar",SG.iva(D))}
+    ${chart("Ventas por mes (pedidos y citas atendidas)",SG.ventas(D))}${chart("Ingresos de Valle GO por mes (sin IVA)",SG.ing(D))}${chart("Membresías por mes: cobrado y por cobrar",SG.pagosM(D))}${chart("1% de comisión por mes: cobrado y por cobrar",SG.pagosC(D))}${chart("IVA por mes: cobrado, de gastos y por pagar",SG.iva(D))}
     <h3>Gastos de ${esc(nomMes(D.mes))}</h3><p class="suave">Registra aquí lo que Valle GO paga (Supabase, Vercel, dominio, publicidad…). Si el gasto incluye IVA, déjalo marcado: se calcula el IVA acreditable.</p>
     ${D.GA.filter(x=>x.mes===D.mes).map(x=>`<div class="item"><div class="in" style="flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap"><b style="flex:1">${esc(x.concepto)}</b><span>${mxn(Number(x.monto))}</span><span class="suave">${x.con_iva?"con IVA":"sin IVA"}</span><button class="btn sec" data-gdel="${x.id}">Quitar</button></div></div>`).join("")||'<p class="suave">Aún no hay gastos este mes.</p>'}
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:8px 0 14px"><label style="flex:2;min-width:150px">Concepto<input id="gCon" placeholder="Ej. Supabase Pro"></label><label style="flex:1;min-width:110px">Monto (MXN)<input id="gMon" type="number" step="0.01" min="0" placeholder="0.00"></label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="gIva" checked style="width:auto"> Incluye IVA</label><button class="btn" data-gadd>Agregar gasto</button></div>
@@ -887,32 +888,33 @@ async function admTab(){
       if(r.error){err=r.error;break}P=P.concat(r.data||[]);if((r.data||[]).length<1000)break;desde+=1000}
     if(err){box.innerHTML="<p>No se pudo cargar el reporte: "+esc(err.message)+"</p>";return}
     const PCT=0.01, MEMS={simple:360,basico:720}, IVA=0.16, memDe=pl=>MEMS[pl==="simple"?"simple":"basico"], memIva=memDe("basico"), r2=x=>Math.round(x*100)/100, mx=x=>"$"+x.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
-    const rp=await db.from("cobros_pagos").select("*").eq("mes",adm.mes).order("pagado_en");
+    const[rp,rci]=await Promise.all([db.from("cobros_pagos").select("*").eq("mes",adm.mes).order("pagado_en"),db.from("citas").select("perfil_id,monto").eq("estado","Completada").eq("mes",adm.mes)]);
     const PGC=rp.error?[]:(rp.data||[]).filter(x=>(x.concepto||"comision")==="comision"), pgErr=rp.error?rp.error.message:"", nomC={};cs.forEach(c=>nomC[c.id]=c.nombre);
     const ag={}; let excl=0;
     P.forEach(p=>{
       const cuenta=p.estado!=="Cancelado"&&!(p.pago==="en_linea"||p.pago==="tarjeta")||(p.estado!=="Cancelado"&&p.estado_pago==="Pagado");
       if(!cuenta){excl++;return}
-      const a=ag[p.comercio_id]||(ag[p.comercio_id]={n:0,linea:0,otro:0});
+      const a=ag[p.comercio_id]||(ag[p.comercio_id]={n:0,linea:0,otro:0,nc:0,cit:0});
       const v=Number(p.total)||0;a.n++;if(p.pago==="en_linea"||p.pago==="tarjeta")a.linea+=v;else a.otro+=v});
-    const F=cs.filter(c=>c.activo!==false||ag[c.id]).map(c=>{const a=ag[c.id]||{n:0,linea:0,otro:0},tot=a.linea+a.otro,com=r2(tot*PCT);
+    (rci&&!rci.error?rci.data||[]:[]).forEach(x=>{const a=ag[x.perfil_id]||(ag[x.perfil_id]={n:0,linea:0,otro:0,nc:0,cit:0});a.nc++;a.cit+=Number(x.monto)||0});
+    const F=cs.filter(c=>c.activo!==false||ag[c.id]).map(c=>{const a=ag[c.id]||{n:0,linea:0,otro:0,nc:0,cit:0},tot=a.linea+a.otro+a.cit,com=r2(tot*PCT);
       const pag=r2(PGC.filter(x=>x.comercio_id===c.id).reduce((t,x)=>t+Number(x.monto),0));
-      return{id:c.id,pag,saldo:r2(com-pag),plan:c.plan==="simple"?"Simple":"Básico",nombre:c.nombre,n:a.n,linea:a.linea,otro:a.otro,tot,com}});
-    const S=F.reduce((x,f)=>({pag:x.pag+f.pag,saldo:x.saldo+f.saldo,n:x.n+f.n,linea:x.linea+f.linea,otro:x.otro+f.otro,tot:x.tot+f.tot,com:x.com+f.com}),{pag:0,saldo:0,n:0,linea:0,otro:0,tot:0,com:0});
-    const fila=f=>`<tr><td>${esc(f.nombre)}</td><td>${f.plan}</td><td>${f.n}</td><td>${mx(f.linea)}</td><td>${mx(f.otro)}</td><td>${mx(f.tot)}</td><td><b>${mx(f.com)}</b></td><td>${mx(f.pag)}</td><td>${f.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':'<b>'+mx(f.saldo)+'</b>'+(f.pag>0?' (parcial)':'')}</td><td>${f.saldo>0.004?`<button class="btn sec" data-cpg="${f.id}|${f.saldo}" data-cc="comision">Registrar pago</button>`:""}</td></tr>`;
-    box.innerHTML=`<div class="aviso"><b>Cobros del 1%</b><br>Valle GO cobra <b>1% del total de todos los pedidos</b> (en línea, transferencia, depósito o efectivo), sin IVA. Se revisa este reporte y se cobra al final del mes. Las membresías se registran aparte, en el botón <b>Membresías</b>.</div>
+      return{id:c.id,pag,saldo:r2(com-pag),plan:c.plan==="simple"?"Simple":"Básico",nombre:c.nombre,n:a.n,nc:a.nc,cit:a.cit,linea:a.linea,otro:a.otro,tot,com}});
+    const S=F.reduce((x,f)=>({pag:x.pag+f.pag,saldo:x.saldo+f.saldo,n:x.n+f.n,nc:x.nc+f.nc,cit:x.cit+f.cit,linea:x.linea+f.linea,otro:x.otro+f.otro,tot:x.tot+f.tot,com:x.com+f.com}),{pag:0,saldo:0,n:0,nc:0,cit:0,linea:0,otro:0,tot:0,com:0});
+    const fila=f=>`<tr><td>${esc(f.nombre)}</td><td>${f.plan}</td><td>${f.n}</td><td>${mx(f.linea)}</td><td>${mx(f.otro)}</td><td>${f.nc?f.nc+" · "+mx(f.cit):"—"}</td><td>${mx(f.tot)}</td><td><b>${mx(f.com)}</b></td><td>${mx(f.pag)}</td><td>${f.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':'<b>'+mx(f.saldo)+'</b>'+(f.pag>0?' (parcial)':'')}</td><td>${f.saldo>0.004?`<button class="btn sec" data-cpg="${f.id}|${f.saldo}" data-cc="comision">Registrar pago</button>`:""}</td></tr>`;
+    box.innerHTML=`<div class="aviso"><b>Cobros del 1%</b><br>Valle GO cobra <b>1% del total de todos los pedidos y de las citas atendidas</b> (en línea, transferencia, depósito o efectivo), sin IVA. Se revisa este reporte y se cobra al final del mes. Las membresías se pagan al inicio del mes y se registran aparte, en el botón <b>Membresías</b>.</div>
     <label>Mes<input type="month" id="cMes" value="${adm.mes}"></label>
     <div style="overflow-x:auto;margin:10px 0"><table style="border-collapse:collapse;width:100%;font-size:.85rem;white-space:nowrap" id="tCob">
-    <thead><tr style="text-align:left"><th>Comercio</th><th>Plan</th><th>Pedidos</th><th>Pagos en línea</th><th>Transf./efectivo</th><th>Total vendido</th><th>1% Valle GO</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead>
-    <tbody>${F.map(fila).join("")||'<tr><td colspan="10">No hay comercios.</td></tr>'}</tbody>
-    <tfoot><tr style="border-top:2px solid var(--borde)"><td><b>Total</b></td><td></td><td><b>${S.n}</b></td><td><b>${mx(S.linea)}</b></td><td><b>${mx(S.otro)}</b></td><td><b>${mx(S.tot)}</b></td><td><b>${mx(S.com)}</b></td><td><b>${mx(S.pag)}</b></td><td><b>${mx(S.saldo)}</b></td><td></td></tr></tfoot></table></div>
-    <p class="suave">Cuentan los pedidos del mes que no están cancelados; los pagos en línea solo si están marcados como Pagado. Los de transferencia y efectivo cuentan aunque se cobren fuera de la app: revisa que estén registrados. ${excl?excl+" pedido(s) no se cuentan (cancelados o pago en línea sin pagar). ":""}</p>
+    <thead><tr style="text-align:left"><th>Comercio</th><th>Plan</th><th>Pedidos</th><th>Pagos en línea</th><th>Transf./efectivo</th><th>Citas atendidas</th><th>Total vendido</th><th>1% Valle GO</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead>
+    <tbody>${F.map(fila).join("")||'<tr><td colspan="11">No hay comercios.</td></tr>'}</tbody>
+    <tfoot><tr style="border-top:2px solid var(--borde)"><td><b>Total</b></td><td></td><td><b>${S.n}</b></td><td><b>${mx(S.linea)}</b></td><td><b>${mx(S.otro)}</b></td><td><b>${S.nc} · ${mx(S.cit)}</b></td><td><b>${mx(S.tot)}</b></td><td><b>${mx(S.com)}</b></td><td><b>${mx(S.pag)}</b></td><td><b>${mx(S.saldo)}</b></td><td></td></tr></tfoot></table></div>
+    <p class="suave">Cuentan los pedidos del mes que no están cancelados y las citas que el comercio marcó como atendidas con el total cobrado; los pagos en línea solo si están marcados como Pagado. Los de transferencia y efectivo cuentan aunque se cobren fuera de la app: revisa que estén registrados. ${excl?excl+" pedido(s) no se cuentan (cancelados o pago en línea sin pagar). ":""}</p>
     <h3>Pagos del 1% registrados del mes</h3>${pgErr?'<p class="suave">No se pudo cargar el registro de pagos: '+esc(pgErr)+'</p>':""}
     ${PGC.length?PGC.map(x=>`<div class="aviso" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span><b>${esc(nomC[x.comercio_id]||"Comercio")}</b> · ${mx(Number(x.monto))}<br><span class="suave">${new Date(x.pagado_en).toLocaleDateString("es-MX")}${x.metodo?" · "+esc(x.metodo):""}${x.nota?" · "+esc(x.nota):""}</span></span><button class="btn sec" data-cpdel="${x.id}">Quitar</button></div>`).join(""):'<p class="suave">Aún no hay pagos del 1% registrados este mes.</p>'}
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="cPdf">Descargar PDF</button><button class="btn sec" id="cCsv">Descargar CSV</button></div>`;
     $("cPdf").onclick=()=>bajarBlob(pdfCobros1(adm.mes,F,S,PGC,nomC),"valle-go-cobros-1porciento-"+adm.mes+".pdf");
     $("cMes").onchange=e=>{if(e.target.value){adm.mes=e.target.value;admTab()}};
-    $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Plan","Pedidos","Pagos en linea","Transferencia/efectivo","Total vendido","1% Valle GO","Pagado","Saldo"]].concat(F.map(f=>[f.nombre,f.plan,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.pag.toFixed(2),f.saldo.toFixed(2)])).concat([["Total","",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.pag.toFixed(2),S.saldo.toFixed(2)]]);
+    $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Plan","Pedidos","Pagos en linea","Transferencia/efectivo","Citas atendidas","Monto de citas","Total vendido","1% Valle GO","Pagado","Saldo"]].concat(F.map(f=>[f.nombre,f.plan,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.nc,f.cit.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.pag.toFixed(2),f.saldo.toFixed(2)])).concat([["Total","",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.nc,S.cit.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.pag.toFixed(2),S.saldo.toFixed(2)]]);
       const b=new Blob(["\ufeff"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="valle-go-cobros-1porciento-"+adm.mes+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
   }
   if(t==="membresias"){
@@ -979,12 +981,12 @@ document.addEventListener("click",async e=>{
   if(d.mdl!==undefined||d.mshare!==undefined){const D=adm.mon;if(!D)return;try{const b=await svgAPng(svgInformeAdmin(D),820,992),n="valle-go-informe-"+D.mes+".png";
       if(d.mdl!==undefined)bajarBlob(b,n);else await compartirInforme(b,n,"Informe Valle GO de "+nomMes(D.mes),"")}catch(err){alert(err.message)}return}
   if(d.mpdf!==undefined){const D=adm.mon;if(!D)return;try{bajarBlob(pdfMonitoreo(D),"valle-go-monitoreo-"+D.mes+".pdf")}catch(err){alert(err.message)}return}
-  if(d.mcsv!==undefined){const D=adm.mon;if(!D)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Mes","Pedidos","Total vendido","Pagos en linea","Transferencia/efectivo","Comision 1%","Membresias sin IVA","Ingresos","Ganancia estimada","1% cobrado","1% por cobrar","Membresias cobradas","Membresias por cobrar","IVA cobrado","Gastos","IVA de gastos","IVA por pagar"]];
-    D.keys.forEach(k=>{const T=D.M[k];L.push([k,T.n,T.tot.toFixed(2),T.linea.toFixed(2),T.otro.toFixed(2),T.com.toFixed(2),T.mem.toFixed(2),T.ing.toFixed(2),T.gan.toFixed(2),T.pagC.toFixed(2),T.saldoC.toFixed(2),T.pagM.toFixed(2),T.saldoM.toFixed(2),T.ivaC.toFixed(2),T.gast.toFixed(2),T.ivaG.toFixed(2),T.ivaP.toFixed(2)])});
+  if(d.mcsv!==undefined){const D=adm.mon;if(!D)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Mes","Pedidos","Total vendido","Pagos en linea","Transferencia/efectivo","Citas atendidas","Monto de citas","Comision 1%","Membresias sin IVA","Ingresos","Ganancia estimada","1% cobrado","1% por cobrar","Membresias cobradas","Membresias por cobrar","IVA cobrado","Gastos","IVA de gastos","IVA por pagar"]];
+    D.keys.forEach(k=>{const T=D.M[k];L.push([k,T.n,T.tot.toFixed(2),T.linea.toFixed(2),T.otro.toFixed(2),T.nc,T.cit.toFixed(2),T.com.toFixed(2),T.mem.toFixed(2),T.ing.toFixed(2),T.gan.toFixed(2),T.pagC.toFixed(2),T.saldoC.toFixed(2),T.pagM.toFixed(2),T.saldoM.toFixed(2),T.ivaC.toFixed(2),T.gast.toFixed(2),T.ivaG.toFixed(2),T.ivaP.toFixed(2)])});
     bajarBlob(new Blob(["﻿"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),"valle-go-monitoreo-"+D.mes+".csv");return}
   if(d.mcd||d.mcs){const D=adm.mon;if(!D)return;const R=(D.C[D.mes]||{})[d.mcd||d.mcs];if(!R||R.plan!=="basico"){alert("Solo los comercios del plan Básico reciben informe.");return}
     try{const b=await svgAPng(svgInformeComercio(D,R.id),820,520),n="informe-"+R.nombre.replace(/[^a-z0-9]+/gi,"-").toLowerCase()+"-"+D.mes+".png";
-      if(d.mcd)bajarBlob(b,n);else{const c=D.cs.find(x=>x.id===R.id)||{};await compartirInforme(b,n,"Informe Valle GO · "+R.nombre+" · "+nomMes(D.mes)+"\nPedidos: "+R.n+" · Ventas: "+mxn(R.tot)+"\n1% Valle GO: "+mxn(R.com)+" · Membresía: "+mxn(R.memI)+"\nTotal del mes: "+mxn(R.cobrar)+" · Saldo: "+mxn(R.saldo),c.whatsapp)}}catch(err){alert(err.message)}return}
+      if(d.mcd)bajarBlob(b,n);else{const c=D.cs.find(x=>x.id===R.id)||{};await compartirInforme(b,n,"Informe Valle GO · "+R.nombre+" · "+nomMes(D.mes)+"\nPedidos: "+R.n+" · Ventas: "+mxn(R.tot)+"\nCitas atendidas: "+R.nc+" ("+mxn(R.cit)+")\n1% Valle GO: "+mxn(R.com)+" · Membresía: "+mxn(R.memI)+"\nTotal del mes: "+mxn(R.cobrar)+" · Saldo: "+mxn(R.saldo),c.whatsapp)}}catch(err){alert(err.message)}return}
   if(d.aadd!==undefined){const c=($("aCorreo").value||"").trim();if(!c){$("aMsg").textContent=" Escribe un correo.";return}
     if(!confirm("¿Dar permisos de administrador a "+c+"?"))return;
     const r=await db.rpc("admin_agregar_admin",{correo:c});if(r.error){$("aMsg").textContent=" "+r.error.message;return}return admTab()}
@@ -1405,7 +1407,7 @@ async function vistaPanelSrv(){
     idsP.length?db.from("viajes").select("*").in("perfil_id",idsP).order("creado",{ascending:false}).limit(100):Promise.resolve({data:[]})]);
   const P=[...agCom.filter(c=>c.ofrece_citas).map(c=>({id:c.id,tipo:"agenda",nombre:c.nombre,activo:true,_com:true,plan:c.plan})),...agCom.filter(c=>c.ofrece_consulta).map(c=>({id:c.id,tipo:"consulta",nombre:c.nombre,activo:true,_com:true,plan:c.plan})),...(pf.data||[])],I=it.data||[],orden={Solicitada:0,Reprogramada:1,Confirmada:2,Completada:3,Cancelada:4};
   const C=(ci.data||[]).sort((a,b)=>(orden[a.estado]-orden[b.estado])||((a.fecha+a.hora)<(b.fecha+b.hora)?-1:1)),Q=co.data||[],Vj=(vj.data||[]).sort((a,b)=>({Solicitada:0,Cotizada:1,Confirmada:2,Completada:3,Cancelada:4}[a.estado]-{Solicitada:0,Cotizada:1,Confirmada:2,Completada:3,Cancelada:4}[b.estado]));
-  window._vj={};Vj.forEach(v=>window._vj[v.id]=v);
+  window._vj={};Vj.forEach(v=>window._vj[v.id]=v);window._ci={};C.forEach(c=>window._ci[c.id]=c);window._itP={};I.forEach(i=>window._itP[i.id]=i.precio);
   const idsTr=misSrv.filter(s=>s.tipo==="transporte").map(s=>s.id),mesAct=mkey(new Date());let cortes=[];
   if(idsTr.length){try{cortes=await corteTransporte(mesAct,idsTr)}catch(e){cortes=[]}}
   const corteHTML=p=>{const r=cortes.find(c=>c.id===p.id);if(!r)return"";
@@ -1415,7 +1417,7 @@ async function vistaPanelSrv(){
     <span class="svbtns">${["Solicitada","Cotizada"].includes(x.estado)?`<button class="btn mini" data-vq="${x.id}">${x.estado==="Cotizada"?"Cambiar precio":"Cotizar"}</button>`:""}${x.estado==="Solicitada"&&x.tipo==="agenda"?`<button class="btn mini" data-vcf="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-vfn="${x.id}">Completado</button>`:""}${["Solicitada","Cotizada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-vrc="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
     <div class="aviso" id="vq_${x.id}" style="display:none;gap:8px"><label>Precio total del viaje (pesos)<input id="vqP_${x.id}" type="number" inputmode="decimal" min="1" step="0.01" value="${x.precio_num||""}" placeholder="150"></label><label>Mensaje (opcional)<input id="vqM_${x.id}" placeholder="Llego en 10 minutos..."></label><button class="btn mini" data-vqok="${x.id}">Enviar cotización</button></div></div></div>`;
   const citaHTML=x=>`<div class="item"><div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
-    ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.notas?`<span class="suave">📝 ${esc(x.notas)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
+    ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.notas?`<span class="suave">📝 ${esc(x.notas)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}${x.estado==="Completada"&&x.monto?`<span><b>Cobrado:</b> ${mxn(x.monto)} · 1% Valle GO: ${mxn(x.comision||0)}</span>`:""}
     <span class="svbtns">${x.estado==="Solicitada"?`<button class="btn mini" data-cok="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-cfin="${x.id}">Completada</button>`:""}${["Solicitada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-crep="${x.id}">Otra hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-ccan="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
     <div class="aviso" id="rep_${x.id}" style="display:none;gap:8px"><label>Nueva fecha<input type="date" id="repF_${x.id}" min="${hoyISO()}" value="${esc(x.fecha)}"></label><label>Nueva hora<input type="time" id="repH_${x.id}" value="${esc(x.hora)}"></label><label>Mensaje (opcional)<input id="repM_${x.id}"></label><button class="btn mini" data-crepok="${x.id}">Enviar propuesta</button></div></div></div>`;
   const consHTML=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
@@ -1445,7 +1447,8 @@ document.addEventListener("click",async e=>{
   if(d.svok){if(await cita(d.svok,{estado:"Confirmada"}))vistaMisServicios();return}
   if(d.svcan){if(!confirm("¿Cancelar esta cita?"))return;if(await cita(d.svcan,{estado:"Cancelada"}))vistaMisServicios();return}
   if(d.cok){if(await cita(d.cok,{estado:"Confirmada",respuesta:null}))vistaPanelSrv();return}
-  if(d.cfin){if(await cita(d.cfin,{estado:"Completada"}))vistaPanelSrv();return}
+  if(d.cfin){const c=(window._ci||{})[d.cfin]||{},pre=(window._itP||{})[c.servicio_id];const t=prompt("Total cobrado por la cita (pesos).\nSe usa para calcular el 1% de uso de la app:",pre>0?pre:"");if(t===null)return;const pn=numMX(t);if(!(pn>0))return alert("Escribe un total válido.");
+    if(await cita(d.cfin,{estado:"Completada",monto:pn}))vistaPanelSrv();return}
   if(d.ccan){const m=prompt("Motivo para el cliente (opcional):");if(m===null)return;if(await cita(d.ccan,{estado:"Cancelada",respuesta:m.trim()||null}))vistaPanelSrv();return}
   if(d.crep){const r=$("rep_"+d.crep);if(r)r.style.display=r.style.display==="none"?"grid":"none";return}
   if(d.crepok){const f=$("repF_"+d.crepok).value,h=$("repH_"+d.crepok).value;if(!f||!h)return alert("Elige la nueva fecha y hora.");
@@ -1947,7 +1950,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v168";
+const BUILD="valle-go-v169";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
