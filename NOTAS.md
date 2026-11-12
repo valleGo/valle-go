@@ -27,6 +27,7 @@ Valle GO ("¡Va, llegó!"): PWA marketplace de comercios locales de Ameca, Jalis
 | `schema*.sql`, `todo-en-uno.sql`, `datos-demo.sql`, `paso-administrador.sql` | Esquema inicial de la base y datos de prueba |
 | `schema-vecinos.sql` | Función `contar_vecinos()` (ya aplicada en Supabase) |
 | `schema-rendimiento.sql` | Índices de llaves foráneas y RLS optimizado (ya aplicado en Supabase) |
+| `schema-rendimiento-2.sql` | Reglas de admin y de "mis datos" limitadas a `authenticated` (ya aplicado) |
 | `vercel.json` | Región de funciones `pdx1` (junto a Supabase us-west-2) y encabezados de caché |
 | `terminos.html`, `privacidad.html` | Legales |
 | `generar-llaves-vapid.html` | Herramienta para generar llaves VAPID |
@@ -66,12 +67,13 @@ Versión actual al escribir esto: **v156**.
 - **Service worker:** HTML/JS/JSON propios = red primero (si al abrir la red tarda más de 4 s, usa la copia). Imágenes propias, librería de Supabase (jsdelivr) y fuente = copia al instante + actualización en segundo plano, en el caché fijo `ESTATICO` (`valle-go-estatico-v1`), que no se borra con cada versión. `/api/*` y Supabase no pasan por el service worker. Precarga solo lo mínimo (sin `icon-512`).
 - **Fuente:** Montserrat se carga sin bloquear el primer pintado (`preload` + `onload`). Hay `preconnect` a Supabase.
 - **Imágenes:** logo, marca e íconos reducidos a 256 colores (visualmente iguales, ~50–80 % más ligeros). Si se reemplaza una imagen, conservar el nombre o subir `ESTATICO`.
-- **Base de datos:** índices en todas las llaves foráneas; en las reglas RLS `auth.uid()` y `es_admin()` van como `(select ...)` para evaluarse una vez por consulta. **Al crear reglas nuevas, escribirlas así.**
+- **Base de datos:** índices en todas las llaves foráneas; en las reglas RLS `auth.uid()` y `es_admin()` van como `(select ...)` para evaluarse una vez por consulta. **Al crear reglas nuevas, escribirlas así**, y si solo aplican con sesión (admin, dueño, comprador), ponerles `to authenticated` para que no se evalúen en las consultas de visitantes.
 - **Vercel:** funciones en `pdx1`; imágenes con caché de 1 día + 7 días de revalidación.
 - Medido con red simulada (400 ms por consulta): comercios visibles en ~0.5 s la 1a visita y ~0.1 s las siguientes (antes ~2.1 s siempre).
 
 ## Cómo probar
 - Playwright local bloqueando hosts externos. Para probar el service worker y la carga de datos: servir con `python3 -m http.server` en 127.0.0.1 y simular `supabase-js` con un cliente falso con retraso.
+- El carrito está dentro del menú de la bolsa (`#bMenuR` abre `#popR`); a admin y comerciantes se les oculta (`body.sinCarro`).
 - Esperar ~4.5 s tras cargar; luego `sesion={id:'u',nombre:'Ana',email:'a@x.com'}` (opcional `esAdmin=true`) y llamar `pintaHeader()`.
 - Revisión de sintaxis: ejecutar `new Function(...)` sobre los scripts en línea.
 - Probar en iPhone, Android, PC y tableta antes de dar algo por terminado.
@@ -90,7 +92,7 @@ Los captura el dueño directamente en Vercel o Supabase: Client Secret y Access 
 - El repo sigue público hasta que el dueño pida privatizarlo.
 
 ## Historial reciente
-- v146: título de inicio rediseñado. v147–v148: etiqueta "vecinos" con conteo general. v149: logo y eslogan suben la página. v150: botón flotante para subir. v151: el botón también funciona dentro del Directorio. v152: optimización de velocidad (arranque en paralelo, copia local, caché, imágenes, índices y RLS). v153: menús bajo demanda. v154: barra superior más transparente (degradado del `header` en la regla de "3 zonas": blanco .35 → verde claro 15 %). v155: aún más transparente (blanco .15 → verde claro 6 %). v156: desenfoque de la barra de 14 px a 7 px (el contenido se intuye debajo, sin verse nítido).
+- v146: título de inicio rediseñado. v147–v148: etiqueta "vecinos" con conteo general. v149: logo y eslogan suben la página. v150: botón flotante para subir. v151: el botón también funciona dentro del Directorio. v152: optimización de velocidad (arranque en paralelo, copia local, caché, imágenes, índices y RLS). v153: menús bajo demanda. v154: barra superior más transparente (degradado del `header` en la regla de "3 zonas": blanco .35 → verde claro 15 %). v155: aún más transparente (blanco .15 → verde claro 6 %). v156: desenfoque de la barra de 14 px a 7 px (el contenido se intuye debajo, sin verse nítido). Revisión general (11 nov): todas las pantallas sin errores en celular, tableta y PC; reglas de la base limitadas a usuarios con sesión (`schema-rendimiento-2.sql`).
 
 ## Pendientes
 - Compra real de prueba con Mercado Pago (la hace el dueño).
