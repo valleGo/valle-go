@@ -394,9 +394,10 @@ header #bPanel *{pointer-events:none}header #bPanel:hover{transform:translateY(-
 button,.btn,a,select,label,input[type=checkbox]{touch-action:manipulation}
 #cCarrito .q,#cCarrito .q *{-webkit-user-select:none;user-select:none}
 /* Carrito: palomita con la V del eslogan "Va, llegó" en lugar del emoji */
-#cCarrito .vchk{display:inline-block;width:30px;height:13px;margin:0 8px 0 0;vertical-align:-1px;background:url(va-check.png) left center/contain no-repeat;animation:vTrazo .45s ease-out both}
-#cCarrito .linea+.linea .vchk{animation-delay:.06s}
-@keyframes vTrazo{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+#cCarrito .vchk{display:inline-block;width:30px;height:13px;margin:0 8px 0 0;vertical-align:-1px;background:url(va-check.png) left center/contain no-repeat;
+  -webkit-mask:linear-gradient(90deg,#000 45%,transparent 55%) 100% 0/250% 100% no-repeat;mask:linear-gradient(90deg,#000 45%,transparent 55%) 100% 0/250% 100% no-repeat;
+  animation:vTrazo 1.4s cubic-bezier(.55,.08,.25,1) both;animation-delay:calc(.25s + var(--i,0)*.22s)}
+@keyframes vTrazo{0%{-webkit-mask-position:100% 0;mask-position:100% 0;opacity:.5}12%{opacity:1}100%{-webkit-mask-position:0 0;mask-position:0 0;opacity:1}}
 #cCarrito .linea small{display:block;margin-left:38px}
 @media(prefers-reduced-motion:reduce){#cCarrito .vchk{animation:none}}
 </style>
@@ -541,11 +542,11 @@ async function vistaPanel(){
     db.from("menu_items").select("*").in("comercio_id",ids).order("categoria")]);
   const P=pe.data||[], M=me.data||[];
   const ventas=P.filter(p=>p.estado!=="Cancelado").reduce((a,p)=>a+Number(p.total),0);
-  $("vista").innerHTML=`<h2>Mi panel</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)} · ${misCom.map(c=>esc(c.nombre)).join(", ")}</p>${(misSrv.length||misCom.some(c=>c.ofrece_citas||c.ofrece_consulta))?`<p><a class="btn sec mini" href="#/panel-servicios">Ir a mi agenda y servicios →</a></p>`:""}${pe.error?`<div class="aviso" style="color:var(--coral)">No se pudieron cargar los pedidos: ${esc(pe.error.message)}. Toca 🔄 o recarga la página.</div>`:""}<p class="suave">Aquí confirmas y actualizas el estado de tus pedidos. Para cambiar fotos, precios o platillos, contacta al administrador de Valle GO.</p>
+  $("vista").innerHTML=`<h2>Mi panel</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)} · ${misCom.map(c=>esc(c.nombre)).join(", ")}</p>${(misSrv.length||misCom.some(c=>c.ofrece_citas||c.ofrece_consulta))?`<p><a class="btn sec mini" href="#/panel-servicios">Ir a mi agenda y servicios →</a></p>`:""}${pe.error?`<div class="aviso" style="color:var(--coral)">No se pudieron cargar los pedidos: ${esc(pe.error.message)}. Toca 🔄 o recarga la página.</div>`:""}<p class="suave">Aquí confirmas y actualizas el estado de tus pedidos. Para cambiar fotos, precios o productos, contacta al administrador de Valle GO.</p>
    ${notifBtnHTML()}${cobroHTML()}<div class="aviso">${P.length} pedidos recientes · ${din(ventas)} en ventas</div><h2>Historial de pedidos</h2>`+
    (P.map(p=>ped2html(p,"com")).join("")||"<p>Aún no hay pedidos.</p>")+`<h2>Mi menú completo</h2>`+
    (M.map(m=>`<div class="item"><div class="foto" ${foto({foto:m.foto_url})}>${m.foto_url?"":esc(m.emoji||"🍽️")}</div><div class="in"><b>${esc(m.nombre)}</b>
-    <span class="suave">${esc(m.categoria)} · ${m.disponible?"Disponible":"No disponible"}</span><span class="precio">${din(Number(m.precio))}</span></div></div>`).join("")||"<p>Sin platillos.</p>");
+    <span class="suave">${esc(m.categoria)} · ${m.disponible?"Disponible":"No disponible"}</span><span class="precio">${din(Number(m.precio))}</span></div></div>`).join("")||"<p>Sin productos.</p>");
 }
 
 // ---- Panel de administración: SOLO el administrador edita ----
@@ -814,7 +815,7 @@ async function admTab(){
     if(!cs.length){box.innerHTML="<p>Primero crea un comercio.</p>";return}
     if(!cs.some(c=>c.id===adm.com))adm.com=cs[0].id;
     const L=(await db.from("menu_items").select("*").eq("comercio_id",adm.com).order("categoria")).data||[];
-    box.innerHTML=`<label>Comercio<select id="selCom">${cs.map(c=>`<option value="${c.id}" ${c.id===adm.com?"selected":""}>${esc(c.nombre)}</option>`).join("")}</select></label><br><button class="btn" data-mnew>+ Nuevo platillo</button><br><br>`+
+    box.innerHTML=`<label>Comercio<select id="selCom">${cs.map(c=>`<option value="${c.id}" ${c.id===adm.com?"selected":""}>${esc(c.nombre)}</option>`).join("")}</select></label><br><button class="btn" data-mnew>+ Nuevo producto</button><br><br>`+
      L.map(m=>`<div class="item"><div class="foto" ${foto({foto:m.foto_url})}>${m.foto_url?"":esc(m.emoji||"🍽️")}</div><div class="in"><b>${esc(m.nombre)}</b><span class="suave">${esc(m.categoria)} · ${din(Number(m.precio))} · ${m.disponible?"Disponible":"Oculto"}</span>
       <span><button class="btn sec" data-med="${m.id}">Editar</button> <button class="btn sec" data-mdel="${m.id}">Borrar</button></span></div></div>`).join("");
     $("selCom").onchange=e=>{adm.com=e.target.value;admTab()};
@@ -1025,7 +1026,7 @@ document.addEventListener("click",async e=>{
   if(d.cadel&&confirm("¿Borrar esta categoría?\nLos comercios que la tengan quedarán sin categoría.")){const r=await db.from("categorias").delete().eq("id",d.cadel);if(r.error){alert(r.error.message);return}cargarDatos();return admTab()}
   if(d.mnew!==undefined)return formAdm("menu_items",CF_MENU,{disponible:true,comercio_id:adm.com});
   if(d.med){const r=await db.from("menu_items").select("*").eq("id",d.med).single();return formAdm("menu_items",CF_MENU,r.data)}
-  if(d.mdel&&confirm("¿Borrar este platillo?")){await db.from("menu_items").delete().eq("id",d.mdel);cargarDatos();return admTab()}
+  if(d.mdel&&confirm("¿Borrar este producto?")){await db.from("menu_items").delete().eq("id",d.mdel);cargarDatos();return admTab()}
 });
 document.addEventListener("change",async e=>{const g=e.target.dataset.pag;
   if(g&&(esAdmin||misCom.length)){const r=await db.from("pedidos").update({estado_pago:e.target.value}).eq("id",g).select("id");if(r.error||!(r.data&&r.data.length)){alert(r.error?r.error.message:"No se pudo guardar el cambio.");ruta()}}});
@@ -1786,13 +1787,13 @@ function pintaCarrito(){
   if(!t.menu){   // el menú de esta tienda aún no está en el teléfono: se descarga y se vuelve a pintar
     if(db&&!menuPend[t.id]&&reintento(t))cargarMenu(t.id).then(c=>{if(c===null)t._mErr=Date.now();pintaCarrito()});
     $("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>${esc(t.nombre)}</h2><p class="suave">${t._mErr?"No se pudo cargar tu carrito. Revisa tu conexión.":"Cargando tu carrito…"}</p>`;return}
-  {let quito=0;for(const id of ids)if(!t.menu.find(x=>x.id===id)){delete carrito.items[id];quito=1}   // platillos que ya no están disponibles
+  {let quito=0;for(const id of ids)if(!t.menu.find(x=>x.id===id)){delete carrito.items[id];quito=1}   // productos que ya no están disponibles
    if(quito){if(!Object.keys(carrito.items).length)carrito.tienda=null;gcar();return pintaCarrito()}}
   const sub=subtotal(t), dom=t.domicilio&&($("entrega")?$("entrega").value==="domicilio":true), env=dom?t.envio:0;
   const st0=$("cCarrito").scrollTop;   // se conserva la posición al repintar
   const keep=["entrega","pago","ck_c","ck_n","ck_l","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});keep.gdom=$("gdom")?$("gdom").checked:undefined;
   $("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>${t.nombre}</h2>`+
-   ids.map(id=>{const m=t.menu.find(x=>x.id===id);return `<div class="linea"><span><i class="vchk" aria-hidden="true"></i>${m.nombre}<br><small>${din(m.precio)}</small></span>
+   ids.map((id,i)=>{const m=t.menu.find(x=>x.id===id);return `<div class="linea"><span><i class="vchk" style="--i:${Math.min(i,6)}" aria-hidden="true"></i>${m.nombre}<br><small>${din(m.precio)}</small></span>
     <span class="q"><button data-menos="${id}" aria-label="Quitar uno">−</button><b>${carrito.items[id]}</b><button data-mas="${id}" aria-label="Agregar uno">+</button></span></div>`}).join("")+
    `<label>¿Cómo lo quieres?<select id="entrega">${t.domicilio?`<option value="domicilio">Entrega a domicilio</option>`:""}<option value="recoger">Recoger en tienda</option></select></label>
     <div id="dirBox" style="display:grid;gap:12px"><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("ck",null)}${db&&sesion&&sesion.id?`<label style="display:flex;gap:8px;align-items:center;font-size:.85rem"><input type="checkbox" id="gdom" style="width:auto"> 💾 Guardar este domicilio para mis próximos pedidos</label>`:""}</div>
@@ -1942,7 +1943,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v162";
+const BUILD="valle-go-v163";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
