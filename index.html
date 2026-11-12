@@ -393,6 +393,12 @@ header #bPanel *{pointer-events:none}header #bPanel:hover{transform:translateY(-
 /* Toques rápidos: sin zoom por doble toque en botones */
 button,.btn,a,select,label,input[type=checkbox]{touch-action:manipulation}
 #cCarrito .q,#cCarrito .q *{-webkit-user-select:none;user-select:none}
+/* Carrito: palomita con la V del eslogan "Va, llegó" en lugar del emoji */
+#cCarrito .vchk{display:inline-block;width:30px;height:13px;margin:0 8px 0 0;vertical-align:-1px;background:url(va-check.png) left center/contain no-repeat;animation:vTrazo .45s ease-out both}
+#cCarrito .linea+.linea .vchk{animation-delay:.06s}
+@keyframes vTrazo{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+#cCarrito .linea small{display:block;margin-left:38px}
+@media(prefers-reduced-motion:reduce){#cCarrito .vchk{animation:none}}
 </style>
 </head>
 <body>
@@ -1786,7 +1792,7 @@ function pintaCarrito(){
   const st0=$("cCarrito").scrollTop;   // se conserva la posición al repintar
   const keep=["entrega","pago","ck_c","ck_n","ck_l","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});keep.gdom=$("gdom")?$("gdom").checked:undefined;
   $("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>${t.nombre}</h2>`+
-   ids.map(id=>{const m=t.menu.find(x=>x.id===id);return `<div class="linea"><span>${m.emoji} ${m.nombre}<br><small>${din(m.precio)}</small></span>
+   ids.map(id=>{const m=t.menu.find(x=>x.id===id);return `<div class="linea"><span><i class="vchk" aria-hidden="true"></i>${m.nombre}<br><small>${din(m.precio)}</small></span>
     <span class="q"><button data-menos="${id}" aria-label="Quitar uno">−</button><b>${carrito.items[id]}</b><button data-mas="${id}" aria-label="Agregar uno">+</button></span></div>`}).join("")+
    `<label>¿Cómo lo quieres?<select id="entrega">${t.domicilio?`<option value="domicilio">Entrega a domicilio</option>`:""}<option value="recoger">Recoger en tienda</option></select></label>
     <div id="dirBox" style="display:grid;gap:12px"><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("ck",null)}${db&&sesion&&sesion.id?`<label style="display:flex;gap:8px;align-items:center;font-size:.85rem"><input type="checkbox" id="gdom" style="width:auto"> 💾 Guardar este domicilio para mis próximos pedidos</label>`:""}</div>
@@ -1936,7 +1942,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v160";
+const BUILD="valle-go-v161";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
