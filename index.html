@@ -1102,10 +1102,12 @@ let _gAct=null;
 async function googleActivo(){if(!db)return false;if(_gAct!==null)return _gAct;
   try{const r=await fetch(SUPABASE_URL+"/auth/v1/settings",{headers:{apikey:SUPABASE_KEY}});const j=await r.json();_gAct=!!(j.external&&j.external.google)}catch(e){_gAct=false}return _gAct}
 async function entrarGoogle(){const r=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+"/"}});if(r.error)alert("No se pudo iniciar con Google: "+r.error.message)}
+let VECINOS=null; // total de usuarios + comercios activos + servicios (RPC contar_vecinos)
 async function cargarDatos(){
   if(!db)return;
   const an=await db.from("anuncios").select("*").eq("activo",true).order("orden").limit(5); if(an.data)ANUNCIOS=an.data;
   const ct=await db.from("categorias").select("*").order("orden").order("nombre"); if(ct.data)CATEGORIAS=ct.data;
+  try{const vc=await db.rpc("contar_vecinos");if(!vc.error&&vc.data!=null)VECINOS=Number(vc.data)}catch(e){}
   const {data,error}=await db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre");
   if(error||!data||!data.length)return;
   COMERCIANTES=data.map(c=>({id:c.id,plan:c.plan==="simple"?"simple":"basico",nombre:c.nombre,giro:c.giro||"",cat:c.categoria_id||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
@@ -1426,7 +1428,7 @@ function vistaInicio(){
        :catCom==="otros"?sec("Otros",sinCat)
        :(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
   }
-  $("vista").innerHTML=adsHTML()+`<div class="htit"><svg class="hti" viewBox="0 0 58 40" aria-hidden="true"><circle cx="40" cy="13" r="7" fill="var(--acento)"/><path d="M2 36 C10 22 16 18 24 26 C30 32 34 20 42 18 C48 16 53 24 56 36Z" fill="var(--salvia)"/><path d="M2 38 C12 28 20 27 29 33 C37 38 46 29 56 31 V38Z" fill="var(--verde)"/><path d="M2 38.5H56" stroke="var(--verde)" stroke-width="2" stroke-linecap="round"/></svg><h2>Lugares del <b>Valle</b> Hoy</h2><span class="hts"><i></i>${PRINC.length} ${PRINC.length===1?"lugar":"lugares"}<em>•</em>Ameca, Jal.</span></div>`+cuerpo;iniAds();
+  $("vista").innerHTML=adsHTML()+`<div class="htit"><svg class="hti" viewBox="0 0 58 40" aria-hidden="true"><circle cx="40" cy="13" r="7" fill="var(--acento)"/><path d="M2 36 C10 22 16 18 24 26 C30 32 34 20 42 18 C48 16 53 24 56 36Z" fill="var(--salvia)"/><path d="M2 38 C12 28 20 27 29 33 C37 38 46 29 56 31 V38Z" fill="var(--verde)"/><path d="M2 38.5H56" stroke="var(--verde)" stroke-width="2" stroke-linecap="round"/></svg><h2>Lugares del <b>Valle</b> Hoy</h2><span class="hts"><i></i>${VECINOS!=null?`${VECINOS} ${VECINOS===1?"vecino":"vecinos"}<em>•</em>`:""}Ameca, Jal.</span></div>`+cuerpo;iniAds();
   if(homeQOpen)aplicaBusq();
 }
 let dirQ="";
@@ -1795,7 +1797,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v147";
+const BUILD="valle-go-v148";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
