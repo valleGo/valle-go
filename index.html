@@ -227,10 +227,12 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .btn:disabled{filter:grayscale(.2) opacity(.7)}
 .rip{position:absolute;border-radius:50%;background:currentColor;opacity:.22;transform:scale(0);animation:rip .6s ease-out forwards;pointer-events:none}
 @keyframes rip{to{transform:scale(1);opacity:0}}
-#bCarrito.bump{animation:bump .5s cubic-bezier(.3,1.5,.5,1)}
+#bCarrito.bump,#bMenuR.bump{animation:bump .5s cubic-bezier(.3,1.5,.5,1)}
+#bBadge.bump{animation:bdgPop .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes bdgPop{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
 @keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.14)}65%{transform:scale(.97)}100%{transform:scale(1)}}
 #bCuenta .hav{transition:transform .25s}#bCuenta:hover .hav{transform:scale(1.1) rotate(-4deg)}
-@media(prefers-reduced-motion:reduce){.rip,#bCarrito.bump{animation:none}.btn,.hb button{transition:none}}
+@media(prefers-reduced-motion:reduce){.rip,#bCarrito.bump,#bMenuR.bump,#bBadge.bump{animation:none}.btn,.hb button{transition:none}}
 /* Logo y "Va, llegó": crecen poco al pasar el cursor (solo mouse) o al tocar (animación corta que siempre regresa) */
 header .logo,header .marca a{position:relative;z-index:7;-webkit-tap-highlight-color:transparent}
 header .logo img,header .marca img{transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
@@ -374,6 +376,20 @@ header #bPanel *{pointer-events:none}header #bPanel:hover{transform:translateY(-
 #pCarrito::after{content:"";position:fixed;top:calc(var(--carT,76px) - 7px);right:var(--carF,26px);width:14px;height:14px;background:var(--fondo);border-left:1px solid var(--borde);border-top:1px solid var(--borde);transform:rotate(45deg);border-radius:3px 0 0 0;animation:carIn .22s ease-out}
 @media(max-width:600px){#cCarrito{border-radius:20px}#cCarrito #pedir{border-radius:0 0 19px 19px}}
 @media(prefers-reduced-motion:reduce){#cCarrito{animation:none}}
+/* Carrito: ✕, + y − dibujados con líneas (centrados en cualquier letra/teléfono) */
+#cCarrito>.x{font-size:0;color:var(--texto);transition:background .15s,transform .15s}
+#cCarrito>.x::before,#cCarrito>.x::after{content:"";position:absolute;left:50%;top:50%;width:13px;height:2px;margin:-1px 0 0 -6.5px;border-radius:2px;background:currentColor}
+#cCarrito>.x::before{transform:rotate(45deg)}#cCarrito>.x::after{transform:rotate(-45deg)}
+#cCarrito>.x:hover{background:var(--crema)}#cCarrito>.x:active{transform:scale(.9)}
+#cCarrito .q{gap:0;border:1px solid var(--borde);border-radius:999px;background:var(--tarjeta);padding:3px}
+#cCarrito .q b{min-width:26px;text-align:center;font-size:.92rem;font-variant-numeric:tabular-nums}
+#cCarrito .q button{position:relative;width:26px;height:26px;padding:0;font-size:0;border-radius:50%;cursor:pointer;transition:transform .12s,background .15s;-webkit-tap-highlight-color:transparent}
+#cCarrito .q button::before,#cCarrito .q button[data-mas]::after{content:"";position:absolute;left:50%;top:50%;width:10px;height:2px;margin:-1px 0 0 -5px;border-radius:2px;background:currentColor}
+#cCarrito .q button[data-mas]::after{transform:rotate(90deg)}
+#cCarrito .q button[data-menos]{background:transparent;border:1px solid var(--borde);color:var(--texto)}
+#cCarrito .q button[data-mas]{background:var(--verde);border:1px solid var(--verde);color:#fff}
+#cCarrito .q button:active{transform:scale(.88)}
+@media(hover:hover){#cCarrito .q button[data-menos]:hover{background:var(--crema)}#cCarrito .q button[data-mas]:hover{filter:brightness(1.08)}}
 </style>
 </head>
 <body>
@@ -1736,8 +1752,10 @@ function agregar(tid,mid){
     if(!confirm("Tu carrito tiene productos de otro comercio. ¿Vaciarlo y empezar uno nuevo?"))return;
     carrito={tienda:null,items:{}};
   }
-  carrito.tienda=tid; carrito.items[mid]=(carrito.items[mid]||0)+1; gcar(); pintaCarrito();
+  carrito.tienda=tid; carrito.items[mid]=(carrito.items[mid]||0)+1; gcar(); pintaCarrito(); reboteBolsa();
 }
+// Rebote del botón de la bolsa (y su numerito) cada vez que se agrega algo al carrito
+function reboteBolsa(){for(const el of [$("bMenuR"),$("bBadge")]){if(!el)continue;el.classList.remove("bump");void el.offsetWidth;el.classList.add("bump")}}
 function cambia(mid,d){carrito.items[mid]+=d;if(carrito.items[mid]<=0)delete carrito.items[mid];
   if(!Object.keys(carrito.items).length)carrito.tienda=null;gcar();pintaCarrito()}
 function gcar(){$s("carrito",carrito)}
@@ -1745,18 +1763,18 @@ function subtotal(t){return Object.entries(carrito.items).reduce((s,[id,c])=>{co
 function pintaCarrito(){
   const t=tienda(carrito.tienda), ids=Object.keys(carrito.items);
   $("n").textContent=Object.values(carrito.items).reduce((a,b)=>a+b,0);
-  if(!t){$("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>Tu carrito</h2><p>Está vacío. Elige un comercio y agrega platillos.</p>`;return}
+  if(!t){$("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>Tu carrito</h2><p>Está vacío. Elige un comercio y agrega platillos.</p>`;return}
   if(!t.menu){   // el menú de esta tienda aún no está en el teléfono: se descarga y se vuelve a pintar
     if(db&&!menuPend[t.id]&&reintento(t))cargarMenu(t.id).then(c=>{if(c===null)t._mErr=Date.now();pintaCarrito()});
-    $("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>${esc(t.nombre)}</h2><p class="suave">${t._mErr?"No se pudo cargar tu carrito. Revisa tu conexión.":"Cargando tu carrito…"}</p>`;return}
+    $("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>${esc(t.nombre)}</h2><p class="suave">${t._mErr?"No se pudo cargar tu carrito. Revisa tu conexión.":"Cargando tu carrito…"}</p>`;return}
   {let quito=0;for(const id of ids)if(!t.menu.find(x=>x.id===id)){delete carrito.items[id];quito=1}   // platillos que ya no están disponibles
    if(quito){if(!Object.keys(carrito.items).length)carrito.tienda=null;gcar();return pintaCarrito()}}
   const sub=subtotal(t), dom=t.domicilio&&($("entrega")?$("entrega").value==="domicilio":true), env=dom?t.envio:0;
   const st0=$("cCarrito").scrollTop;   // se conserva la posición al repintar
   const keep=["entrega","pago","ck_c","ck_n","ck_l","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});keep.gdom=$("gdom")?$("gdom").checked:undefined;
-  $("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>${t.nombre}</h2>`+
+  $("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>${t.nombre}</h2>`+
    ids.map(id=>{const m=t.menu.find(x=>x.id===id);return `<div class="linea"><span>${m.emoji} ${m.nombre}<br><small>${din(m.precio)}</small></span>
-    <span class="q"><button data-menos="${id}">−</button> ${carrito.items[id]} <button data-mas="${id}">+</button></span></div>`}).join("")+
+    <span class="q"><button data-menos="${id}" aria-label="Quitar uno">−</button><b>${carrito.items[id]}</b><button data-mas="${id}" aria-label="Agregar uno">+</button></span></div>`}).join("")+
    `<label>¿Cómo lo quieres?<select id="entrega">${t.domicilio?`<option value="domicilio">Entrega a domicilio</option>`:""}<option value="recoger">Recoger en tienda</option></select></label>
     <div id="dirBox" style="display:grid;gap:12px"><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("ck",null)}${db&&sesion&&sesion.id?`<label style="display:flex;gap:8px;align-items:center;font-size:.85rem"><input type="checkbox" id="gdom" style="width:auto"> 💾 Guardar este domicilio para mis próximos pedidos</label>`:""}</div>
     <label>¿Cómo pagas?<select id="pago"><option value="efectivo">Efectivo al recibir</option><option value="transferencia">Transferencia bancaria</option>${db?`<option value="en_linea">Pago en línea (Mercado Pago)</option>`:""}</select></label>
@@ -1905,7 +1923,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v158";
+const BUILD="valle-go-v159";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
