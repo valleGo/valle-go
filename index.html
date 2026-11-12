@@ -8,8 +8,9 @@
 <meta name="theme-color" content="#E6E6E6">
 <meta name="color-scheme" content="light">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="preconnect" href="https://mfvyhgyhhqoxfzjjlpvm.supabase.co" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"></noscript>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="config.js"></script>
 <link rel="icon" type="image/png" href="favicon-64.png"><link rel="apple-touch-icon" href="icon-180.png">
 <style>
@@ -336,6 +337,14 @@ header #bPanel *{pointer-events:none}header #bPanel:hover{transform:translateY(-
 @media(hover:hover) and (pointer:fine){#bTop:hover{opacity:1;background:#fff;transform:translateY(-2px)}}
 @media(min-width:800px){#bTop{left:24px;bottom:28px;width:44px;height:44px}}
 @media(prefers-reduced-motion:reduce){#bTop{transition:none}}
+/* Tarjetas de carga (solo la primera visita, mientras llegan los datos) */
+.card.skel{padding:0;overflow:hidden;pointer-events:none}
+.skel .sk1{height:150px;background:var(--crema)}
+.skel .sk2,.skel .sk3{height:14px;margin:16px 16px 0;border-radius:8px;background:var(--borde)}
+.skel .sk2{width:60%}.skel .sk3{width:40%;margin-bottom:20px}
+.skel>div{background-image:linear-gradient(90deg,rgba(255,255,255,0) 0,rgba(255,255,255,.65) 50%,rgba(255,255,255,0) 100%);background-size:200% 100%;background-repeat:no-repeat;animation:skel 1.2s linear infinite}
+@keyframes skel{from{background-position:150% 0}to{background-position:-50% 0}}
+@media(prefers-reduced-motion:reduce){.skel>div{animation:none}}
 </style>
 </head>
 <body>
@@ -348,7 +357,7 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
 </script>
 <header>
   <div class="hz hl"><button class="rb rb-l" id="bMenuL" type="button" aria-label="Perfil y redes" aria-expanded="false" aria-haspopup="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.6-4.2 3.6-6.5 7.5-6.5s6.9 2.3 7.5 6.5"/></svg></button><div class="pmenu" id="popL"><div class="pml">PERFIL:</div><button id="bCuenta"></button><button id="bCont" type="button" aria-label="Contáctanos" aria-expanded="false" aria-controls="contPanel"><span class="lbl">REDES VALLE GO</span><span class="dot"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M15.6 8.4v5.1a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.4 6.9"/></svg></span></button></div></div>
-  <div class="hc"><a href="#/" class="logo" aria-label="Valle GO"><img src="logo.png" alt="Valle GO" width="66" height="66"></a><div class="marca"><a href="#/" aria-label="Va, llegó — ir al inicio"><img src="marca.png" alt="Va, llegó" width="450" height="92"></a></div></div>
+  <div class="hc"><a href="#/" class="logo" aria-label="Valle GO"><img src="logo.png" alt="Valle GO" width="66" height="66"></a><div class="marca"><a href="#/" aria-label="Va, llegó — ir al inicio"><img src="marca.png" alt="Va, llegó" width="450" height="92" decoding="async" fetchpriority="high"></a></div></div>
   <div class="hz hr2"><button id="bPanel" style="display:none"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg><span>PANEL</span></button><span class="rbw"><button class="rb rb-r" id="bMenuR" type="button" aria-label="Pedidos y carrito" aria-expanded="false" aria-haspopup="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l1 12.5h-15z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg><span class="bdg" id="bBadge" hidden>0</span></button><div class="pmenu" id="popR"><button id="bPedidos" style="display:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span class="pl">Ver mis pedidos</span></button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div></span></div>
 </header>
 <div class="dirbar"><div class="dock"><a class="dk" href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a><a class="dk" href="#" id="bAg" role="button" aria-expanded="false" aria-controls="agPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2.2 2.2 4.3-4.4"/></svg>AGENDA SERVICIOS</a><button class="dk" id="bCq" type="button" aria-label="Consulta de stock" aria-expanded="false" aria-controls="cqPanel" title="Consulta de stock"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="11.5" cy="11.5" r="3.5"/><path d="M14.2 14.2L17 17"/></svg>CONSULTA DE STOCK</button></div></div>
@@ -1111,17 +1120,32 @@ async function googleActivo(){if(!db)return false;if(_gAct!==null)return _gAct;
   try{const r=await fetch(SUPABASE_URL+"/auth/v1/settings",{headers:{apikey:SUPABASE_KEY}});const j=await r.json();_gAct=!!(j.external&&j.external.google)}catch(e){_gAct=false}return _gAct}
 async function entrarGoogle(){const r=await db.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+"/"}});if(r.error)alert("No se pudo iniciar con Google: "+r.error.message)}
 let VECINOS=null; // total de usuarios + comercios activos + servicios (RPC contar_vecinos)
+// Datos públicos (anuncios, categorías, comercios y vecinos): las 4 consultas van en paralelo
+// y se guarda una copia local para que la app abra al instante en la siguiente visita.
+const DATOS_KEY="valle_datos_v1";
+let datosListos=!db;   // false mientras no haya datos reales (muestra tarjetas de carga en el inicio)
+function datosLocales(){try{const g=JSON.parse(localStorage.getItem(DATOS_KEY)||"null");if(!g||!Array.isArray(g.com))return false;
+  ANUNCIOS=g.an||[];CATEGORIAS=g.ct||[];COMERCIANTES=g.com;if(g.v!=null)VECINOS=g.v;datosListos=true;return true}catch(e){return false}}
 async function cargarDatos(){
-  if(!db)return;
-  const an=await db.from("anuncios").select("*").eq("activo",true).order("orden").limit(5); if(an.data)ANUNCIOS=an.data;
-  const ct=await db.from("categorias").select("*").order("orden").order("nombre"); if(ct.data)CATEGORIAS=ct.data;
-  try{const vc=await db.rpc("contar_vecinos");if(!vc.error&&vc.data!=null)VECINOS=Number(vc.data)}catch(e){}
-  const {data,error}=await db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre");
-  if(error||!data||!data.length)return;
+  if(!db)return false;
+  const [an,ct,vc,co]=await Promise.all([
+    db.from("anuncios").select("*").eq("activo",true).order("orden").limit(5),
+    db.from("categorias").select("*").order("orden").order("nombre"),
+    db.rpc("contar_vecinos"),
+    db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre")
+  ].map(q=>Promise.resolve(q).catch(e=>({error:e}))));
+  if(an.data)ANUNCIOS=an.data;
+  if(ct.data)CATEGORIAS=ct.data;
+  if(!vc.error&&vc.data!=null)VECINOS=Number(vc.data);
+  const {data,error}=co;
+  if(error||!data)return false;   // sin red: se conserva lo último que se tenía
   COMERCIANTES=data.map(c=>({id:c.id,plan:c.plan==="simple"?"simple":"basico",nombre:c.nombre,giro:c.giro||"",cat:c.categoria_id||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
     desc:c.descripcion||"",citas:c.plan!=="simple"&&!!c.ofrece_citas,consulta:c.plan!=="simple"&&!!c.ofrece_consulta,whatsapp:c.whatsapp,correo:c.correo_publico||"",envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
     menu:(c.menu_items||[]).filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
       desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}))}));
+  datosListos=true;
+  try{localStorage.setItem(DATOS_KEY,JSON.stringify({t:Date.now(),an:ANUNCIOS,ct:CATEGORIAS,com:COMERCIANTES,v:VECINOS}))}catch(e){}
+  return true;
 }
 const tienda=id=>COMERCIANTES.find(t=>t.id===id);
 const logoHTML=(t,g)=>t.logo?`<img class="logo-c${g?" g":""}" src="${esc(t.logo)}" alt="Logotipo de ${esc(t.nombre)}" loading="lazy">`:"";
@@ -1436,6 +1460,7 @@ function vistaInicio(){
        :catCom==="otros"?sec("Otros",sinCat)
        :(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
   }
+  if(!datosListos&&!PRINC.length)cuerpo=`<div class="grid gcom" aria-busy="true" aria-label="Cargando lugares">${'<div class="card skel"><div class="sk1"></div><div class="sk2"></div><div class="sk3"></div></div>'.repeat(3)}</div>`;
   $("vista").innerHTML=adsHTML()+`<div class="htit"><svg class="hti" viewBox="0 0 58 40" aria-hidden="true"><circle cx="40" cy="13" r="7" fill="var(--acento)"/><path d="M2 36 C10 22 16 18 24 26 C30 32 34 20 42 18 C48 16 53 24 56 36Z" fill="var(--salvia)"/><path d="M2 38 C12 28 20 27 29 33 C37 38 46 29 56 31 V38Z" fill="var(--verde)"/><path d="M2 38.5H56" stroke="var(--verde)" stroke-width="2" stroke-linecap="round"/></svg><h2>Lugares del <b>Valle</b> Hoy</h2><span class="hts"><i></i>${VECINOS!=null?`${VECINOS} ${VECINOS===1?"vecino":"vecinos"}<em>•</em>`:""}Ameca, Jal.</span></div>`+cuerpo;iniAds();
   if(homeQOpen)aplicaBusq();
 }
@@ -1816,7 +1841,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v151";
+const BUILD="valle-go-v152";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -1889,12 +1914,14 @@ $("instX").onclick=()=>{$s("instX",Date.now());$("inst").style.display="none"};
 if(/[?&]mp=(ok|error)/.test(location.search)){const bien=/mp=ok/.test(location.search);history.replaceState(null,"",location.pathname+location.hash);
   setTimeout(()=>alert(bien?"Listo: tu cuenta de Mercado Pago quedó conectada. Los pagos en línea llegarán directo a tu cuenta.":"No se pudo conectar tu cuenta de Mercado Pago. Intenta de nuevo."),600)}
 if(/pago=ok/.test(location.search)){aviso("Gracias. Estamos confirmando tu pago; se actualizará en unos segundos.");history.replaceState(null,"",location.pathname+location.hash)}
+if(db&&!datosLocales())COMERCIANTES=[];   // con base de datos nunca se muestran los comercios de ejemplo
 pintaHeader();pintaCarrito();ruta();
 (async()=>{
+  const pDatos=cargarDatos();   // en paralelo con la sesión (Supabase espera la sesión antes de consultar)
   if(db){const {data}=await db.auth.getSession(); if(data.session){sesion=sesionDe(data.session.user);$s("sesion",sesion);await cargarRol();}
     if(/access_token=|refresh_token=/.test(location.hash))history.replaceState(null,"",location.pathname+location.search);}
-  await cargarDatos();
-  if(carrito.tienda&&!tienda(carrito.tienda)){carrito={tienda:null,items:{}};gcar();}
+  const ok=await pDatos;
+  if((ok||!db)&&carrito.tienda&&!tienda(carrito.tienda)){carrito={tienda:null,items:{}};gcar();}   // solo con datos confirmados
   pintaHeader();pintaCarrito();ruta();
 })();
 

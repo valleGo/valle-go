@@ -1,24 +1,58 @@
 // Service worker de Valle GO: abre sin internet, siempre intenta traer la versión nueva y recibe notificaciones.
-const CACHE = "valle-go-v151";
-const ARCHIVOS = ["./", "./index.html", "./config.js", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-180.png"];
+const CACHE = "valle-go-v152";
+// Imágenes propias, librería de Supabase y fuente: se sirven al instante desde aquí y se actualizan en segundo plano.
+// Este caché no cambia de nombre con cada versión, así no se vuelven a descargar en cada actualización.
+const ESTATICO = "valle-go-estatico-v1";
+const ARCHIVOS = ["./", "./index.html", "./config.js", "./manifest.json", "./icon-192.png"];
+const EXTERNOS = ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARCHIVOS)));
   self.skipWaiting();
 });
 self.addEventListener("activate", e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))));
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== ESTATICO).map(k => caches.delete(k)))));
   self.clients.claim();
 });
+
+// Rápido: responde con lo guardado y actualiza en segundo plano (si no hay nada guardado, espera a la red).
+function rapido(e) {
+  const red = fetch(e.request).then(r => {
+    if (r.ok || r.type === "opaque") { const copia = r.clone(); caches.open(ESTATICO).then(c => c.put(e.request, copia)); }
+    return r;
+  });
+  e.waitUntil(red.then(() => {}, () => {}));
+  return caches.match(e.request).then(g => g || red);
+}
+// Red primero (para recibir siempre la versión nueva). Si la red tarda más de 4 s al abrir la app, usa la copia guardada.
+function redPrimero(e) {
+  const req = e.request;
+  const red = fetch(req).then(r => {
+    if (r.ok) { const copia = r.clone(); caches.open(CACHE).then(c => c.put(req, copia)); }
+    return r;
+  });
+  e.waitUntil(red.then(() => {}, () => {}));
+  const respaldo = () => caches.match(req).then(r => r || caches.match("./index.html"));
+  if (req.mode !== "navigate") return red.catch(respaldo);
+  return new Promise(res => {
+    let hecho = false;
+    const fin = r => { if (!hecho && r) { hecho = true; res(r); } };
+    const t = setTimeout(() => respaldo().then(fin), 4000);
+    red.then(r => { clearTimeout(t); fin(r); },
+             () => { clearTimeout(t); respaldo().then(r => { fin(r); if (!hecho) { hecho = true; res(Response.error()); } }); });
+  });
+}
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
-  const mismo = new URL(e.request.url).origin === location.origin;
-  e.respondWith(
-    fetch(e.request).then(r => {
-      if (mismo && r.ok) { const copia = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copia)); }
-      return r;
-    }).catch(() => caches.match(e.request).then(r => r || caches.match("./index.html")))
-  );
+  const u = new URL(e.request.url);
+  if (u.origin === location.origin) {
+    if (u.pathname.startsWith("/api/")) return;                       // funciones del servidor: directo a la red
+    if (/\.(png|svg|jpg|jpeg|webp|ico)$/i.test(u.pathname)) { e.respondWith(rapido(e)); return; }
+    e.respondWith(redPrimero(e));
+    return;
+  }
+  if (EXTERNOS.includes(u.hostname)) { e.respondWith(rapido(e)); return; }
+  // Supabase y demás servicios externos: el navegador los maneja directo (sin pasar por aquí)
 });
 
 // Notificaciones de pedidos nuevos
