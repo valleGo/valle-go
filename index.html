@@ -1426,7 +1426,7 @@ function vistaInicio(){
        :catCom==="otros"?sec("Otros",sinCat)
        :(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
   }
-  $("vista").innerHTML=adsHTML()+`<div class="htit"><svg class="hti" viewBox="0 0 58 40" aria-hidden="true"><circle cx="40" cy="13" r="7" fill="var(--acento)"/><path d="M2 36 C10 22 16 18 24 26 C30 32 34 20 42 18 C48 16 53 24 56 36Z" fill="var(--salvia)"/><path d="M2 38 C12 28 20 27 29 33 C37 38 46 29 56 31 V38Z" fill="var(--verde)"/><path d="M2 38.5H56" stroke="var(--verde)" stroke-width="2" stroke-linecap="round"/></svg><h2>Lugares del <b>Valle</b> Hoy</h2><span class="hts"><i></i>${PRINC.length} ${PRINC.length===1?"comercio":"comercios"}<em>•</em>Ameca, Jal.</span></div>`+cuerpo;iniAds();
+  $("vista").innerHTML=adsHTML()+`<div class="htit"><svg class="hti" viewBox="0 0 58 40" aria-hidden="true"><circle cx="40" cy="13" r="7" fill="var(--acento)"/><path d="M2 36 C10 22 16 18 24 26 C30 32 34 20 42 18 C48 16 53 24 56 36Z" fill="var(--salvia)"/><path d="M2 38 C12 28 20 27 29 33 C37 38 46 29 56 31 V38Z" fill="var(--verde)"/><path d="M2 38.5H56" stroke="var(--verde)" stroke-width="2" stroke-linecap="round"/></svg><h2>Lugares del <b>Valle</b> Hoy</h2><span class="hts"><i></i>${PRINC.length} ${PRINC.length===1?"lugar":"lugares"}<em>•</em>Ameca, Jal.</span></div>`+cuerpo;iniAds();
   if(homeQOpen)aplicaBusq();
 }
 let dirQ="";
@@ -1795,7 +1795,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v146";
+const BUILD="valle-go-v147";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
