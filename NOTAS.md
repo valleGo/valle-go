@@ -36,7 +36,7 @@ Cada cambio visible sube la versión en **dos lugares que deben coincidir**:
 1. `BUILD` en `index.html` (ej. `valle-go-v145`)
 2. `CACHE` en `sw.js`
 
-Versión actual al escribir esto: **v155**.
+Versión actual al escribir esto: **v156**.
 
 ## Arquitectura de la app
 - Rutas por hash en `ruta()`: `#/t/<id>` tienda, `#/cuenta`, `#/panel`, `#/admin`, `#/pedidos`, `#/mis-servicios`, `#/panel-servicios`, y la home por defecto.
@@ -90,7 +90,7 @@ Los captura el dueño directamente en Vercel o Supabase: Client Secret y Access 
 - El repo sigue público hasta que el dueño pida privatizarlo.
 
 ## Historial reciente
-- v146: título de inicio rediseñado. v147–v148: etiqueta "vecinos" con conteo general. v149: logo y eslogan suben la página. v150: botón flotante para subir. v151: el botón también funciona dentro del Directorio. v152: optimización de velocidad (arranque en paralelo, copia local, caché, imágenes, índices y RLS). v153: menús bajo demanda. v154: barra superior más transparente (degradado del `header` en la regla de "3 zonas": blanco .35 → verde claro 15 %). v155: aún más transparente (blanco .15 → verde claro 6 %).
+- v146: título de inicio rediseñado. v147–v148: etiqueta "vecinos" con conteo general. v149: logo y eslogan suben la página. v150: botón flotante para subir. v151: el botón también funciona dentro del Directorio. v152: optimización de velocidad (arranque en paralelo, copia local, caché, imágenes, índices y RLS). v153: menús bajo demanda. v154: barra superior más transparente (degradado del `header` en la regla de "3 zonas": blanco .35 → verde claro 15 %). v155: aún más transparente (blanco .15 → verde claro 6 %). v156: desenfoque de la barra de 14 px a 7 px (el contenido se intuye debajo, sin verse nítido).
 
 ## Pendientes
 - Compra real de prueba con Mercado Pago (la hace el dueño).
