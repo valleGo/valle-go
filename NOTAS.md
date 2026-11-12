@@ -38,7 +38,7 @@ Cada cambio visible sube la versión en **dos lugares que deben coincidir**:
 1. `BUILD` en `index.html` (ej. `valle-go-v145`)
 2. `CACHE` en `sw.js`
 
-Versión actual al escribir esto: **v157**.
+Versión actual al escribir esto: **v158**.
 
 ## Arquitectura de la app
 - Rutas por hash en `ruta()`: `#/t/<id>` tienda, `#/cuenta`, `#/panel`, `#/admin`, `#/pedidos`, `#/mis-servicios`, `#/panel-servicios`, y la home por defecto.
@@ -94,7 +94,7 @@ Los captura el dueño directamente en Vercel o Supabase: Client Secret y Access 
 - El repo sigue público hasta que el dueño pida privatizarlo.
 
 ## Historial reciente
-- v146: título de inicio rediseñado. v147–v148: etiqueta "vecinos" con conteo general. v149: logo y eslogan suben la página. v150: botón flotante para subir. v151: el botón también funciona dentro del Directorio. v152: optimización de velocidad (arranque en paralelo, copia local, caché, imágenes, índices y RLS). v153: menús bajo demanda. v154: barra superior más transparente (degradado del `header` en la regla de "3 zonas": blanco .35 → verde claro 15 %). v155: aún más transparente (blanco .15 → verde claro 6 %). v156: desenfoque de la barra de 14 px a 7 px (el contenido se intuye debajo, sin verse nítido). Revisión general (11 nov): todas las pantallas sin errores en celular, tableta y PC; reglas de la base limitadas a usuarios con sesión (`schema-rendimiento-2.sql`) y luego unificadas, una por acción (`schema-reglas-unificadas.sql`). v157: carrito compacto (estilos `#cCarrito` al final del primer `<style>`): tarjeta flotante de 380 px en PC, hoja inferior con agarradera en celular (≤600 px), campos más compactos, Calle y Número en una fila, totales en recuadro y "Confirmar pedido" fijo abajo. Solo CSS.
+- v146: título de inicio rediseñado. v147–v148: etiqueta "vecinos" con conteo general. v149: logo y eslogan suben la página. v150: botón flotante para subir. v151: el botón también funciona dentro del Directorio. v152: optimización de velocidad (arranque en paralelo, copia local, caché, imágenes, índices y RLS). v153: menús bajo demanda. v154: barra superior más transparente (degradado del `header` en la regla de "3 zonas": blanco .35 → verde claro 15 %). v155: aún más transparente (blanco .15 → verde claro 6 %). v156: desenfoque de la barra de 14 px a 7 px (el contenido se intuye debajo, sin verse nítido). Revisión general (11 nov): todas las pantallas sin errores en celular, tableta y PC; reglas de la base limitadas a usuarios con sesión (`schema-rendimiento-2.sql`) y luego unificadas, una por acción (`schema-reglas-unificadas.sql`). v157: carrito compacto (estilos `#cCarrito` al final del primer `<style>`): tarjeta flotante de 380 px en PC, hoja inferior con agarradera en celular (≤600 px), campos más compactos, Calle y Número en una fila, totales en recuadro y "Confirmar pedido" fijo abajo. Solo CSS. v158: el carrito se abre como ventana desplegable justo debajo del botón de la bolsa (`posCarrito()` mide `#bMenuR` y fija `--carT/--carR/--carF`; flechita con `#pCarrito::after`), alto máx. 600 px con desplazamiento interno, igual en celular y PC. Se cierra con clic fuera del recuadro (incluida la bolsa), la ✕, Esc o Atrás.
 
 ## Pendientes
 - Compra real de prueba con Mercado Pago (la hace el dueño).
