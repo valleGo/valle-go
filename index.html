@@ -1132,21 +1132,40 @@ async function cargarDatos(){
     db.from("anuncios").select("*").eq("activo",true).order("orden").limit(5),
     db.from("categorias").select("*").order("orden").order("nombre"),
     db.rpc("contar_vecinos"),
-    db.from("comercios").select("*, menu_items(*)").eq("activo",true).order("nombre")
+    db.from("comercios").select("*").eq("activo",true).order("nombre")
   ].map(q=>Promise.resolve(q).catch(e=>({error:e}))));
   if(an.data)ANUNCIOS=an.data;
   if(ct.data)CATEGORIAS=ct.data;
   if(!vc.error&&vc.data!=null)VECINOS=Number(vc.data);
   const {data,error}=co;
   if(error||!data)return false;   // sin red: se conserva lo último que se tenía
+  const prevMenu=new Map(COMERCIANTES.map(x=>[x.id,x.menu]));menuFresco.clear();
   COMERCIANTES=data.map(c=>({id:c.id,plan:c.plan==="simple"?"simple":"basico",nombre:c.nombre,giro:c.giro||"",cat:c.categoria_id||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
     desc:c.descripcion||"",citas:c.plan!=="simple"&&!!c.ofrece_citas,consulta:c.plan!=="simple"&&!!c.ofrece_consulta,whatsapp:c.whatsapp,correo:c.correo_publico||"",envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
-    menu:(c.menu_items||[]).filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
-      desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}))}));
+    menu:prevMenu.get(c.id)||null}));   // el menú se carga al abrir la tienda (cargarMenu)
   datosListos=true;
-  try{localStorage.setItem(DATOS_KEY,JSON.stringify({t:Date.now(),an:ANUNCIOS,ct:CATEGORIAS,com:COMERCIANTES,v:VECINOS}))}catch(e){}
+  guardaDatos();
   return true;
 }
+function guardaDatos(){try{localStorage.setItem(DATOS_KEY,JSON.stringify({t:Date.now(),an:ANUNCIOS,ct:CATEGORIAS,com:COMERCIANTES,v:VECINOS}))}catch(e){}}
+// Menús bajo demanda: solo se descarga el menú de la tienda que se abre (o la del carrito).
+// Devuelve true si el menú cambió, false si quedó igual y null si no se pudo cargar.
+const menuPend={},menuFresco=new Set();
+const mapMenu=L=>L.filter(m=>m.disponible).map(m=>({id:m.id,cat:m.categoria||"Menú",nombre:m.nombre,
+  desc:m.descripcion||"",precio:Number(m.precio),emoji:m.emoji||"🍽️",foto:m.foto_url||""}));
+function cargarMenu(id){
+  if(!db)return Promise.resolve(false);
+  if(menuPend[id])return menuPend[id];
+  return menuPend[id]=(async()=>{
+    try{const r=await db.from("menu_items").select("*").eq("comercio_id",id).eq("disponible",true);
+      if(r.error||!r.data)return null;
+      const t=tienda(id);if(!t)return false;
+      const nuevo=mapMenu(r.data),cambio=JSON.stringify(nuevo)!==JSON.stringify(t.menu);
+      t.menu=nuevo;t._mErr=0;menuFresco.add(id);if(cambio)guardaDatos();return cambio}
+    catch(e){return null}finally{delete menuPend[id]}})();
+}
+const reintento=t=>!(t._mErr&&Date.now()-t._mErr<10000);   // tras un fallo, espera 10 s antes de volver a intentar
+const enTienda=id=>{const [,r,x]=location.hash.split("/");return r==="t"&&x===id};
 const tienda=id=>COMERCIANTES.find(t=>t.id===id);
 const logoHTML=(t,g)=>t.logo?`<img class="logo-c${g?" g":""}" src="${esc(t.logo)}" alt="Logotipo de ${esc(t.nombre)}" loading="lazy">`:"";
 
@@ -1504,15 +1523,18 @@ function vistaTienda(id){
      ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
      ${tel?`<span class="suave">📞 <a href="tel:+${tel}">${esc(t.whatsapp)}</a></span>`:""}${t.correo?`<span class="suave">✉️ <a href="mailto:${esc(t.correo)}">${esc(t.correo)}</a></span>`:""}</div></div>`;
     return}
-  const cats=["Todo",...new Set(t.menu.map(m=>m.cat))];
+  if(!menuFresco.has(id)&&!menuPend[id]&&reintento(t))cargarMenu(id).then(c=>{if(c===null)t._mErr=Date.now();if((c||(c===null&&!t.menu))&&enTienda(id))vistaTienda(id)});
+  const M=t.menu||[];
+  const cats=["Todo",...new Set(M.map(m=>m.cat))];
   $("vista").innerHTML=`<div class="perfil"><div class="foto-w"><div class="foto" ${foto(t)}>${em(t)}</div>${logoHTML(t,1)}</div><div class="in${t.logo?" cl g":""}">
    <h2>${esc(t.nombre)}</h2><span>${t.desc}</span>
    <span class="suave">${t.giro} · Abierto ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
    ${t.dias?`<span class="suave">📅 Días: ${diasTxt(t.dias)}</span>`:""}
    <span class="suave">${t.domicilio?"Envío "+din(t.envio)+" · ":"Solo recoger en tienda · "}Pedido mínimo ${din(t.minimo)}</span></div></div>
-   <div class="cats">${cats.map(c=>`<button class="${c===cat?"on":""}" data-cat="${c}">${c}</button>`).join("")}</div>`+
-   t.menu.filter(m=>cat==="Todo"||m.cat===cat).map(m=>`
+   `+(!t.menu?`<p class="suave" style="text-align:center;padding:28px 0">${t._mErr?"No se pudo cargar el menú. Revisa tu conexión e intenta de nuevo.":"Cargando menú…"}</p>`:"")+
+   (t.menu?`<div class="cats">${cats.map(c=>`<button class="${c===cat?"on":""}" data-cat="${c}">${c}</button>`).join("")}</div>`:"")+
+   M.filter(m=>cat==="Todo"||m.cat===cat).map(m=>`
    <div class="item"><div class="foto${m.foto?" zoom":""}" ${foto(m)}${m.foto?` data-ver="${esc(m.foto)}" data-nom="${esc(m.nombre)}" role="button" tabindex="0" aria-label="Ver foto de ${esc(m.nombre)}"`:""}>${em(m)}</div><div class="in">
    <b>${m.nombre}</b><span class="suave">${m.desc}</span><span class="precio">${din(m.precio)}</span>
    <button class="btn" data-add="${t.id}|${m.id}">Agregar al carrito</button></div></div>`).join("");
@@ -1690,11 +1712,16 @@ function agregar(tid,mid){
 function cambia(mid,d){carrito.items[mid]+=d;if(carrito.items[mid]<=0)delete carrito.items[mid];
   if(!Object.keys(carrito.items).length)carrito.tienda=null;gcar();pintaCarrito()}
 function gcar(){$s("carrito",carrito)}
-function subtotal(t){return Object.entries(carrito.items).reduce((s,[id,c])=>s+t.menu.find(m=>m.id===id).precio*c,0)}
+function subtotal(t){return Object.entries(carrito.items).reduce((s,[id,c])=>{const m=(t.menu||[]).find(x=>x.id===id);return s+(m?m.precio*c:0)},0)}
 function pintaCarrito(){
   const t=tienda(carrito.tienda), ids=Object.keys(carrito.items);
   $("n").textContent=Object.values(carrito.items).reduce((a,b)=>a+b,0);
   if(!t){$("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>Tu carrito</h2><p>Está vacío. Elige un comercio y agrega platillos.</p>`;return}
+  if(!t.menu){   // el menú de esta tienda aún no está en el teléfono: se descarga y se vuelve a pintar
+    if(db&&!menuPend[t.id]&&reintento(t))cargarMenu(t.id).then(c=>{if(c===null)t._mErr=Date.now();pintaCarrito()});
+    $("cCarrito").innerHTML=`<button class="x" data-cerrar>×</button><h2>${esc(t.nombre)}</h2><p class="suave">${t._mErr?"No se pudo cargar tu carrito. Revisa tu conexión.":"Cargando tu carrito…"}</p>`;return}
+  {let quito=0;for(const id of ids)if(!t.menu.find(x=>x.id===id)){delete carrito.items[id];quito=1}   // platillos que ya no están disponibles
+   if(quito){if(!Object.keys(carrito.items).length)carrito.tienda=null;gcar();return pintaCarrito()}}
   const sub=subtotal(t), dom=t.domicilio&&($("entrega")?$("entrega").value==="domicilio":true), env=dom?t.envio:0;
   const st0=$("cCarrito").scrollTop;   // se conserva la posición al repintar
   const keep=["entrega","pago","ck_c","ck_n","ck_l","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});keep.gdom=$("gdom")?$("gdom").checked:undefined;
@@ -1726,7 +1753,7 @@ async function confirmar(t,sub){
   if(dom&&db&&sesion.id&&$("gdom")&&$("gdom").checked&&(D.dir_calle!==sesion.dir_calle||D.dir_num!==sesion.dir_num||D.dir_col!==sesion.dir_col)){
     try{const g=await db.auth.updateUser({data:D});if(!g.error){Object.assign(sesion,D);$s("sesion",sesion)}}catch(e){}}
   const env=dom?t.envio:0, total=sub+env, pago=$("pago").value;
-  const lineas=Object.entries(carrito.items).map(([id,c])=>{const m=t.menu.find(x=>x.id===id);return `${c} x ${m.nombre} - ${din(m.precio*c)}`});
+  const lineas=Object.entries(carrito.items).map(([id,c])=>{const m=t.menu.find(x=>x.id===id);return m?`${c} x ${m.nombre} - ${din(m.precio*c)}`:""}).filter(Boolean);
   const items=Object.entries(carrito.items).map(([id,cant])=>({id,cant}));
   // Nota: la base de datos recalcula total y detalle con los precios reales del menú.
   const fila={comprador_id:sesion.id,cliente_nombre:sesion.nombre,cliente_tel:sesion.tel,comercio_id:t.id,lineas,items,total,entrega:dom?"domicilio":"recoger",pago,direccion:dir,notas:$("notas").value,estado:"Enviado al comercio"};
@@ -1841,7 +1868,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v152";
+const BUILD="valle-go-v153";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
