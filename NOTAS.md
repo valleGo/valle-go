@@ -77,11 +77,11 @@ Versión actual al escribir esto: **v164**.
 - Medido con red simulada (400 ms por consulta): comercios visibles en ~0.5 s la 1a visita y ~0.1 s las siguientes (antes ~2.1 s siempre).
 
 ## Respaldos (12 nov 2026)
-- Repositorio **privado** `valleGo/valle-go-respaldos` con la tarea *Respaldo diario Valle GO* (`.github/workflows/respaldo.yml`): todos los días 3:23 a. m. (09:23 UTC) guarda código con historial (`git bundle`), base completa (`supabase db dump`: roles, estructura, datos; más `auth.users`/`auth.identities` aparte), resumen de filas y fotos del bucket `fotos`. Copia diaria como *Artifact* (30 días); el día 1 de cada mes (o a mano con "mensual") queda como *Release* permanente. Si falla, GitHub manda correo.
+- Repositorio **privado** `valleGo/valle-go-respaldos` con la tarea *Respaldo Valle GO (cada 15 días)* (`.github/workflows/respaldo.yml`): días 1 y 16 de cada mes, 3:23 a. m. (09:23 UTC), guarda en **Releases** código con historial (`git bundle`), base completa (`supabase db dump`: roles, estructura, datos; más `auth.users`/`auth.identities` aparte), resumen de filas y fotos del bucket `fotos`. **Solo conserva los 2 respaldos más recientes** (borra los viejos con `gh release delete --cleanup-tag`). Si falla, GitHub manda correo.
 - Necesita el secreto `SUPABASE_DB_URL` (cadena **Session pooler** de Supabase con la contraseña de la base). Claude no puede ver secretos ni correr Actions desde la sesión (el proxy lo bloquea): el dueño lo corre en *Actions → Run workflow*.
 - Instrucciones de restauración en `RESTAURAR.md` de ese repo. Las claves de Vercel (MP, VAPID, Supabase service key) **no** se respaldan ahí: el dueño las guarda en un gestor de contraseñas.
 - **Nunca** subir respaldos al repo `valle-go`: es **público**.
-- Capas: GitHub (código e historial) + Vercel (cada despliegue, rollback) + respaldo diario privado + Supabase Pro (respaldos diarios de 7 días al activarlo) + copia mensual descargada por el dueño.
+- Capas: GitHub (código e historial) + Vercel (cada despliegue, rollback) + respaldo privado cada 15 días (máx. 2) + Supabase Pro (respaldos diarios de 7 días al activarlo) + copia descargada por el dueño a su computadora/Drive.
 
 ## Cómo probar
 - Playwright local bloqueando hosts externos. Para probar el service worker y la carga de datos: servir con `python3 -m http.server` en 127.0.0.1 y simular `supabase-js` con un cliente falso con retraso.
