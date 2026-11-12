@@ -68,7 +68,7 @@ header .hb.lcol{flex-direction:column;align-items:center;gap:8px;margin-left:0}
 .hr{display:flex;flex-direction:column;align-items:center;gap:8px;margin-left:auto}header .hr .hb{margin-left:0}
 header .hr #bCont{position:static;top:auto;right:auto}
 /* ===== Barra superior: 3 zonas (logo+usuario | marca | redes, pedidos y carrito) ===== */
-header{padding:12px 18px;background:linear-gradient(180deg,rgba(255,255,255,.35),color-mix(in srgb,var(--claro-verde) 15%,transparent));box-shadow:0 6px 18px rgba(60,70,40,.09)}
+header{padding:12px 18px;background:linear-gradient(180deg,rgba(255,255,255,.15),color-mix(in srgb,var(--claro-verde) 6%,transparent));box-shadow:0 6px 18px rgba(60,70,40,.09)}
 header .hb.lcol{gap:10px;margin:0}header .hr{gap:8px;margin:0}
 header .marca{order:0;flex:none;align-self:center;display:flex;justify-content:center}
 header .marca a{display:flex;justify-content:center;max-width:100%}header .marca img{max-height:none;height:auto;width:min(100%,175px);filter:drop-shadow(0 1px 0 rgba(255,255,255,.7))}
@@ -1868,7 +1868,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v154";
+const BUILD="valle-go-v155";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
