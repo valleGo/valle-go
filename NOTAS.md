@@ -70,6 +70,8 @@ Versión actual al escribir esto: **v150**.
 Los captura el dueño directamente en Vercel o Supabase: Client Secret y Access Token de producción de Mercado Pago, `WEBHOOK_SECRET`, llave privada VAPID y el secreto Bearer de `avisar_pedido`. Nunca pegarlos en el chat ni en archivos.
 
 ## Reglas acordadas
+- **Siempre actualizar todo** con cada cambio publicado: versión (`BUILD` y `CACHE`), este `NOTAS.md` (versión actual, secciones afectadas e historial) y los `.sql` del repo si se toca la base.
+- Hablar siempre en español con el dueño.
 - No dar permisos de administrador a cuentas sin confirmar. Admin: la cuenta del dueño.
 - El repo sigue público hasta que el dueño pida privatizarlo.
 
