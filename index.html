@@ -1782,7 +1782,7 @@ function subtotal(t){return Object.entries(carrito.items).reduce((s,[id,c])=>{co
 function pintaCarrito(){
   const t=tienda(carrito.tienda), ids=Object.keys(carrito.items);
   $("n").textContent=Object.values(carrito.items).reduce((a,b)=>a+b,0);
-  if(!t){$("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>Tu carrito</h2><p>Está vacío. Elige un comercio y agrega platillos.</p>`;return}
+  if(!t){$("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>Tu carrito</h2><p>Está vacío. Elige un comercio y agrega productos.</p>`;return}
   if(!t.menu){   // el menú de esta tienda aún no está en el teléfono: se descarga y se vuelve a pintar
     if(db&&!menuPend[t.id]&&reintento(t))cargarMenu(t.id).then(c=>{if(c===null)t._mErr=Date.now();pintaCarrito()});
     $("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>${esc(t.nombre)}</h2><p class="suave">${t._mErr?"No se pudo cargar tu carrito. Revisa tu conexión.":"Cargando tu carrito…"}</p>`;return}
@@ -1942,7 +1942,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v161";
+const BUILD="valle-go-v162";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
