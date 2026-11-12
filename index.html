@@ -802,8 +802,8 @@ async function admTab(){
   if(t==="servicios"){
     const L=(await db.from("servicios_perfiles").select("*").order("tipo").order("nombre")).data||[];
     const hoyA=new Date();if(!adm.mes)adm.mes=mkey(hoyA);let CT=[],ctErr="";try{CT=await corteTransporte(adm.mes)}catch(e){ctErr=e.message||String(e)}
-    const ctHTML=`<div class="aviso"><b>Corte mensual de transporte</b><br>Cada transportista paga la membresía del plan Simple (${mxn(memConIva("simple"))} al mes, IVA incluido) más el 7% del total de los viajes completados en la app (sin IVA). Se cobra junto al final del mes.</div>
-      <label>Mes<input type="month" id="tcMes" value="${adm.mes}"></label>`+(ctErr?`<p class="suave">No se pudo cargar el corte: ${esc(ctErr)}</p>`:CT.length?CT.map(r=>`<div class="item"><div class="in"><b>${esc(r.nombre)}</b><span>Viajes completados: ${r.n} · Total: ${mxn(r.tot)}</span><span>Comisión 7%: <b>${mxn(r.com)}</b>${r.comMP?` (+ ${mxn(r.comMP)} descontada por Mercado Pago)`:""}</span><span>Membresía: ${mxn(r.mem)}</span><span>Total a cobrar: <b>${mxn(r.cobrar)}</b> · Pagado: ${mxn(r.pag)}</span><span>${r.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':"Saldo: <b>"+mxn(r.saldo)+"</b>"+(r.pag>0?" (parcial)":"")}</span>
+    const ctHTML=`<div class="aviso"><b>Corte mensual de transporte</b><br>Cada transportista paga la membresía del plan Simple (${mxn(memConIva("simple"))} al mes, IVA incluido) más el 5% del total de los viajes completados en la app (sin IVA). Se cobra junto al final del mes.</div>
+      <label>Mes<input type="month" id="tcMes" value="${adm.mes}"></label>`+(ctErr?`<p class="suave">No se pudo cargar el corte: ${esc(ctErr)}</p>`:CT.length?CT.map(r=>`<div class="item"><div class="in"><b>${esc(r.nombre)}</b><span>Viajes completados: ${r.n} · Total: ${mxn(r.tot)}</span><span>Comisión 5%: <b>${mxn(r.com)}</b>${r.comMP?` (+ ${mxn(r.comMP)} descontada por Mercado Pago)`:""}</span><span>Membresía: ${mxn(r.mem)}</span><span>Total a cobrar: <b>${mxn(r.cobrar)}</b> · Pagado: ${mxn(r.pag)}</span><span>${r.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':"Saldo: <b>"+mxn(r.saldo)+"</b>"+(r.pag>0?" (parcial)":"")}</span>
         ${r.pags.map(x=>`<span class="suave">💵 ${mxn(Number(x.monto))} · ${new Date(x.pagado_en).toLocaleDateString("es-MX")}${x.metodo?" · "+esc(x.metodo):""} <button class="btn sec mini" data-tcdel="${x.id}">Quitar</button></span>`).join("")}
         <span class="svbtns">${r.saldo>0.004?`<button class="btn mini" data-tcpg="${r.id}|${r.saldo}">Registrar pago</button>`:""}${r.whatsapp?`<a class="btn mini sec" target="_blank" rel="noopener" href="${waUrl(r.whatsapp)}?text=${encodeURIComponent(corteResumen(r,adm.mes))}">Enviar corte por WhatsApp</a>`:""}</span></div></div>`).join(""):"<p class='suave'>No hay transportistas activos este mes.</p>")+"<hr>";
     box.innerHTML=ctHTML+`<p class="suave">Transportistas y taxistas. La agenda de servicios y la consulta de stock se activan en cada comercio del plan Básico (el plan Simple solo tiene perfil en el directorio): Comercios → Editar → «Ofrece agenda de citas» y «Ofrece consulta de stock». Al crear un transportista, escribe el correo de su dueño (debe estar registrado en la app).</p><button class="btn" data-svnew>+ Nuevo transportista</button><br><br>`+
@@ -1348,8 +1348,8 @@ async function svDetalle(root,id,volver,cod){
     }catch(err){alert("No se pudo enviar: "+err.message);$("cqEnv").disabled=false;$("cqEnv").textContent="Enviar consulta"}};
 }
 
-// --- Corte mensual de transporte: membresía Simple + 7% de los viajes completados (sin IVA en la comisión) ---
-const COM_TR=0.07;
+// --- Corte mensual de transporte: membresía Simple + 5% de los viajes completados (sin IVA en la comisión) ---
+const COM_TR=0.05;
 const numMX=s=>{const v=Math.round(parseFloat(String(s||"").replace(/[$,\s]/g,""))*100)/100;return isNaN(v)?0:v};
 async function corteTransporte(mes,ids){
   const[Y,M]=mes.split("-").map(Number),fin=new Date(Y,M,1);
@@ -1362,7 +1362,7 @@ async function corteTransporte(mes,ids){
       mem=activo?memConIva("simple"):0,cobrar=r2m(com+mem),pags=PG.filter(x=>x.perfil_id===p.id),pag=r2m(pags.reduce((t,x)=>t+Number(x.monto),0));
     R.push({id:p.id,nombre:p.nombre,whatsapp:p.whatsapp,n,tot,com,comMP,mem,cobrar,pag,pags,saldo:Math.max(0,r2m(cobrar-pag))})});
   return R}
-const corteResumen=(r,mes)=>`Corte de ${nomMes(mes)} · ${r.nombre}\nViajes completados: ${r.n} · Total: ${mxn(r.tot)}\nComisión 7% (uso y mantenimiento, sin IVA): ${mxn(r.com)}${r.comMP?" (+ "+mxn(r.comMP)+" ya descontada por Mercado Pago)":""}\nMembresía plan Simple (IVA incluido): ${mxn(r.mem)}\nTotal a pagar: ${mxn(r.cobrar)} · Pagado: ${mxn(r.pag)} · Saldo: ${mxn(r.saldo)}`;
+const corteResumen=(r,mes)=>`Corte de ${nomMes(mes)} · ${r.nombre}\nViajes completados: ${r.n} · Total: ${mxn(r.tot)}\nComisión 5% (uso y mantenimiento, sin IVA): ${mxn(r.com)}${r.comMP?" (+ "+mxn(r.comMP)+" ya descontada por Mercado Pago)":""}\nMembresía plan Simple (IVA incluido): ${mxn(r.mem)}\nTotal a pagar: ${mxn(r.cobrar)} · Pagado: ${mxn(r.pag)} · Saldo: ${mxn(r.saldo)}`;
 
 // --- Mis solicitudes (cliente) ---
 async function vistaMisServicios(){
@@ -1406,7 +1406,7 @@ async function vistaPanelSrv(){
   const idsTr=misSrv.filter(s=>s.tipo==="transporte").map(s=>s.id),mesAct=mkey(new Date());let cortes=[];
   if(idsTr.length){try{cortes=await corteTransporte(mesAct,idsTr)}catch(e){cortes=[]}}
   const corteHTML=p=>{const r=cortes.find(c=>c.id===p.id);if(!r)return"";
-    return `<div class="aviso" style="margin:10px 0"><b>Mi corte de ${nomMes(mesAct)}</b><br>Viajes completados: ${r.n} · Total: ${mxn(r.tot)}<br>Comisión 7% de uso y mantenimiento (sin IVA): <b>${mxn(r.com)}</b>${r.comMP?`<br>Ya descontada por Mercado Pago: ${mxn(r.comMP)}`:""}<br>Membresía plan Simple (IVA incluido): <b>${mxn(r.mem)}</b><br>Total a pagar a final de mes: <b>${mxn(r.cobrar)}</b> · Pagado: ${mxn(r.pag)} · ${r.saldo<=0.004?"✅ Al corriente":"Saldo: <b>"+mxn(r.saldo)+"</b>"}<br><span class="suave" style="font-size:.78rem">Se cobra junto el último día del mes. Solo cuentan los viajes que marcas como "Completado" en la app.</span></div>`};
+    return `<div class="aviso" style="margin:10px 0"><b>Mi corte de ${nomMes(mesAct)}</b><br>Viajes completados: ${r.n} · Total: ${mxn(r.tot)}<br>Comisión 5% de uso y mantenimiento (sin IVA): <b>${mxn(r.com)}</b>${r.comMP?`<br>Ya descontada por Mercado Pago: ${mxn(r.comMP)}`:""}<br>Membresía plan Simple (IVA incluido): <b>${mxn(r.mem)}</b><br>Total a pagar a final de mes: <b>${mxn(r.cobrar)}</b> · Pagado: ${mxn(r.pag)} · ${r.saldo<=0.004?"✅ Al corriente":"Saldo: <b>"+mxn(r.saldo)+"</b>"}<br><span class="suave" style="font-size:.78rem">Se cobra junto el último día del mes. Solo cuentan los viajes que marcas como "Completado" en la app.</span></div>`};
   const viajeHTML=x=>`<div class="item"><div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${x.tipo==="agenda"?"Viaje agendado":"Cotización"}: ${esc(x.origen)} → ${esc(x.destino)}</span>
     ${x.fecha?`<span class="suave">📅 ${fMX(x.fecha)}${x.hora?" · "+esc(x.hora):""}</span>`:""}${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.detalle?`<span class="suave">📝 ${esc(x.detalle)}</span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <span class="svbtns">${["Solicitada","Cotizada"].includes(x.estado)?`<button class="btn mini" data-vq="${x.id}">${x.estado==="Cotizada"?"Cambiar precio":"Cotizar"}</button>`:""}${x.estado==="Solicitada"&&x.tipo==="agenda"?`<button class="btn mini" data-vcf="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-vfn="${x.id}">Completado</button>`:""}${["Solicitada","Cotizada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-vrc="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
@@ -1457,7 +1457,7 @@ document.addEventListener("click",async e=>{
   if(d.vqok){const pn=numMX($("vqP_"+d.vqok).value);if(!(pn>0))return alert("Escribe el precio de la cotización en pesos.");
     if(await viaje(d.vqok,{estado:"Cotizada",precio_num:pn,precio:mxn(pn),respuesta:$("vqM_"+d.vqok).value.trim()||null}))vistaPanelSrv();return}
   if(d.vcf){if(await viaje(d.vcf,{estado:"Confirmada",respuesta:null}))vistaPanelSrv();return}
-  if(d.vfn){const v=(window._vj||{})[d.vfn]||{};const t=prompt("Total cobrado por el viaje (pesos).\nSe usa para calcular el 7% de uso de la app:",v.precio_num||"");if(t===null)return;const pn=numMX(t);if(!(pn>0))return alert("Escribe un total válido.");
+  if(d.vfn){const v=(window._vj||{})[d.vfn]||{};const t=prompt("Total cobrado por el viaje (pesos).\nSe usa para calcular el 5% de uso de la app:",v.precio_num||"");if(t===null)return;const pn=numMX(t);if(!(pn>0))return alert("Escribe un total válido.");
     if(await viaje(d.vfn,{estado:"Completada",precio_num:pn,precio:mxn(pn)}))vistaPanelSrv();return}
   if(d.vrc){const m=prompt("Motivo para el cliente (opcional):");if(m===null)return;if(await viaje(d.vrc,{estado:"Cancelada",respuesta:m.trim()||null}))vistaPanelSrv();return}
   if(d.sped){const r=await db.from("servicios_perfiles").select("*").eq("id",d.sped).single();if(!r.data)return;
@@ -1943,7 +1943,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v163";
+const BUILD="valle-go-v164";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
