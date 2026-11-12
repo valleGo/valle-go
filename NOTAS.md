@@ -14,7 +14,7 @@ Valle GO ("¡Va, llegó!"): PWA marketplace de comercios locales de Ameca, Jalis
 - Membresías: Simple $12/día = $360/mes; Básico $24/día = $720/mes (IVA incluido). Los precios no cambian.
 - Transportistas: membresía Simple $360/mes + comisión de viajes completados (sin IVA), cobrada en un corte mensual. **5% desde el 11 nov (v164)**: trigger `viaje_comision` (`round(precio_num*0.05,2)`, respaldo en `schema-transporte.sql`), `COM_TR=0.05` y textos del corte en `index.html`. Viaje típico en Ameca: $30–$50 (promedio $40 → $2 de comisión). El descuento directo por Mercado Pago **aún no está construido**.
 - PDF comerciales (11 nov, no están en el repo porque el sitio es público): "COMERCIOS-propuesta-planes" (3 págs.: planes, secciones/directorios y transportistas 5%, cobros con énfasis en que 1% + Mercado Pago es barato vs. apps de reparto de 15–30%) y "ADMIN-cotizacion-y-proyeccion" (5 págs.: mantenimiento $65 USD ≈ $1,219/mes, resumen de planes y directorios, comisiones, proyección y riesgos). Se generan con HTML + Chrome (Inter, mismo diseño que los originales).
-- Pendiente con el contador: tratamiento de IVA del 7% y del 1%.
+- Pendiente con el contador: tratamiento de IVA del 5% (transporte) y del 1%.
 
 ## Archivos
 | Archivo | Para qué sirve |
@@ -49,7 +49,7 @@ Versión actual al escribir esto: **v164**.
 - Roles: `esAdmin`, `misCom` (comercios del usuario), `misSrv` (servicios/transporte). `pintaHeader()` muestra u oculta los botones según el rol y pone las clases `sinPed` / `sinCarro` en `body`.
 - Avisos: triggers de la base llaman a la función `avisar_pedido()` (SECURITY DEFINER) → `/api/notificar` → push web (VAPID).
 - Conteo de vecinos: RPC pública `contar_vecinos()` (SECURITY DEFINER, solo devuelve un número) = usuarios de `auth.users` + comercios activos + `servicios_perfiles` activos (se cuentan por separado a propósito, decisión del dueño). Se carga en `cargarDatos()` en la variable `VECINOS`; si falla, la etiqueta muestra solo "Ameca, Jal.".
-- Tablas relevantes: pedidos, citas, consultas_stock, `viajes` (tipos cotización/agenda; la comisión del 7% la calcula un trigger al pasar a Completada) y `cobros_transporte` (corte mensual).
+- Tablas relevantes: pedidos, citas, consultas_stock, `viajes` (tipos cotización/agenda; la comisión del 5% la calcula el trigger `viaje_comision` al pasar a Completada) y `cobros_transporte` (corte mensual).
 
 ## Barra superior (header)
 - Cuadrícula de 3 áreas: izquierda, centro, derecha.
@@ -104,4 +104,4 @@ Los captura el dueño directamente en Vercel o Supabase: Client Secret y Access 
 - Pasar Supabase a Pro antes de cobrar a clientes reales (y entonces activar la protección de contraseñas filtradas).
 - Consultar al contador sobre el IVA.
 - Al pasar Supabase a Pro: activar "Prevent use of leaked passwords" (Authentication → contraseñas). Solo existe en Pro o superior; en el plan gratuito no se puede.
-- Opcionales: descuento directo del 7% por Mercado Pago a transportistas; integrar el corte de transporte en Monitoreo/Cobros/Membresías/PDF/IVA; ocultar el teléfono del cliente al transportista; lista fija de colonias de Ameca.
+- Opcionales: descuento directo del 5% por Mercado Pago a transportistas; integrar el corte de transporte en Monitoreo/Cobros/Membresías/PDF/IVA; ocultar el teléfono del cliente al transportista; lista fija de colonias de Ameca.
