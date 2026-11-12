@@ -314,6 +314,20 @@ header #bPanel{display:inline-flex;align-items:center;gap:6px;height:40px;paddin
 header #bPanel *{pointer-events:none}header #bPanel:hover{transform:translateY(-2px)}header #bPanel:active{transform:scale(.95)}header #bPanel.on{background:#5C7648;border-color:#46593a;color:#fff}
 @media(min-width:800px){.rb{width:50px;height:50px}.pmenu{min-width:200px}.pmenu button{height:42px;font-size:.9rem}.pmenu #bCarrito{line-height:42px}}
 @media(max-width:379px){.rb{width:40px;height:40px}header #bPanel{padding:0 11px;font-size:.72rem}}
+/* Título de inicio "Lugares del Valle Hoy" */
+.htit{display:flex;flex-direction:column;align-items:center;gap:6px;margin:10px 0 18px;text-align:center;animation:htIn .5s ease-out both}
+.htit .hti{width:58px;height:40px;display:block;filter:drop-shadow(0 3px 6px rgba(93,119,74,.18))}
+.htit h2{margin:0;font-size:1.65rem;font-weight:800;letter-spacing:-.03em;line-height:1.1;color:var(--texto)}
+.htit h2 b{position:relative;color:var(--verde);font-weight:800;white-space:nowrap}
+.htit h2 b::after{content:"";position:absolute;left:-3px;right:-3px;bottom:.06em;height:.34em;background:var(--acento);opacity:.55;border-radius:6px;z-index:-1}
+.htit h2 b{z-index:0;isolation:isolate}
+.htit .hts{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;background:var(--tarjeta);border:1px solid var(--borde);box-shadow:var(--sombra);font-size:.74rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--suave)}
+.htit .hts i{width:8px;height:8px;border-radius:50%;background:#3FA34D;box-shadow:0 0 0 0 rgba(63,163,77,.5);animation:htDot 2s ease-out infinite}
+.htit .hts em{font-style:normal;color:var(--salvia)}
+@keyframes htIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes htDot{0%{box-shadow:0 0 0 0 rgba(63,163,77,.5)}70%{box-shadow:0 0 0 7px rgba(63,163,77,0)}100%{box-shadow:0 0 0 0 rgba(63,163,77,0)}}
+@media(min-width:700px){.htit h2{font-size:2rem}.htit .hti{width:66px;height:46px}}
+@media(prefers-reduced-motion:reduce){.htit,.htit .hts i{animation:none}}
 </style>
 </head>
 <body>
@@ -1412,7 +1426,7 @@ function vistaInicio(){
        :catCom==="otros"?sec("Otros",sinCat)
        :(k=>sec(nom(k),PRINC.filter(t=>t.cat===k.id)))(usadas.find(k=>k.id===catCom)));
   }
-  $("vista").innerHTML=adsHTML()+`<h2 style="text-align:center">Lugares del Valle Hoy:</h2>`+cuerpo;iniAds();
+  $("vista").innerHTML=adsHTML()+`<div class="htit"><svg class="hti" viewBox="0 0 58 40" aria-hidden="true"><circle cx="40" cy="13" r="7" fill="var(--acento)"/><path d="M2 36 C10 22 16 18 24 26 C30 32 34 20 42 18 C48 16 53 24 56 36Z" fill="var(--salvia)"/><path d="M2 38 C12 28 20 27 29 33 C37 38 46 29 56 31 V38Z" fill="var(--verde)"/><path d="M2 38.5H56" stroke="var(--verde)" stroke-width="2" stroke-linecap="round"/></svg><h2>Lugares del <b>Valle</b> Hoy</h2><span class="hts"><i></i>${PRINC.length} ${PRINC.length===1?"comercio":"comercios"}<em>•</em>Ameca, Jal.</span></div>`+cuerpo;iniAds();
   if(homeQOpen)aplicaBusq();
 }
 let dirQ="";
@@ -1781,7 +1795,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v145";
+const BUILD="valle-go-v146";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
