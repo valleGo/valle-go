@@ -345,6 +345,38 @@ header #bPanel *{pointer-events:none}header #bPanel:hover{transform:translateY(-
 .skel>div{background-image:linear-gradient(90deg,rgba(255,255,255,0) 0,rgba(255,255,255,.65) 50%,rgba(255,255,255,0) 100%);background-size:200% 100%;background-repeat:no-repeat;animation:skel 1.2s linear infinite}
 @keyframes skel{from{background-position:150% 0}to{background-position:-50% 0}}
 @media(prefers-reduced-motion:reduce){.skel>div{animation:none}}
+/* ===== Carrito compacto (v157): tarjeta flotante en PC, hoja inferior en celular ===== */
+#pCarrito{background:rgba(43,52,33,.28);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#cCarrito{top:16px;right:16px;bottom:auto;left:auto;width:min(380px,calc(100% - 32px));height:auto;max-height:calc(100dvh - 32px);
+  padding:16px 18px 0;gap:10px;border-radius:22px;border:1px solid var(--borde);background:var(--fondo);
+  box-shadow:0 18px 50px rgba(43,52,33,.22),0 2px 8px rgba(43,52,33,.08);animation:carIn .22s ease-out}
+#cCarrito>.x{position:absolute;top:12px;right:12px;width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:var(--tarjeta);border:1px solid var(--borde);font-size:1.15rem;z-index:2}
+#cCarrito h2{margin:2px 40px 2px 0;font-size:1.12rem;line-height:1.25}
+#cCarrito .linea{padding:8px 0;font-size:.9rem}
+#cCarrito .linea small{color:var(--suave)}
+#cCarrito .q{display:flex;align-items:center;gap:6px;font-weight:700}
+#cCarrito .q button{width:28px;height:28px}
+#cCarrito label{font-size:.78rem;gap:4px}
+#cCarrito input,#cCarrito select,#cCarrito textarea{padding:8px 11px;border-radius:10px}
+#cCarrito textarea{min-height:0}
+#cCarrito #dirBox{gap:8px!important;grid-template-columns:minmax(0,1fr) 92px}
+#cCarrito #dirBox>*{grid-column:1/-1}
+#cCarrito #dirBox>label:has(#ck_c){grid-column:1}#cCarrito #dirBox>label:has(#ck_n){grid-column:2}
+#cCarrito .fila{font-size:.88rem;padding:0 12px}
+#cCarrito .fila:has(#env),#cCarrito .fila.tot{margin-top:-10px}#cCarrito .fila:has(#env){padding-top:6px;padding-bottom:6px}
+#cCarrito .fila:not(:has(#env)):not(.tot){padding-top:10px;border-radius:14px 14px 0 0;background:var(--tarjeta);margin-top:2px}
+#cCarrito .fila:has(#env){background:var(--tarjeta)}
+#cCarrito .fila.tot{font-size:1.02rem;padding-bottom:10px;padding-top:6px;border-radius:0 0 14px 14px;background:var(--tarjeta);border-top:1px dashed var(--borde)}
+#cCarrito #pedir{position:sticky;bottom:0;margin:2px -18px 0;padding:14px;border-radius:0 0 21px 21px;box-shadow:0 -10px 18px var(--fondo)}
+#cCarrito>p{margin:4px 0 18px}
+@keyframes carIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@media(max-width:600px){
+  #cCarrito{top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));left:8px;right:8px;width:auto;max-height:84dvh;border-radius:24px;padding-top:22px;animation:carUp .26s cubic-bezier(.2,.8,.2,1)}
+  #cCarrito::before{content:"";position:absolute;top:8px;left:50%;width:38px;height:4px;margin-left:-19px;border-radius:4px;background:var(--borde)}
+  #cCarrito #pedir{border-radius:0 0 23px 23px}
+}
+@keyframes carUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){#cCarrito{animation:none}}
 </style>
 </head>
 <body>
@@ -1868,7 +1900,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v156";
+const BUILD="valle-go-v157";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
