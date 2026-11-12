@@ -390,6 +390,9 @@ header #bPanel *{pointer-events:none}header #bPanel:hover{transform:translateY(-
 #cCarrito .q button[data-mas]{background:var(--verde);border:1px solid var(--verde);color:#fff}
 #cCarrito .q button:active{transform:scale(.88)}
 @media(hover:hover){#cCarrito .q button[data-menos]:hover{background:var(--crema)}#cCarrito .q button[data-mas]:hover{filter:brightness(1.08)}}
+/* Toques rápidos: sin zoom por doble toque en botones */
+button,.btn,a,select,label,input[type=checkbox]{touch-action:manipulation}
+#cCarrito .q,#cCarrito .q *{-webkit-user-select:none;user-select:none}
 </style>
 </head>
 <body>
@@ -1756,8 +1759,18 @@ function agregar(tid,mid){
 }
 // Rebote del botón de la bolsa (y su numerito) cada vez que se agrega algo al carrito
 function reboteBolsa(){for(const el of [$("bMenuR"),$("bBadge")]){if(!el)continue;el.classList.remove("bump");void el.offsetWidth;el.classList.add("bump")}}
-function cambia(mid,d){carrito.items[mid]+=d;if(carrito.items[mid]<=0)delete carrito.items[mid];
-  if(!Object.keys(carrito.items).length)carrito.tienda=null;gcar();pintaCarrito()}
+function cambia(mid,d){if(!carrito.items[mid])return;carrito.items[mid]+=d;const q=carrito.items[mid];if(q<=0)delete carrito.items[mid];
+  if(!Object.keys(carrito.items).length)carrito.tienda=null;gcar();
+  if(!carrito.tienda||!actualizaLinea(mid,q))pintaCarrito()}
+// Cambio rápido de cantidad: solo toca el número, los totales y (si llega a 0) quita esa línea
+function actualizaLinea(mid,q){
+  const t=tienda(carrito.tienda),c=$("cCarrito");if(!t||!t.menu||!c||!$("csub"))return false;
+  const b=[...c.querySelectorAll("[data-menos]")].find(x=>x.dataset.menos===mid);if(!b)return false;
+  const L=b.closest(".linea");if(!L)return false;
+  if(q<=0)L.remove();else{const n=L.querySelector(".q b");if(!n)return false;n.textContent=q}
+  $("n").textContent=Object.values(carrito.items).reduce((a,v)=>a+v,0);
+  $("csub").textContent=din(subtotal(t));$("entrega").onchange();
+  return true}
 function gcar(){$s("carrito",carrito)}
 function subtotal(t){return Object.entries(carrito.items).reduce((s,[id,c])=>{const m=(t.menu||[]).find(x=>x.id===id);return s+(m?m.precio*c:0)},0)}
 function pintaCarrito(){
@@ -1779,7 +1792,7 @@ function pintaCarrito(){
     <div id="dirBox" style="display:grid;gap:12px"><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("ck",null)}${db&&sesion&&sesion.id?`<label style="display:flex;gap:8px;align-items:center;font-size:.85rem"><input type="checkbox" id="gdom" style="width:auto"> 💾 Guardar este domicilio para mis próximos pedidos</label>`:""}</div>
     <label>¿Cómo pagas?<select id="pago"><option value="efectivo">Efectivo al recibir</option><option value="transferencia">Transferencia bancaria</option>${db?`<option value="en_linea">Pago en línea (Mercado Pago)</option>`:""}</select></label>
     <label>Notas<textarea id="notas" rows="2" placeholder="Sin cebolla, tocar el timbre..."></textarea></label>
-    <div class="fila"><span>Subtotal</span><span>${din(sub)}</span></div>
+    <div class="fila"><span>Subtotal</span><span id="csub">${din(sub)}</span></div>
     <div class="fila"><span>Envío</span><span id="env">${din(env)}</span></div>
     <div class="fila tot"><span>Total</span><span id="tot">${din(sub+env)}</span></div>
     <button class="btn" id="pedir">Confirmar pedido</button>`;
@@ -1788,8 +1801,8 @@ function pintaCarrito(){
   const dd=sesion?((sesion.dir_calle||sesion.dir_num||sesion.dir_col)?sesion:{dir_calle:sesion.dir||"",dir_num:"",dir_col:""}):{};
   $("ck_c").value=keep.ck_c||dd.dir_calle||"";$("ck_n").value=keep.ck_n||dd.dir_num||"";$("ck_l").value=keep.ck_l||dd.dir_col||"";$("notas").value=keep.notas;
   $("entrega").onchange=()=>{$("dirBox").style.display=$("entrega").value==="domicilio"?"grid":"none";
-    const e=$("entrega").value==="domicilio"?t.envio:0;$("env").textContent=din(e);$("tot").textContent=din(sub+e)};
-  $("entrega").onchange(); $("pedir").onclick=()=>confirmar(t,sub);
+    const e=$("entrega").value==="domicilio"?t.envio:0;$("env").textContent=din(e);$("tot").textContent=din(subtotal(t)+e)};
+  $("entrega").onchange(); $("pedir").onclick=()=>confirmar(t,subtotal(t));
   $("cCarrito").scrollTop=st0;
 }
 async function confirmar(t,sub){
@@ -1923,7 +1936,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v159";
+const BUILD="valle-go-v160";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
