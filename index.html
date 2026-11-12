@@ -400,6 +400,9 @@ button,.btn,a,select,label,input[type=checkbox]{touch-action:manipulation}
 @keyframes vTrazo{0%{-webkit-mask-position:100% 0;mask-position:100% 0;opacity:.5}12%{opacity:1}100%{-webkit-mask-position:0 0;mask-position:0 0;opacity:1}}
 #cCarrito .linea small{display:block;margin-left:38px}
 @media(prefers-reduced-motion:reduce){#cCarrito .vchk{animation:none}}
+/* Aviso de privacidad simplificado en el registro */
+.avPriv{font-size:.74rem;line-height:1.45;color:var(--suave);background:var(--crema);border-radius:10px;padding:8px 11px;margin:6px 0 10px}
+.avPriv a{color:var(--verde);font-weight:700}
 </style>
 </head>
 <body>
@@ -417,7 +420,7 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
 </header>
 <div class="dirbar"><div class="dock"><a class="dk" href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a><a class="dk" href="#" id="bAg" role="button" aria-expanded="false" aria-controls="agPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2.2 2.2 4.3-4.4"/></svg>AGENDA SERVICIOS</a><button class="dk" id="bCq" type="button" aria-label="Consulta de stock" aria-expanded="false" aria-controls="cqPanel" title="Consulta de stock"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="11.5" cy="11.5" r="3.5"/><path d="M14.2 14.2L17 17"/></svg>CONSULTA DE STOCK</button></div></div>
 <main id="vista" style="padding-top:48px"></main>
-<footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><a href="privacidad.html">Política de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
+<footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><a href="privacidad.html">Aviso de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
 <div class="panel" id="pCarrito"><div class="caja" id="cCarrito"></div></div>
 <button id="bTop" type="button" aria-label="Subir al inicio de la página" title="Subir"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><div id="toast"></div><div id="inst"><span id="instT"></span><button id="instB">Instalar</button><button id="instX" aria-label="Cerrar">×</button></div>
 
@@ -1652,13 +1655,14 @@ function vistaCuenta(){
     <label>Nombre<input id="rn" autocomplete="name"></label><label>Correo<input id="re" type="email" autocomplete="email"></label>
     <label>Teléfono<input id="rt" type="tel" autocomplete="tel"></label><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("rg",null)}
     <label>Contraseña (mínimo 6)<input id="rp" type="password" autocomplete="new-password"></label>
+    <p class="avPriv"><b>Aviso de privacidad simplificado:</b> Valle GO (Ameca, Jalisco) usará tus datos para crear tu cuenta y hacer llegar tus pedidos, citas, consultas y viajes al comercio o transportista que elijas. No pedimos datos sensibles. Puedes ejercer tus derechos ARCO o revocar tu consentimiento en contacto.vallego@gmail.com. Al crear tu cuenta aceptas el <a href="privacidad.html" target="_blank" rel="noopener">Aviso de privacidad integral</a> y las <a href="terminos.html" target="_blank" rel="noopener">Condiciones del Servicio</a>.</p>
     <button class="btn" id="reg">Crear cuenta</button></div>
    <div class="caja" style="position:static;width:auto;padding:0">
     <h2>Ya tengo cuenta</h2><label>Correo<input id="le" type="email" autocomplete="username"></label>
     <label>Contraseña<input id="lp" type="password" autocomplete="current-password"></label><button class="btn sec" id="ent">Entrar</button></div></div>`;
   $("reg").onclick=registrar; $("ent").onclick=entrar;
   googleActivo().then(ok=>{const b=$("gBox");if(!ok||!b)return;
-    b.innerHTML=`<button class="btn" id="gBtn" style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#1f1f1f;border:1px solid #dadce0"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continuar con Google</button><p class="suave">o usa tu correo:</p>`;
+    b.innerHTML=`<button class="btn" id="gBtn" style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#1f1f1f;border:1px solid #dadce0"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continuar con Google</button><p class="avPriv">Al continuar con Google aceptas el <a href="privacidad.html" target="_blank" rel="noopener">Aviso de privacidad</a> y las <a href="terminos.html" target="_blank" rel="noopener">Condiciones del Servicio</a>.</p><p class="suave">o usa tu correo:</p>`;
     $("gBtn").onclick=entrarGoogle});
 }
 // ---- Respaldo: revisa cambios cada 8 s (por si la conexión en tiempo real se corta, común en iPhone) ----
@@ -1943,7 +1947,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v164";
+const BUILD="valle-go-v165";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
