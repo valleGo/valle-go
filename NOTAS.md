@@ -12,7 +12,8 @@ Valle GO ("¡Va, llegó!"): PWA marketplace de comercios locales de Ameca, Jalis
 ## Modelo de negocio
 - Comisión del 1% por pedido (sin IVA).
 - Membresías: Simple $12/día = $360/mes; Básico $24/día = $720/mes (IVA incluido). Los precios no cambian.
-- Transportistas: membresía Simple $360/mes + 7% del total de viajes completados (sin IVA), cobrado en un corte mensual. El descuento directo por Mercado Pago **aún no está construido**.
+- Transportistas: membresía Simple $360/mes + comisión de viajes completados (sin IVA), cobrada en un corte mensual. **Acordado el 11 nov: 5%** (así dicen los PDF comerciales); la app todavía calcula **7%** (`COM_TR` en `index.html`, textos del corte y trigger `viaje_comision` en la base) hasta que el dueño confirme el cambio. El descuento directo por Mercado Pago **aún no está construido**.
+- PDF comerciales (11 nov, no están en el repo porque el sitio es público): "COMERCIOS-propuesta-planes" (3 págs.: planes, secciones/directorios y transportistas 5%, cobros con énfasis en que 1% + Mercado Pago es barato vs. apps de reparto de 15–30%) y "ADMIN-cotizacion-y-proyeccion" (5 págs.: mantenimiento $65 USD ≈ $1,219/mes, resumen de planes y directorios, comisiones, proyección y riesgos). Se generan con HTML + Chrome (Inter, mismo diseño que los originales).
 - Pendiente con el contador: tratamiento de IVA del 7% y del 1%.
 
 ## Archivos
