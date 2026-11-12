@@ -331,6 +331,7 @@ header #bPanel *{pointer-events:none}header #bPanel:hover{transform:translateY(-
 /* Botón flotante discreto para subir (abajo a la izquierda) */
 #bTop{position:fixed;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:3;width:40px;height:40px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--verde);background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--borde);box-shadow:0 4px 14px rgba(43,45,34,.14);opacity:0;visibility:hidden;transform:translateY(10px) scale(.9);transition:opacity .25s,transform .25s,visibility .25s,background .2s;-webkit-tap-highlight-color:transparent}
 #bTop.ver{opacity:.9;visibility:visible;transform:none}
+#bTop.dir{z-index:5}
 #bTop:active{transform:scale(.92)}
 @media(hover:hover) and (pointer:fine){#bTop:hover{opacity:1;background:#fff;transform:translateY(-2px)}}
 @media(min-width:800px){#bTop{left:24px;bottom:28px;width:44px;height:44px}}
@@ -1464,8 +1465,8 @@ function toggleDirectorio(){
   d.addEventListener("click",async e=>{const a=e.target.closest('a[href^="#/"]');if(!a)return;e.preventDefault();const h=a.getAttribute("href");await cierraTodasCapas();location.hash=h});
 }
 document.addEventListener("click",e=>{const g=e.target.closest("#bAg,#bCq");if(g){e.preventDefault();g.id==="bAg"?toggleAgenda():toggleConsulta();return}
-  for(const pid of["agPanel","cqPanel"])if($(pid)&&!e.target.closest("#"+pid+",#bDir")&&e.target.isConnected&&!e.target.closest(".x"))cierraCapa();
-  const b=e.target.closest("#bDir");if(b){e.preventDefault();toggleDirectorio();return}if($("dirPanel")&&!e.target.closest("#dirPanel")&&e.target.isConnected)cierraCapa()});
+  for(const pid of["agPanel","cqPanel"])if($(pid)&&!e.target.closest("#"+pid+",#bDir,#bTop")&&e.target.isConnected&&!e.target.closest(".x"))cierraCapa();
+  const b=e.target.closest("#bDir");if(b){e.preventDefault();toggleDirectorio();return}if($("dirPanel")&&!e.target.closest("#dirPanel,#bTop")&&e.target.isConnected)cierraCapa()});
 function vistaTienda(id){
   const t=tienda(id); if(!t)return vistaInicio();
   if(t.plan==="simple"){
@@ -1750,10 +1751,13 @@ $("bPedidos").onclick=async()=>{await cierraTodasCapas();location.hash="#/pedido
 $("bPanel").onclick=()=>{const h=location.hash;location.hash=(h.startsWith("#/admin")||h.startsWith("#/panel"))?"#/":(esAdmin?"#/admin":"#/panel")};   // clic: abre el panel; otro clic: regresa al inicio
 window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
 // Botón flotante para subir: aparece al bajar y su única función es regresar hasta arriba
+// Con el Directorio abierto, sube al principio del Directorio (su propia caja con scroll)
 (()=>{const b=$("bTop");if(!b)return;let t=0;
-  const ver=()=>{t=0;b.classList.toggle("ver",scrollY>360)};
-  addEventListener("scroll",()=>{if(!t)t=requestAnimationFrame(ver)},{passive:true});ver();
-  b.addEventListener("click",()=>scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"}));
+  const ver=()=>{t=0;const d=$("dirPanel");b.classList.toggle("dir",!!d);b.classList.toggle("ver",d?d.scrollTop>240:scrollY>360)};
+  const pide=()=>{if(!t)t=requestAnimationFrame(ver)};
+  addEventListener("scroll",pide,{passive:true,capture:true});ver();
+  new MutationObserver(pide).observe(document.body,{childList:true});
+  b.addEventListener("click",()=>{const o={top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"},d=$("dirPanel");(d||window).scrollTo(o)});
 })();
 
 
@@ -1812,7 +1816,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v150";
+const BUILD="valle-go-v151";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{

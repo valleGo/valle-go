@@ -34,14 +34,14 @@ Cada cambio visible sube la versión en **dos lugares que deben coincidir**:
 1. `BUILD` en `index.html` (ej. `valle-go-v145`)
 2. `CACHE` en `sw.js`
 
-Versión actual al escribir esto: **v150**.
+Versión actual al escribir esto: **v151**.
 
 ## Arquitectura de la app
 - Rutas por hash en `ruta()`: `#/t/<id>` tienda, `#/cuenta`, `#/panel`, `#/admin`, `#/pedidos`, `#/mis-servicios`, `#/panel-servicios`, y la home por defecto.
 - Backend: Supabase (Auth, RLS, RPC, Realtime, Storage). Funciones serverless en Vercel (`api/*.js`).
 - Roles: `esAdmin`, `misCom` (comercios del usuario), `misSrv` (servicios/transporte). `pintaHeader()` muestra u oculta los botones según el rol y pone las clases `sinPed` / `sinCarro` en `body`.
 - Avisos: triggers de la base llaman a la función `avisar_pedido()` (SECURITY DEFINER) → `/api/notificar` → push web (VAPID).
-- Conteo de vecinos: RPC pública `contar_vecinos()` (SECURITY DEFINER, solo devuelve un número) = usuarios de `auth.users` + comercios activos + `servicios_perfiles` activos. Se carga en `cargarDatos()` en la variable `VECINOS`; si falla, la etiqueta muestra solo "Ameca, Jal.".
+- Conteo de vecinos: RPC pública `contar_vecinos()` (SECURITY DEFINER, solo devuelve un número) = usuarios de `auth.users` + comercios activos + `servicios_perfiles` activos (se cuentan por separado a propósito, decisión del dueño). Se carga en `cargarDatos()` en la variable `VECINOS`; si falla, la etiqueta muestra solo "Ameca, Jal.".
 - Tablas relevantes: pedidos, citas, consultas_stock, `viajes` (tipos cotización/agenda; la comisión del 7% la calcula un trigger al pasar a Completada) y `cobros_transporte` (corte mensual).
 
 ## Barra superior (header)
@@ -56,6 +56,7 @@ Versión actual al escribir esto: **v150**.
 - Título `.htit` en `vistaInicio()`: ícono SVG de valle, "Lugares del **Valle** Hoy" (Valle en verde con resaltado amarillo) y etiqueta `.hts` "● N VECINOS • AMECA, JAL.".
 - Logo y eslogan de la barra superior: en el inicio suben la página hasta arriba (suave); en otras rutas llevan al inicio.
 - Botón flotante `#bTop` abajo a la izquierda (con márgenes y zona segura): aparece al bajar más de 360 px; su única función es subir. `z-index:3`, queda debajo de los avisos inferiores (`#inst`, `#bnotif`).
+  - Con el Directorio abierto (`#dirPanel`, caja con su propio scroll) el botón toma la clase `.dir` (`z-index:5`), aparece al bajar más de 240 px dentro del directorio y sube al principio del directorio sin cerrarlo. Los clics en `#bTop` están excluidos del "clic fuera cierra la capa".
 
 ## Cómo probar
 - Playwright local bloqueando hosts externos. Esperar ~4.5 s tras cargar; luego `sesion={id:'u',nombre:'Ana',email:'a@x.com'}` (opcional `esAdmin=true`) y llamar `pintaHeader()`.
@@ -76,11 +77,10 @@ Los captura el dueño directamente en Vercel o Supabase: Client Secret y Access 
 - El repo sigue público hasta que el dueño pida privatizarlo.
 
 ## Historial reciente
-- v146: título de inicio rediseñado. v147–v148: etiqueta "vecinos" con conteo general. v149: logo y eslogan suben la página. v150: botón flotante para subir.
+- v146: título de inicio rediseñado. v147–v148: etiqueta "vecinos" con conteo general. v149: logo y eslogan suben la página. v150: botón flotante para subir. v151: el botón también funciona dentro del Directorio.
 
 ## Pendientes
 - Compra real de prueba con Mercado Pago (la hace el dueño).
 - Pasar Supabase a Pro antes de cobrar a clientes reales.
 - Consultar al contador sobre el IVA.
-- Decidir si el conteo de vecinos debe evitar contar doble al comerciante (como usuario y como comercio).
 - Opcionales: descuento directo del 7% por Mercado Pago a transportistas; integrar el corte de transporte en Monitoreo/Cobros/Membresías/PDF/IVA; ocultar el teléfono del cliente al transportista; lista fija de colonias de Ameca.
