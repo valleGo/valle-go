@@ -328,6 +328,13 @@ header #bPanel *{pointer-events:none}header #bPanel:hover{transform:translateY(-
 @keyframes htDot{0%{box-shadow:0 0 0 0 rgba(63,163,77,.5)}70%{box-shadow:0 0 0 7px rgba(63,163,77,0)}100%{box-shadow:0 0 0 0 rgba(63,163,77,0)}}
 @media(min-width:700px){.htit h2{font-size:2rem}.htit .hti{width:66px;height:46px}}
 @media(prefers-reduced-motion:reduce){.htit,.htit .hts i{animation:none}}
+/* Botón flotante discreto para subir (abajo a la izquierda) */
+#bTop{position:fixed;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:3;width:40px;height:40px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--verde);background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--borde);box-shadow:0 4px 14px rgba(43,45,34,.14);opacity:0;visibility:hidden;transform:translateY(10px) scale(.9);transition:opacity .25s,transform .25s,visibility .25s,background .2s;-webkit-tap-highlight-color:transparent}
+#bTop.ver{opacity:.9;visibility:visible;transform:none}
+#bTop:active{transform:scale(.92)}
+@media(hover:hover) and (pointer:fine){#bTop:hover{opacity:1;background:#fff;transform:translateY(-2px)}}
+@media(min-width:800px){#bTop{left:24px;bottom:28px;width:44px;height:44px}}
+@media(prefers-reduced-motion:reduce){#bTop{transition:none}}
 </style>
 </head>
 <body>
@@ -347,7 +354,7 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
 <main id="vista" style="padding-top:48px"></main>
 <footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><a href="privacidad.html">Política de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
 <div class="panel" id="pCarrito"><div class="caja" id="cCarrito"></div></div>
-<div id="toast"></div><div id="inst"><span id="instT"></span><button id="instB">Instalar</button><button id="instX" aria-label="Cerrar">×</button></div>
+<button id="bTop" type="button" aria-label="Subir al inicio de la página" title="Subir"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><div id="toast"></div><div id="inst"><span id="instT"></span><button id="instB">Instalar</button><button id="instX" aria-label="Cerrar">×</button></div>
 
 <script>
 // ============ CONFIGURACIÓN (edita aquí tus comerciantes) ============
@@ -1742,6 +1749,12 @@ $("bCuenta").onclick=()=>location.hash="#/cuenta";
 $("bPedidos").onclick=async()=>{await cierraTodasCapas();location.hash="#/pedidos"};
 $("bPanel").onclick=()=>{const h=location.hash;location.hash=(h.startsWith("#/admin")||h.startsWith("#/panel"))?"#/":(esAdmin?"#/admin":"#/panel")};   // clic: abre el panel; otro clic: regresa al inicio
 window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
+// Botón flotante para subir: aparece al bajar y su única función es regresar hasta arriba
+(()=>{const b=$("bTop");if(!b)return;let t=0;
+  const ver=()=>{t=0;b.classList.toggle("ver",scrollY>360)};
+  addEventListener("scroll",()=>{if(!t)t=requestAnimationFrame(ver)},{passive:true});ver();
+  b.addEventListener("click",()=>scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"}));
+})();
 
 
 // ---- Botón flotante de contacto (WhatsApp, Facebook, Instagram) ----
@@ -1799,7 +1812,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v149";
+const BUILD="valle-go-v150";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
