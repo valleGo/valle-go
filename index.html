@@ -276,7 +276,21 @@ header .logo.pop img{animation:popL .6s ease-out}header .marca a.pop img{animati
 @keyframes popM{0%{transform:scale(1)}30%{transform:scale(1.3)}50%{transform:scale(.94)}70%{transform:scale(1.07)}100%{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){header .logo.pop img,header .marca a.pop img{animation:none}header .logo img,header .marca img{transition:none}}
 #bnueva{position:fixed;left:12px;right:12px;bottom:14px;max-width:520px;margin:auto;z-index:99998;background:#da9c48;color:#fff;border-radius:999px;padding:10px 12px 10px 18px;display:flex;align-items:center;gap:8px;font-weight:700;font-size:.88rem;box-shadow:0 6px 18px rgba(0,0,0,.3)}#bnueva span{flex:1}#bnueva button{border:0;border-radius:999px;padding:8px 14px;font-weight:800;cursor:pointer;background:#fff;color:#8a5a12}#bnueva #bnuevaX{background:transparent;color:#fff;font-size:1.2rem;padding:4px 8px}
-#toast{display:none;position:fixed;top:68px;left:14px;right:14px;max-width:560px;margin:auto;background:var(--verde);color:var(--on-verde);border-radius:var(--radio);padding:14px;font-weight:700;z-index:20;text-align:center;box-shadow:var(--sombra)}
+#toast{display:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:14px;right:14px;max-width:460px;margin:auto;background:#2B2D22;color:#fff;border-radius:18px;padding:13px 16px 13px 46px;font-weight:600;font-size:.92rem;line-height:1.4;z-index:10001;text-align:left;box-shadow:0 12px 32px rgba(0,0,0,.28);animation:vtBaja .3s cubic-bezier(.2,.9,.3,1.2)}
+#toast::before{content:"🔔";position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:1.15rem}
+@keyframes vtBaja{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+#vtFondo{position:fixed;inset:0;z-index:10000;background:rgba(24,26,18,.48);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:18px;animation:vtFade .2s ease}
+#vtFondo .vt{background:#FFFDF7;color:#2B2D22;width:100%;max-width:400px;border-radius:24px;padding:24px 22px 18px;box-shadow:0 24px 60px rgba(0,0,0,.3);text-align:center;animation:vtSube .28s cubic-bezier(.2,.9,.3,1.15);max-height:calc(100vh - 36px);overflow:auto}
+#vtFondo .vtIco{width:58px;height:58px;margin:0 auto 10px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.7rem;background:#EEF2E6;color:#5D774A}
+#vtFondo .vt.ok .vtIco{background:#E3F1DA;color:#3F7A2E}#vtFondo .vt.error .vtIco{background:#FBE4E1;color:#B23A2E}#vtFondo .vt.peligro .vtIco{background:#FFF1D6;color:#B7791F}
+#vtFondo h3{margin:0 0 6px;font-size:1.12rem}#vtFondo .vtTxt{font-size:.95rem;line-height:1.5;color:#4A4A3C}#vtFondo .vtTxt p{margin:.35em 0}
+#vtFondo input{width:100%;margin-top:12px;padding:12px 14px;border-radius:14px;border:1.5px solid #D9D3C0;font-size:1rem;background:#fff;color:#2B2D22}#vtFondo input:focus{outline:3px solid #A8C08C;border-color:#5D774A}
+#vtFondo .vtBots{display:flex;gap:10px;margin-top:18px}#vtFondo .vtBots button{flex:1;min-height:48px;border-radius:999px;font-weight:700;font-size:.98rem;border:0;cursor:pointer}
+#vtFondo .vtSi{background:#5D774A;color:#fff}#vtFondo .vt.peligro .vtSi{background:#B23A2E}#vtFondo .vtNo{background:#EFEBDD;color:#2B2D22}
+#vtFondo button:focus-visible{outline:3px solid #F2C230;outline-offset:2px}
+@media(max-width:600px){#vtFondo{align-items:flex-end;padding:0}#vtFondo .vt{max-width:none;border-radius:26px 26px 0 0;padding:22px 20px calc(18px + env(safe-area-inset-bottom,0px));animation-name:vtSubeCel}}
+@keyframes vtFade{from{opacity:0}to{opacity:1}}@keyframes vtSube{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}@keyframes vtSubeCel{from{transform:translateY(100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){#vtFondo,#vtFondo .vt,#toast{animation:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .dias{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:6px}.dia{display:inline-flex;align-items:center;gap:4px;font-weight:500}
 .avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;background:var(--arena);display:block}
@@ -1099,14 +1113,14 @@ document.addEventListener("click",async e=>{
         const txt="Informe Valle GO · "+R.nombre+" · "+nomMes(D.mes)+"\n"+(R.plan==="simple"?"Citas atendidas: "+R.nc+" · Total cobrado: "+mxn(R.tot):"Pedidos: "+R.n+" · Citas atendidas: "+R.nc+" · Ventas: "+mxn(R.tot))+"\n3% Valle GO: "+mxn(R.com)+" · "+memL+"\nTotal del mes: "+mxn(R.cobrar)+" · Saldo: "+mxn(R.saldo);
         await compartirInforme(b,n,txt,c.whatsapp)}}catch(err){alert(err.message)}return}
   if(d.aadd!==undefined){const c=($("aCorreo").value||"").trim();if(!c){$("aMsg").textContent=" Escribe un correo.";return}
-    if(!confirm("¿Dar permisos de administrador a "+c+"?"))return;
+    if(!await confirma("¿Dar permisos de administrador a "+c+"?"))return;
     const r=await db.rpc("admin_agregar_admin",{correo:c});if(r.error){$("aMsg").textContent=" "+r.error.message;return}return admTab()}
-  if(d.arm){if(!confirm("¿Quitar permisos de administrador a "+(d.ae||"este usuario")+"?"))return;
+  if(d.arm){if(!await confirma("¿Quitar permisos de administrador a "+(d.ae||"este usuario")+"?"))return;
     const r=await db.rpc("admin_quitar_admin",{uid:d.arm});if(r.error){alert(r.error.message);return}return admTab()}
   if(d.uh){adm.uh=(adm.ul||[]).find(u=>u.id===d.uh)||null;if(adm.uh)abreCapa(()=>{adm.uh=null;admTab()});return admTab()}
   if(d.uback!==undefined){if(adm.uh&&capas.length)return cierraCapa();adm.uh=null;return admTab()}
   if(d.udel){const u=(adm.ul||[]).find(x=>x.id===d.udel)||adm.uh; const n=u?u.nombre+" ("+u.email+")":"este usuario";
-    if(!confirm("¿Eliminar a "+n+"?\n\nSe borra su cuenta y no podrá volver a entrar con ella. Sus pedidos se conservan para los comercios, pero sin su nombre, teléfono ni dirección.\nNo se puede deshacer."))return;
+    if(!await confirma("¿Eliminar a "+n+"?\n\nSe borra su cuenta y no podrá volver a entrar con ella. Sus pedidos se conservan para los comercios, pero sin su nombre, teléfono ni dirección.\nNo se puede deshacer."))return;
     e.target.disabled=true;const r=await db.rpc("admin_eliminar_usuario",{uid:d.udel});
     if(r.error){alert("No se pudo eliminar: "+r.error.message);e.target.disabled=false;return}
     if(adm.uh&&capas.length){cierraCapa();return}adm.uh=null;return admTab()}
@@ -1114,35 +1128,35 @@ document.addEventListener("click",async e=>{
     if(!con||!(mon>=0)||isNaN(mon)){alert("Escribe el concepto y el monto del gasto.");return}
     const r=await db.from("gastos").insert({mes:adm.mesM||mkey(new Date()),concepto:con,monto:mon,con_iva:$("gIva").checked});
     if(r.error){alert("No se pudo guardar: "+r.error.message);return}adm.monForzar=true;return admTab()}
-  if(d.gdel){if(!confirm("¿Quitar este gasto?"))return;const r=await db.from("gastos").delete().eq("id",d.gdel);if(r.error){alert(r.error.message);return}adm.monForzar=true;return admTab()}
-  if(d.cpg){const[cid,sal]=d.cpg.split("|");const m=prompt("Monto recibido (MXN):",Number(sal).toFixed(2));if(m===null)return;const monto=Math.round(parseFloat(String(m).replace(/[$,\s]/g,""))*100)/100;
+  if(d.gdel){if(!await confirma("¿Quitar este gasto?"))return;const r=await db.from("gastos").delete().eq("id",d.gdel);if(r.error){alert(r.error.message);return}adm.monForzar=true;return admTab()}
+  if(d.cpg){const[cid,sal]=d.cpg.split("|");const m=await pregunta("Monto recibido (MXN):",Number(sal).toFixed(2));if(m===null)return;const monto=Math.round(parseFloat(String(m).replace(/[$,\s]/g,""))*100)/100;
     if(!(monto>0)){alert("Escribe un monto válido.");return}
-    const met=prompt("Cómo pagó (transferencia, efectivo, depósito…):","Transferencia");if(met===null)return;const nota=prompt("Nota (opcional):","");
+    const met=await pregunta("Cómo pagó (transferencia, efectivo, depósito…):","Transferencia");if(met===null)return;const nota=await pregunta("Nota (opcional):","");
     e.target.disabled=true;const r=await db.from("cobros_pagos").insert({comercio_id:cid,mes:adm.mes,concepto:d.cc==="membresia"?"membresia":"comision",monto,metodo:(met||"").trim()||null,nota:((nota||"").trim())||null});
     if(r.error){alert("No se pudo guardar: "+r.error.message);e.target.disabled=false;return}return admTab()}
-  if(d.tcpg){const[pid,sal]=d.tcpg.split("|");const m=prompt("Monto recibido (MXN):",Number(sal).toFixed(2));if(m===null)return;const monto=numMX(m);if(!(monto>0)){alert("Escribe un monto válido.");return}
-    const met=prompt("Cómo pagó (transferencia, efectivo, depósito…):","Efectivo");if(met===null)return;
+  if(d.tcpg){const[pid,sal]=d.tcpg.split("|");const m=await pregunta("Monto recibido (MXN):",Number(sal).toFixed(2));if(m===null)return;const monto=numMX(m);if(!(monto>0)){alert("Escribe un monto válido.");return}
+    const met=await pregunta("Cómo pagó (transferencia, efectivo, depósito…):","Efectivo");if(met===null)return;
     e.target.disabled=true;const r=await db.from("cobros_transporte").insert({perfil_id:pid,mes:adm.mes,monto,metodo:(met||"").trim()||null});
     if(r.error){alert("No se pudo guardar: "+r.error.message);e.target.disabled=false;return}return admTab()}
-  if(d.tcdel&&confirm("¿Quitar este pago registrado?")){const r=await db.from("cobros_transporte").delete().eq("id",d.tcdel);if(r.error){alert(r.error.message);return}return admTab()}
-  if(d.cpdel&&confirm("¿Quitar este pago registrado?")){const r=await db.from("cobros_pagos").delete().eq("id",d.cpdel);if(r.error){alert(r.error.message);return}return admTab()}
+  if(d.tcdel&&await confirma("¿Quitar este pago registrado?")){const r=await db.from("cobros_transporte").delete().eq("id",d.tcdel);if(r.error){alert(r.error.message);return}return admTab()}
+  if(d.cpdel&&await confirma("¿Quitar este pago registrado?")){const r=await db.from("cobros_pagos").delete().eq("id",d.cpdel);if(r.error){alert(r.error.message);return}return admTab()}
   if(d.aon){const[i,a]=d.aon.split("|");await db.from("anuncios").update({activo:a!=="true"}).eq("id",i);cargarDatos();return admTab()}
-  if(d.adel&&confirm("¿Borrar este anuncio?")){await db.from("anuncios").delete().eq("id",d.adel);cargarDatos();return admTab()}
-  if(d.pdel){if(!confirm("¿Eliminar este pedido definitivamente?\nNo se puede deshacer."))return;
+  if(d.adel&&await confirma("¿Borrar este anuncio?")){await db.from("anuncios").delete().eq("id",d.adel);cargarDatos();return admTab()}
+  if(d.pdel){if(!await confirma("¿Eliminar este pedido definitivamente?\nNo se puede deshacer."))return;
     e.target.disabled=true;const r=await db.from("pedidos").delete().eq("id",d.pdel).select("id");
     if(r.error||!(r.data&&r.data.length)){alert(r.error?r.error.message:"No se pudo eliminar el pedido.");e.target.disabled=false;return}
     return admTab()}
   if(d.svnew!==undefined){await promoUsados();return formAdm("servicios_perfiles",cfSrv("servicios"),{activo:true,tipo:"transporte"})}
   if(d.sved){await promoUsados();const r=await db.from("servicios_perfiles").select("*").eq("id",d.sved).single();return formAdm("servicios_perfiles",cfSrv("servicios"),r.data)}
-  if(d.svdel){if(!confirm("¿Eliminar este prestador y todas sus citas y consultas?\nNo se puede deshacer."))return;const r=await db.from("servicios_perfiles").delete().eq("id",d.svdel);if(r.error)return alert(r.error.message);return admTab()}
+  if(d.svdel){if(!await confirma("¿Eliminar este prestador y todas sus citas y consultas?\nNo se puede deshacer."))return;const r=await db.from("servicios_perfiles").delete().eq("id",d.svdel);if(r.error)return alert(r.error.message);return admTab()}
   if(d.cnew!==undefined){await promoUsados();return formAdm("comercios",CF_COM,{activo:true,plan:"basico",envio:30,minimo:0,ofrece_domicilio:true,dias_abiertos:DIAS.join(",")})}
   if(d.ced){await promoUsados();const r=await db.from("comercios").select("*").eq("id",d.ced).single();return formAdm("comercios",CF_COM,r.data)}
   if(d.canew!==undefined)return formAdm("categorias",CF_CAT,{orden:CATEGORIAS.length+1,grupo:"productos"});
   if(d.caed){const r=await db.from("categorias").select("*").eq("id",d.caed).single();return formAdm("categorias",CF_CAT,r.data)}
-  if(d.cadel&&confirm("¿Borrar esta categoría?\nLos comercios que la tengan quedarán sin categoría.")){const r=await db.from("categorias").delete().eq("id",d.cadel);if(r.error){alert(r.error.message);return}cargarDatos();return admTab()}
+  if(d.cadel&&await confirma("¿Borrar esta categoría?\nLos comercios que la tengan quedarán sin categoría.")){const r=await db.from("categorias").delete().eq("id",d.cadel);if(r.error){alert(r.error.message);return}cargarDatos();return admTab()}
   if(d.mnew!==undefined)return formAdm("menu_items",CF_MENU,{disponible:true,comercio_id:adm.com});
   if(d.med){const r=await db.from("menu_items").select("*").eq("id",d.med).single();return formAdm("menu_items",CF_MENU,r.data)}
-  if(d.mdel&&confirm("¿Borrar este producto?")){await db.from("menu_items").delete().eq("id",d.mdel);cargarDatos();return admTab()}
+  if(d.mdel&&await confirma("¿Borrar este producto?")){await db.from("menu_items").delete().eq("id",d.mdel);cargarDatos();return admTab()}
 });
 document.addEventListener("change",async e=>{const g=e.target.dataset.pag;
   if(g&&(esAdmin||misCom.length)){const r=await db.from("pedidos").update({estado_pago:e.target.value}).eq("id",g).select("id");if(r.error||!(r.data&&r.data.length)){alert(r.error?r.error.message:"No se pudo guardar el cambio.");ruta()}}});
@@ -1164,6 +1178,31 @@ const notifBtnHTML=()=>notifOK()
     ?`<p class="aviso">🔔 Avisos de pedidos activados en este dispositivo. <span class="nbtns"><button class="btn sec mini" id="bProbar">Probar aviso</button><button class="btn sec mini" id="bNotif">Reactivar</button></span></p>`
     :`<p class="aviso">Recibe avisos en tu celular de pedidos, citas y consultas. <button class="btn" id="bNotif">Activar notificaciones</button></p>`)
   :iosViejo()?`<p class="aviso">${MSG_IOS_VIEJO(iosViejo())}</p>`:`<p class="aviso">Para recibir avisos en iPhone: 1) abre esta página en Safari, 2) toca Compartir ⬆️ → «Agregar a pantalla de inicio», 3) abre Valle GO desde ese ícono nuevo (no desde Safari) y 4) toca «Activar notificaciones». Requiere iOS 16.4 o más nuevo.</p>`;
+// ---- Ventanas propias de Valle GO (en lugar de las del navegador "valle-go.vercel.app dice…") ----
+let vtCola=Promise.resolve();
+function ventana(o){const r=vtCola.then(()=>new Promise(fin=>{
+  const t=String(o.texto==null?"":o.texto),tipo=o.tipo||(/^(listo|✅|¡listo)/i.test(t)?"ok":/no se pudo|error|no se puede|inválid|incorrect|falt|escribe un|revisa/i.test(t)?"error":"info");
+  const peligro=o.preg==="si"&&/eliminar|borrar|quitar|cancelar|desconectar|vaciar|deshacer/i.test(t);
+  const ico={ok:"✓",error:"!",info:"🔔"}[tipo],tit=o.titulo||(o.preg==="si"?(peligro?"¿Estás seguro?":"Confirma"):o.preg==="txt"?"Valle GO":{ok:"¡Listo!",error:"Algo salió mal",info:"Aviso"}[tipo]);
+  const t2=tipo==="ok"&&!o.preg?t.replace(/^(¡?listo!?[:.,]?|✅)\s*/i,"").replace(/^./,c=>c.toUpperCase()):t;   // el título ya dice "¡Listo!"
+  const txt=t2.split(/\n+/).filter(x=>x.trim()).map(x=>`<p>${esc(x)}</p>`).join("");
+  const d=document.createElement("div");d.id="vtFondo";
+  d.innerHTML=`<div class="vt ${peligro?"peligro":o.preg?"":tipo}" role="${o.preg?"dialog":"alertdialog"}" aria-modal="true" aria-labelledby="vtT" aria-describedby="vtD"><div class="vtIco" aria-hidden="true">${peligro?"⚠️":o.preg==="txt"?"✏️":o.preg==="si"?"❔":ico}</div><h3 id="vtT">${esc(tit)}</h3><div class="vtTxt" id="vtD">${txt}</div>${o.preg==="txt"?`<input id="vtIn" type="text" ${/pesos|monto|mxn/i.test(t)?'inputmode="decimal"':""} aria-labelledby="vtD" autocomplete="off">`:""}
+   <div class="vtBots">${o.preg?`<button type="button" class="vtNo">Cancelar</button>`:""}<button type="button" class="vtSi">${o.preg==="si"?(peligro?"Sí, continuar":"Aceptar"):o.preg==="txt"?"Aceptar":"Entendido"}</button></div></div>`;
+  const antes=document.activeElement;document.body.appendChild(d);
+  const inp=d.querySelector("#vtIn");if(inp)inp.value=o.valor==null?"":String(o.valor);
+  const cerrar=v=>{d.remove();document.removeEventListener("keydown",tecla,true);try{antes&&antes.focus&&antes.focus()}catch(e){}fin(v)};
+  const si=()=>cerrar(o.preg==="txt"?inp.value:o.preg==="si"?true:undefined),no=()=>cerrar(o.preg==="txt"?null:o.preg==="si"?false:undefined);
+  d.querySelector(".vtSi").onclick=si;const bn=d.querySelector(".vtNo");if(bn)bn.onclick=no;
+  d.onclick=e=>{if(e.target===d)(o.preg?no:si)()};
+  const tecla=e=>{if(e.key==="Escape"){e.preventDefault();(o.preg?no:si)()}else if(e.key==="Enter"&&(!o.preg||o.preg==="txt"||document.activeElement===d.querySelector(".vtSi"))){e.preventDefault();si()}
+    else if(e.key==="Tab"){const f=[...d.querySelectorAll("input,button")],i=f.indexOf(document.activeElement);e.preventDefault();f[(i+(e.shiftKey?-1:1)+f.length)%f.length].focus()}};
+  document.addEventListener("keydown",tecla,true);
+  setTimeout(()=>{if(inp){inp.focus();inp.select()}else d.querySelector(o.preg==="si"&&peligro?".vtNo":".vtSi").focus()},50);
+}));vtCola=r.catch(()=>{});return r}
+window.alert=m=>{ventana({texto:m});};
+const confirma=m=>ventana({texto:m,preg:"si"});
+const pregunta=(m,v)=>ventana({texto:m,preg:"txt",valor:v});
 function aviso(t){const x=$("toast");x.textContent=t;x.style.display="block";setTimeout(()=>x.style.display="none",6000)}
 function sonido(){   // timbre largo (unos 4 s) + vibración, para que no pase desapercibido
   try{navigator.vibrate&&navigator.vibrate([400,150,400,150,400,150,800])}catch(e){}
@@ -1274,7 +1313,7 @@ async function pagarPedido(id){
 document.addEventListener("click",e=>{const g=e.target.dataset.pagar;if(g)pagarPedido(g)});
 document.addEventListener("click",async e=>{const d=e.target.dataset;
   if(d.mpc){try{const j=await llamaMp({comercio_id:d.mpc});location.href=j.url}catch(err){alert(err.message)}return}
-  if(d.mpd){if(confirm("¿Desconectar tu cuenta de Mercado Pago?\nLos pagos en línea de este comercio volverán a recibirse en la cuenta de Valle GO."))try{await llamaMp({comercio_id:d.mpd,desconectar:true});vistaPanel()}catch(err){alert(err.message)}return}
+  if(d.mpd){if(await confirma("¿Desconectar tu cuenta de Mercado Pago?\nLos pagos en línea de este comercio volverán a recibirse en la cuenta de Valle GO."))try{await llamaMp({comercio_id:d.mpd,desconectar:true});vistaPanel()}catch(err){alert(err.message)}return}
 });
 
 
@@ -1495,7 +1534,7 @@ async function vistaCompra(id){
   if(q.estado!=="Hay"||!(Number(q.oferta_precio)>0))return fin("Este enlace de compra ya no está disponible. Escríbele al comercio.");
   if(!t)return fin("Este comercio no está disponible por ahora.");
   const k="cq:"+q.id;
-  if(carrito.tienda&&carrito.tienda!==t.id&&Object.keys(carrito.items).length&&!confirm("Tu carrito tiene productos de otro comercio. ¿Vaciarlo y comprar esto?")){location.hash="#/mis-servicios";return}
+  if(carrito.tienda&&carrito.tienda!==t.id&&Object.keys(carrito.items).length&&!await confirma("Tu carrito tiene productos de otro comercio. ¿Vaciarlo y comprar esto?")){location.hash="#/mis-servicios";return}
   if(carrito.tienda!==t.id)carrito={tienda:t.id,items:{},ofertas:{}};
   carrito.ofertas=carrito.ofertas||{};carrito.ofertas[k]={id:k,nombre:q.oferta_nombre,precio:Number(q.oferta_precio),max:q.oferta_max||1};
   carrito.items[k]=carrito.items[k]||1;gcar();
@@ -1587,11 +1626,11 @@ document.addEventListener("click",async e=>{
   if(d.svref!==undefined)return vistaMisServicios();
   const cita=async(id,o,msg)=>{b.disabled=true;const r=await db.from("citas").update(o).eq("id",id);if(r.error){alert(msg||("No se pudo actualizar: "+r.error.message));b.disabled=false;return false}return true};
   if(d.svok){if(await cita(d.svok,{estado:"Confirmada"}))vistaMisServicios();return}
-  if(d.svcan){if(!confirm("¿Cancelar esta cita?"))return;if(await cita(d.svcan,{estado:"Cancelada"}))vistaMisServicios();return}
+  if(d.svcan){if(!await confirma("¿Cancelar esta cita?"))return;if(await cita(d.svcan,{estado:"Cancelada"}))vistaMisServicios();return}
   if(d.cok){if(await cita(d.cok,{estado:"Confirmada",respuesta:null}))vistaPanelSrv();return}
-  if(d.cfin){const c=(window._ci||{})[d.cfin]||{},pre=(window._itP||{})[c.servicio_id];const t=prompt("Total cobrado por la cita (pesos).\nSe usa para calcular el 3% de uso de la app:",pre>0?pre:"");if(t===null)return;const pn=numMX(t);if(!(pn>0))return alert("Escribe un total válido.");
+  if(d.cfin){const c=(window._ci||{})[d.cfin]||{},pre=(window._itP||{})[c.servicio_id];const t=await pregunta("Total cobrado por la cita (pesos).\nSe usa para calcular el 3% de uso de la app:",pre>0?pre:"");if(t===null)return;const pn=numMX(t);if(!(pn>0))return alert("Escribe un total válido.");
     if(await cita(d.cfin,{estado:"Completada",monto:pn}))vistaPanelSrv();return}
-  if(d.ccan){const m=prompt("Motivo para el cliente (opcional):");if(m===null)return;if(await cita(d.ccan,{estado:"Cancelada",respuesta:m.trim()||null}))vistaPanelSrv();return}
+  if(d.ccan){const m=await pregunta("Motivo para el cliente (opcional):");if(m===null)return;if(await cita(d.ccan,{estado:"Cancelada",respuesta:m.trim()||null}))vistaPanelSrv();return}
   if(d.crep){const r=$("rep_"+d.crep);if(r)r.style.display=r.style.display==="none"?"grid":"none";return}
   if(d.crepok){const f=$("repF_"+d.crepok).value,h=$("repH_"+d.crepok).value;if(!f||!h)return alert("Elige la nueva fecha y hora.");
     if(await cita(d.crepok,{estado:"Reprogramada",fecha:f,hora:h,respuesta:$("repM_"+d.crepok).value.trim()||null}))vistaPanelSrv();return}
@@ -1602,27 +1641,27 @@ document.addEventListener("click",async e=>{
     if(!n)return alert("Escribe el nombre del producto.");if(!(pr>0))return alert("Escribe el precio por pieza.");b.disabled=true;
     const r=await db.from("consultas_stock").update({oferta_nombre:n,oferta_precio:pr,oferta_max:Math.min(Math.max(mx,1),99)}).eq("id",id);
     if(r.error){alert("No se pudo crear el enlace: "+r.error.message);b.disabled=false;return}return reCons()}
-  if(d.cqofx){if(!confirm("¿Quitar el enlace de compra? El cliente ya no podrá comprarlo."))return;b.disabled=true;
+  if(d.cqofx){if(!await confirma("¿Quitar el enlace de compra? El cliente ya no podrá comprarlo."))return;b.disabled=true;
     const r=await db.from("consultas_stock").update({oferta_precio:null}).eq("id",d.cqofx);if(r.error){alert(r.error.message);b.disabled=false;return}return reCons()}
   if(d.cqlink){const u=location.origin+location.pathname+"#/compra/"+d.cqlink,txt="Ya puedes comprar lo que me preguntaste en Valle GO: "+u;
     try{if(navigator.share){await navigator.share({title:"Valle GO",text:txt});return}}catch(e){return}
-    try{await navigator.clipboard.writeText(u);alert("Enlace copiado. Pégalo en WhatsApp para tu cliente.\n\nSolo funciona con la cuenta del cliente que hizo la consulta.")}catch(e){prompt("Copia el enlace:",u)}return}
+    try{await navigator.clipboard.writeText(u);alert("Enlace copiado. Pégalo en WhatsApp para tu cliente.\n\nSolo funciona con la cuenta del cliente que hizo la consulta.")}catch(e){await pregunta("Copia el enlace:",u)}return}
   const viaje=async(id,o)=>{b.disabled=true;const r=await db.from("viajes").update(o).eq("id",id);if(r.error){alert("No se pudo actualizar: "+r.error.message);b.disabled=false;return false}return true};
   if(d.vac){if(await viaje(d.vac,{estado:"Confirmada"}))vistaMisServicios();return}
-  if(d.vcl){if(!confirm("¿Cancelar esta solicitud?"))return;if(await viaje(d.vcl,{estado:"Cancelada"}))vistaMisServicios();return}
+  if(d.vcl){if(!await confirma("¿Cancelar esta solicitud?"))return;if(await viaje(d.vcl,{estado:"Cancelada"}))vistaMisServicios();return}
   if(d.vq){const r=$("vq_"+d.vq);if(r)r.style.display=r.style.display==="none"?"grid":"none";return}
   if(d.vqok){const pn=numMX($("vqP_"+d.vqok).value);if(!(pn>0))return alert("Escribe el precio de la cotización en pesos.");
     if(await viaje(d.vqok,{estado:"Cotizada",precio_num:pn,precio:mxn(pn),respuesta:$("vqM_"+d.vqok).value.trim()||null}))vistaPanelSrv();return}
   if(d.vcf){if(await viaje(d.vcf,{estado:"Confirmada",respuesta:null}))vistaPanelSrv();return}
-  if(d.vfn){const v=(window._vj||{})[d.vfn]||{};const t=prompt("Total cobrado por el viaje (pesos).\nSe usa para calcular el 5% de uso de la app:",v.precio_num||"");if(t===null)return;const pn=numMX(t);if(!(pn>0))return alert("Escribe un total válido.");
+  if(d.vfn){const v=(window._vj||{})[d.vfn]||{};const t=await pregunta("Total cobrado por el viaje (pesos).\nSe usa para calcular el 5% de uso de la app:",v.precio_num||"");if(t===null)return;const pn=numMX(t);if(!(pn>0))return alert("Escribe un total válido.");
     if(await viaje(d.vfn,{estado:"Completada",precio_num:pn,precio:mxn(pn)}))vistaPanelSrv();return}
-  if(d.vrc){const m=prompt("Motivo para el cliente (opcional):");if(m===null)return;if(await viaje(d.vrc,{estado:"Cancelada",respuesta:m.trim()||null}))vistaPanelSrv();return}
+  if(d.vrc){const m=await pregunta("Motivo para el cliente (opcional):");if(m===null)return;if(await viaje(d.vrc,{estado:"Cancelada",respuesta:m.trim()||null}))vistaPanelSrv();return}
   if(d.sped){const r=await db.from("servicios_perfiles").select("*").eq("id",d.sped).single();if(!r.data)return;
     return svForm("Editar mi perfil",cfSrv("servicios/"+sesion.id).filter(c=>c.k!=="tipo"),r.data,async o=>{const x=await db.from("servicios_perfiles").update(o).eq("id",d.sped);if(x.error)throw x.error;cargarRol()})}
   if(d.sinew)return svForm("Nuevo servicio",CF_SITEM.map(c=>({...c,l:c.l})),{activo:true,precio:0},async o=>{o.perfil_id=d.sinew;o.duracion_min=o.duracion_min||null;const x=await db.from("servicios_items").insert(o);if(x.error)throw x.error});
   if(d.siedit){const r=await db.from("servicios_items").select("*").eq("id",d.siedit).single();if(!r.data)return;
     return svForm("Editar servicio",CF_SITEM,r.data,async o=>{o.duracion_min=o.duracion_min||null;const x=await db.from("servicios_items").update(o).eq("id",d.siedit);if(x.error)throw x.error})}
-  if(d.sidel){if(!confirm("¿Quitar este servicio?"))return;const x=await db.from("servicios_items").delete().eq("id",d.sidel);if(x.error)return alert(x.error.message);vistaPanelSrv()}
+  if(d.sidel){if(!await confirma("¿Quitar este servicio?"))return;const x=await db.from("servicios_items").delete().eq("id",d.sidel);if(x.error)return alert(x.error.message);vistaPanelSrv()}
 });
 
 // --- Tiempo real: avisos dentro de la app (además de las notificaciones push) ---
@@ -1876,7 +1915,7 @@ async function vistaPedidos(silencio){
 document.addEventListener("click",async e=>{
   const t=e.target.closest("#bActPed");if(t){t.disabled=true;await vistaPedidos();return}
   const b=e.target.closest("[data-recib]");if(!b)return;
-  if(!confirm("¿Confirmas que ya recibiste tu pedido? Se avisará al comercio."))return;
+  if(!await confirma("¿Confirmas que ya recibiste tu pedido? Se avisará al comercio."))return;
   b.disabled=true;
   const r=await db.rpc("cliente_confirmar_recibido",{pid:b.dataset.recib});
   if(r.error){alert(r.error.message);b.disabled=false;return}
@@ -1939,10 +1978,10 @@ function pintaHeader(){setTimeout(()=>{try{medirHeader()}catch(e){}},0);$("bCuen
 
 // ---------- Carrito ----------
 function pideRegistro(){alert("Para ordenar y hacer pedidos necesitas registrarte o iniciar sesión.");location.hash="#/cuenta"}
-function agregar(tid,mid){
+async function agregar(tid,mid){
   if(!sesion)return pideRegistro();
   if(carrito.tienda&&carrito.tienda!==tid){
-    if(!confirm("Tu carrito tiene productos de otro comercio. ¿Vaciarlo y empezar uno nuevo?"))return;
+    if(!await confirma("Tu carrito tiene productos de otro comercio. ¿Vaciarlo y empezar uno nuevo?"))return;
     carrito={tienda:null,items:{}};
   }
   carrito.tienda=tid; carrito.items[mid]=(carrito.items[mid]||0)+1; gcar(); pintaCarrito(); reboteBolsa();
@@ -2127,7 +2166,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v191";
+const BUILD="valle-go-v192";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2262,7 +2301,7 @@ function vistaInstalar(){
    <p class="suave nota">Valle GO nunca te pedirá contraseñas por mensaje ni te cobrará por instalarla. Si tienes dudas, escríbenos al correo que aparece en Contacto, en las <a href="terminos.html#cambios">Condiciones del Servicio</a>.</p>
    <p class="cen"><button class="btn sec" id="insComp">Compartir esta guía</button></p></div>`;
   const b=$("insYa");if(b)b.onclick=instalarAhora;const bp=$("insPc");if(bp)bp.onclick=instalarAhora;const bf=$("insFl");if(bf){bf.onclick=flechaIOS;if(!vistaInstalar.vista){vistaInstalar.vista=1;setTimeout(()=>{if(location.hash==="#/instalar")flechaIOS()},700)}}
-  $("insComp").onclick=()=>{const u=location.origin+location.pathname+"#/instalar";if(navigator.share)navigator.share({title:"Instala Valle GO",url:u}).catch(()=>{});else navigator.clipboard.writeText(u).then(()=>aviso("Enlace copiado")).catch(()=>prompt("Copia el enlace:",u))};
+  $("insComp").onclick=()=>{const u=location.origin+location.pathname+"#/instalar";if(navigator.share)navigator.share({title:"Instala Valle GO",url:u}).catch(()=>{});else navigator.clipboard.writeText(u).then(()=>aviso("Enlace copiado")).catch(()=>pregunta("Copia el enlace:",u))};
 }
 $("instX").onclick=()=>{$s("instX",Date.now());$("inst").style.display="none"};
 if(/[?&]mp=(ok|error)/.test(location.search)){const bien=/mp=ok/.test(location.search);history.replaceState(null,"",location.pathname+location.hash);
