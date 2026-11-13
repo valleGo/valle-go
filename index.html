@@ -223,12 +223,14 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .btnrec{background:#da9c48;color:#fff;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 22px;box-shadow:0 3px 10px rgba(0,0,0,.2)}.btnrec:active{transform:scale(.97)}.btnrec img{width:170px;height:auto;pointer-events:none}.btnrec span{pointer-events:none}
 .pasos{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.78rem;color:var(--suave,#888)}.paso.ok{color:var(--texto);font-weight:600}.paso.act{color:var(--salvia)}.paso.mal{color:var(--coral);font-weight:600}
 .estado{display:inline-block;background:color-mix(in srgb,var(--salvia) 30%,var(--tarjeta));color:var(--texto);border-radius:999px;padding:3px 12px;font-size:.78rem;font-weight:600}
-#inst{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:5;align-items:center;padding:0;border-radius:999px;background:linear-gradient(135deg,#E8582F,#F29A2E);border:2px solid #fff;box-shadow:0 8px 24px rgba(214,84,32,.45),0 0 0 0 rgba(232,88,47,.55);animation:instSube .35s cubic-bezier(.2,.9,.3,1.2),instLate 2.2s ease-out .6s infinite}
-#inst #instB{border:0;background:transparent;color:#fff;font-weight:800;font-size:.98rem;letter-spacing:.01em;padding:11px 22px;border-radius:999px;white-space:nowrap;min-height:46px;text-shadow:0 1px 2px rgba(120,40,10,.35)}
-@keyframes instLate{0%{box-shadow:0 8px 24px rgba(214,84,32,.45),0 0 0 0 rgba(232,88,47,.55)}70%{box-shadow:0 8px 24px rgba(214,84,32,.45),0 0 0 14px rgba(232,88,47,0)}100%{box-shadow:0 8px 24px rgba(214,84,32,.45),0 0 0 0 rgba(232,88,47,0)}}
-html[data-tema=oscuro] #inst{border-color:#2B2D22}
+#inst{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:5;align-items:center;padding:0;border-radius:999px;overflow:hidden;background:linear-gradient(135deg,#3F5A2E 0%,#5D774A 55%,#7E9A5B 100%);border:2.5px solid #F6C335;box-shadow:0 8px 24px rgba(40,55,25,.45),0 0 0 0 rgba(246,195,53,.6);animation:instSube .35s cubic-bezier(.2,.9,.3,1.2),instLate 2.2s ease-out .6s infinite}
+#inst::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);animation:instBrillo 3.2s ease-in-out 1.2s infinite;pointer-events:none}
+@keyframes instBrillo{0%,55%{left:-60%}100%{left:130%}}
+#inst #instB{border:0;background:transparent;color:#fff;font-weight:800;font-size:.98rem;letter-spacing:.01em;padding:11px 22px;border-radius:999px;white-space:nowrap;min-height:46px;text-shadow:0 1px 2px rgba(0,0,0,.35);position:relative;z-index:1}
+@keyframes instLate{0%{box-shadow:0 8px 24px rgba(40,55,25,.45),0 0 0 0 rgba(246,195,53,.6)}70%{box-shadow:0 8px 24px rgba(40,55,25,.45),0 0 0 14px rgba(246,195,53,0)}100%{box-shadow:0 8px 24px rgba(40,55,25,.45),0 0 0 0 rgba(246,195,53,0)}}
+html[data-tema=oscuro] #inst{box-shadow:0 8px 24px rgba(0,0,0,.6),0 0 0 0 rgba(246,195,53,.6)}
 #inst button:focus-visible{outline:3px solid #F2C230;outline-offset:2px}
-@keyframes instSube{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}@media (prefers-reduced-motion:reduce){#inst{animation:none}}
+@keyframes instSube{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}@media (prefers-reduced-motion:reduce){#inst,#inst::after{animation:none}}
 #fInstW{margin:0 0 10px}.finst{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;background:linear-gradient(135deg,#5D774A,#7C9A5E);color:#fff!important;font-weight:700;font-size:.74rem;letter-spacing:.02em;text-decoration:none!important;box-shadow:0 3px 10px rgba(93,119,74,.28);transition:transform .15s,box-shadow .15s}
 .finst:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(93,119,74,.36)}.finst:active{transform:scale(.97)}
 .ins .cen{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;text-align:center;margin:14px 0}
@@ -2286,7 +2288,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v206";
+const BUILD="valle-go-v207";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2360,12 +2362,14 @@ function banner(txt,sub,btn,accion){ if(yaApp||(typeof instaladaAntes==="functio
 if(yaApp){const f=$("fInstW");if(f)f.remove()}
 // Botón "Instalar" bajo el carrito: visible para todos hasta que la app quede instalada en este aparato
 const INST_K="valle_instalada";
-const marcaInstalada=()=>{try{localStorage.setItem(INST_K,"1")}catch(e){}$("inst").style.display="none"};
-const instaladaAntes=()=>{try{return localStorage.getItem(INST_K)==="1"}catch(e){return false}};
+// Se guarda la fecha; vale 7 días y se renueva cada vez que se abre como app. Si el navegador vuelve a ofrecer instalar
+// (o Chrome/Edge dicen que no está instalada), se borra: así, si la desinstalan, el botón regresa.
+const marcaInstalada=()=>{try{localStorage.setItem(INST_K,String(Date.now()))}catch(e){}const i=$("inst");if(i)i.style.display="none"};
+const olvidaInstalada=()=>{try{localStorage.removeItem(INST_K)}catch(e){}};
+const instaladaAntes=()=>{try{const v=Number(localStorage.getItem(INST_K)||0);return v>1&&Date.now()-v<6048e5}catch(e){return false}};
 if(yaApp)marcaInstalada();
-else if(!instaladaAntes()){
-  // Chrome/Edge (Android y PC) pueden decir si la app ya está instalada en este aparato
-  if(navigator.getInstalledRelatedApps)navigator.getInstalledRelatedApps().then(l=>{if(l&&l.length)marcaInstalada()}).catch(()=>{})}   // el botón del pie solo se muestra a quien todavía no la instala
+else{if(window.__bip)olvidaInstalada();
+  if(navigator.getInstalledRelatedApps)navigator.getInstalledRelatedApps().then(l=>{if(l&&l.length)marcaInstalada();else{olvidaInstalada();if(!$("inst").dataset.listo)return;banner("","","",$("instB").dataset.a||"directo")}}).catch(()=>{})}   // el botón del pie solo se muestra a quien todavía no la instala
 function flechaIOS(){
   if(!esIOS||yaApp)return;const v=+((NAV.match(/Version\/(\d+)/)||[])[1]||0),ipad=/ipad|Macintosh/i.test(NAV),crios=/CriOS/i.test(NAV);
   let pos,txt;
@@ -2393,7 +2397,7 @@ async function instalarDirecto(){
 }
 async function instalarAhora(){if(!ev&&window.__bip)ev=window.__bip;if(ev){ev.prompt();const r=await ev.userChoice;ev=null;if(r&&r.outcome==="accepted")marcaInstalada();if(r&&r.outcome==="accepted")aviso(sistemaInst==="pc"?"Listo: Valle GO quedó instalada en tu computadora.":"Listo: Valle GO quedó en tu pantalla de inicio.");if(location.hash==="#/instalar")vistaInstalar();return true}return false}
 const hayPermiso=()=>{banner("","","Instalar","instalar");if(location.hash==="#/instalar")vistaInstalar()};
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;window.__bip=e;hayPermiso()});
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;window.__bip=e;olvidaInstalada();hayPermiso()});   // si el navegador ofrece instalar, no está instalada
 if(ev)setTimeout(hayPermiso,0);
 window.addEventListener("appinstalled",()=>{$("inst").style.display="none";ev=null;marcaInstalada()});
 if(!yaApp)setTimeout(()=>{if(instaladaAntes())return;   // aparece a los 2.5 s a todos los que no la tienen instalada (aunque el navegador aún no dé permiso)
