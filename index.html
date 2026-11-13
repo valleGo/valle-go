@@ -461,6 +461,8 @@ function diasTxt(x){const a=(x||"").split(",").filter(Boolean).map(d=>DIAS.index
   while(i<a.length){let j=i;while(j+1<a.length&&a[j+1]===a[j]+1)j++;g.push(j-i>=2?DIAS[a[i]]+" a "+DIAS[a[j]]:a.slice(i,j+1).map(k=>DIAS[k]).join(", "));i=j+1}
   return g.join(", ")}
 let sesion=$$("sesion",null), carrito=$$("carrito",{tienda:null,items:{}}), cat="Todo";
+// Producto del carrito: del menú, o de un enlace de compra de consulta de stock (id "cq:<consulta>", datos en carrito.ofertas)
+const itemCar=(t,id)=>id.startsWith("cq:")?((carrito.ofertas||{})[id]||null):(t.menu||[]).find(x=>x.id===id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let CATEGORIAS=[],catCom="Todos";
 let ANUNCIOS=[{titulo:"Anuncia tu negocio en Valle GO",imagen_url:"",enlace:""},{titulo:"Pide fácil, recibe rápido",imagen_url:"",enlace:""}];
@@ -1410,6 +1412,27 @@ async function corteTransporte(mes,ids){
   return R}
 const corteResumen=(r,mes)=>`Corte de ${nomMes(mes)} · ${r.nombre}\nViajes completados: ${r.n} · Total: ${mxn(r.tot)}\nComisión 5% (uso y mantenimiento, sin IVA): ${mxn(r.com)}${r.comMP?" (+ "+mxn(r.comMP)+" ya descontada por Mercado Pago)":""}\nMembresía plan Simple (IVA incluido${r.promo?", "+r.promo:""}): ${mxn(r.mem)}\nTotal a pagar: ${mxn(r.cobrar)} · Pagado: ${mxn(r.pag)} · Saldo: ${mxn(r.saldo)}`;
 
+// --- Enlace de compra de una consulta de stock: pone el producto en el carrito y lo abre ---
+async function vistaCompra(id){
+  if(!sesion){pideRegistro();return}
+  if(!db||!/^[0-9a-f-]{36}$/i.test(id||"")){location.hash="#/";return}
+  $("vista").innerHTML=`<p class="suave">Abriendo tu compra…</p>`;
+  for(let i=0;i<40&&!datosListos;i++)await new Promise(r=>setTimeout(r,200));   // al abrir desde el aviso, espera los comercios
+  const r=await db.from("consultas_stock").select("id,perfil_id,cliente_id,estado,oferta_nombre,oferta_precio,oferta_max,oferta_pedido_id").eq("id",id).maybeSingle();
+  const q=r.data,t=q&&tienda(q.perfil_id);
+  const fin=m=>{alert(m);location.hash="#/mis-servicios"};
+  if(r.error||!q||q.cliente_id!==sesion.id)return fin("Este enlace de compra no es para tu cuenta. Inicia sesión con la cuenta con la que hiciste la consulta.");
+  if(q.oferta_pedido_id)return fin("Ya compraste este producto. Lo ves en Mis pedidos.");
+  if(q.estado!=="Hay"||!(Number(q.oferta_precio)>0))return fin("Este enlace de compra ya no está disponible. Escríbele al comercio.");
+  if(!t)return fin("Este comercio no está disponible por ahora.");
+  const k="cq:"+q.id;
+  if(carrito.tienda&&carrito.tienda!==t.id&&Object.keys(carrito.items).length&&!confirm("Tu carrito tiene productos de otro comercio. ¿Vaciarlo y comprar esto?")){location.hash="#/mis-servicios";return}
+  if(carrito.tienda!==t.id)carrito={tienda:t.id,items:{},ofertas:{}};
+  carrito.ofertas=carrito.ofertas||{};carrito.ofertas[k]={id:k,nombre:q.oferta_nombre,precio:Number(q.oferta_precio),max:q.oferta_max||1};
+  carrito.items[k]=carrito.items[k]||1;gcar();
+  location.hash="#/t/"+t.id;setTimeout(()=>{if(!$("pCarrito").classList.contains("on"))$("bCarrito").onclick()},350);
+}
+
 // --- Mis solicitudes (cliente) ---
 async function vistaMisServicios(){
   if(!sesion||!db){location.hash="#/cuenta";return}
@@ -1417,13 +1440,14 @@ async function vistaMisServicios(){
     db.from("consultas_stock").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50),
     db.from("viajes").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50)]);
   const C=c.data||[],Q=q.data||[],V=vj.data||[];
-  const wa=()=>"";
+  const wa=()=>"",nomPerfil=x=>(x.servicios_perfiles||{}).nombre||(tienda(x.perfil_id)||{}).nombre||"Comercio";
   $("vista").innerHTML=`<p><a href="#/">← Inicio</a></p><h2>Mis solicitudes</h2><p class="suave"><button class="btn sec mini" data-svref>🔄 Actualizar</button> En tiempo real</p>${notifBtnHTML()}
-   <h3>Citas</h3>`+(C.map(x=>`<div class="item"><div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
+   <h3>Citas</h3>`+(C.map(x=>`<div class="item"><div class="in"><b>${esc(nomPerfil(x))}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
     ${x.estado==="Reprogramada"?`<span class="aviso" style="padding:8px">🔁 El prestador propone esta nueva fecha y hora.</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <span class="svbtns">${x.estado==="Reprogramada"?`<button class="btn mini" data-svok="${x.id}">Aceptar nueva hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-svcan="${x.id}">Cancelar cita</button>`:""}${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no tienes citas.</p>")+
-   `<h3>Consultas de stock</h3>`+(Q.map(x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
-    ${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}<span class="svbtns">${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no has enviado consultas.</p>")+
+   `<h3>Consultas de stock</h3>`+(Q.map(x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(nomPerfil(x))}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
+    ${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
+    ${x.oferta_pedido_id?`<span class="suave">✅ Ya lo compraste. <a href="#/pedidos">Ver en Mis pedidos</a></span>`:x.estado==="Hay"&&x.oferta_precio?`<span><b>🛒 ${esc(x.oferta_nombre)}</b> · ${din(Number(x.oferta_precio))}${x.oferta_max>1?" · hasta "+x.oferta_max+" piezas":""}</span><span class="svbtns"><a class="btn mini" href="#/compra/${x.id}">🛒 Comprar ahora</a></span>`:""}<span class="svbtns">${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no has enviado consultas.</p>")+
    `<h3>Viajes y cotizaciones</h3>`+(V.map(x=>`<div class="item"><div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${x.tipo==="agenda"?"Viaje agendado":"Cotización"}: ${esc(x.origen)} → ${esc(x.destino)}</span>
     ${x.fecha?`<span class="suave">📅 ${fMX(x.fecha)}${x.hora?" · "+esc(x.hora):""}</span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <span class="svbtns">${x.estado==="Cotizada"?`<button class="btn mini" data-vac="${x.id}">Aceptar cotización</button>`:""}${["Solicitada","Cotizada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-vcl="${x.id}">Cancelar</button>`:""}${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no has pedido viajes ni cotizaciones.</p>");
@@ -1464,7 +1488,13 @@ async function vistaPanelSrv(){
   const consHTML=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
     ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <label>Precio (opcional)<input id="cqP_${x.id}" value="${esc(x.precio||"")}" placeholder="$250"></label><label>Mensaje (opcional)<input id="cqM_${x.id}" value="${esc(x.respuesta||"")}" placeholder="Disponible en tienda, llega mañana..."></label>
-    <span class="svbtns"><button class="btn mini" data-cqr="${x.id}|Hay">Sí hay</button><button class="btn mini sec" data-cqr="${x.id}|No hay">No hay</button><button class="btn mini sec" data-cqr="${x.id}|Consultar">Responder</button></span></div></div>`;
+    <span class="svbtns"><button class="btn mini" data-cqr="${x.id}|Hay">Sí hay</button><button class="btn mini sec" data-cqr="${x.id}|No hay">No hay</button><button class="btn mini sec" data-cqr="${x.id}|Consultar">Responder</button></span>${ofertaHTML(x)}</div></div>`;
+  // Enlace de compra: el comercio convierte la consulta en un producto que el cliente compra en la app
+  const ofertaHTML=x=>x.estado!=="Hay"?"":x.oferta_pedido_id?`<span class="aviso" style="padding:8px">✅ El cliente ya lo compró. Lo ves en tus <b>Pedidos</b>.</span>`
+    :x.oferta_precio?`<span class="aviso" style="padding:8px">🛒 <b>Enlace de compra activo:</b> ${esc(x.oferta_nombre)} · ${din(Number(x.oferta_precio))}${x.oferta_max>1?" · hasta "+x.oferta_max+" piezas":""}<br><small>El cliente ya recibió el aviso para comprarlo.</small></span><span class="svbtns"><button class="btn mini sec" data-cqlink="${x.id}">📤 Compartir enlace</button><button class="btn mini sec" data-cqofx="${x.id}">Quitar enlace</button></span>`
+    :`<span style="display:grid;gap:6px;border:1px dashed var(--borde);border-radius:12px;padding:10px"><b>🛒 Crear enlace de compra</b><small class="suave">El cliente recibe un aviso y lo compra en la app como un pedido normal.</small>
+      <label>Producto<input id="cqON_${x.id}" value="${esc(String(x.texto||"").slice(0,120))}" maxlength="120"></label><span class="fila" style="gap:8px"><label style="flex:1">Precio por pieza<input id="cqOP_${x.id}" inputmode="decimal" value="${numMX(x.precio)>0?numMX(x.precio):""}" placeholder="$250"></label><label style="width:90px">Piezas<input id="cqOM_${x.id}" type="number" min="1" max="99" value="1"></label></span>
+      <button class="btn mini" data-cqof="${x.id}">🛒 Crear enlace de compra</button></span>`;
   $("vista").innerHTML=`<h2>Mi panel de servicios</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)}</p>${misCom.some(c=>c.plan!=="simple")?`<p><a class="btn sec mini" href="#/panel">← Mi panel de comercio</a></p>`:""}${notifBtnHTML()}`+
    P.map(p=>{const mi=I.filter(i=>i.perfil_id===p.id),mc=C.filter(c=>c.perfil_id===p.id),mq=Q.filter(q=>q.perfil_id===p.id);
     return `<div class="perfil" style="padding:14px;margin-top:16px"><h3 style="margin:0">${SV[p.tipo].e} ${esc(p.nombre)} <span class="suave" style="font-size:.8rem">· ${SV[p.tipo].t}${p.activo?"":" · Oculto"}</span></h3>
@@ -1477,7 +1507,7 @@ async function vistaPanelSrv(){
 
 // --- Acciones (clientes y prestadores) ---
 document.addEventListener("click",async e=>{
-  const b=e.target.closest&&e.target.closest("[data-svopen],[data-agtab],[data-svclose],[data-svmis],[data-svref],[data-svok],[data-svcan],[data-cok],[data-cfin],[data-crep],[data-crepok],[data-ccan],[data-cqr],[data-sped],[data-sinew],[data-siedit],[data-sidel],[data-vac],[data-vcl],[data-vq],[data-vqok],[data-vcf],[data-vfn],[data-vrc]");
+  const b=e.target.closest&&e.target.closest("[data-svopen],[data-agtab],[data-svclose],[data-svmis],[data-svref],[data-svok],[data-svcan],[data-cok],[data-cfin],[data-crep],[data-crepok],[data-ccan],[data-cqr],[data-cqof],[data-cqofx],[data-cqlink],[data-sped],[data-sinew],[data-siedit],[data-sidel],[data-vac],[data-vcl],[data-vq],[data-vqok],[data-vcf],[data-vfn],[data-vrc]");
   if(!b)return;const d=b.dataset;
   if(d.agtab){agTab=d.agtab;return svAgPinta()}
   if(d.svclose){return cierraCapa()}
@@ -1497,6 +1527,15 @@ document.addEventListener("click",async e=>{
   if(d.cqr){const[id,est]=d.cqr.split("|");b.disabled=true;
     const r=await db.from("consultas_stock").update({estado:est,precio:$("cqP_"+id).value.trim()||null,respuesta:$("cqM_"+id).value.trim()||null}).eq("id",id);
     if(r.error){alert("No se pudo responder: "+r.error.message);b.disabled=false;return}return vistaPanelSrv()}
+  if(d.cqof){const id=d.cqof,n=$("cqON_"+id).value.trim(),pr=numMX($("cqOP_"+id).value),mx=parseInt($("cqOM_"+id).value,10)||1;
+    if(!n)return alert("Escribe el nombre del producto.");if(!(pr>0))return alert("Escribe el precio por pieza.");b.disabled=true;
+    const r=await db.from("consultas_stock").update({oferta_nombre:n,oferta_precio:pr,oferta_max:Math.min(Math.max(mx,1),99)}).eq("id",id);
+    if(r.error){alert("No se pudo crear el enlace: "+r.error.message);b.disabled=false;return}return vistaPanelSrv()}
+  if(d.cqofx){if(!confirm("¿Quitar el enlace de compra? El cliente ya no podrá comprarlo."))return;b.disabled=true;
+    const r=await db.from("consultas_stock").update({oferta_precio:null}).eq("id",d.cqofx);if(r.error){alert(r.error.message);b.disabled=false;return}return vistaPanelSrv()}
+  if(d.cqlink){const u=location.origin+location.pathname+"#/compra/"+d.cqlink,txt="Ya puedes comprar lo que me preguntaste en Valle GO: "+u;
+    try{if(navigator.share){await navigator.share({title:"Valle GO",text:txt});return}}catch(e){return}
+    try{await navigator.clipboard.writeText(u);alert("Enlace copiado. Pégalo en WhatsApp para tu cliente.\n\nSolo funciona con la cuenta del cliente que hizo la consulta.")}catch(e){prompt("Copia el enlace:",u)}return}
   const viaje=async(id,o)=>{b.disabled=true;const r=await db.from("viajes").update(o).eq("id",id);if(r.error){alert("No se pudo actualizar: "+r.error.message);b.disabled=false;return false}return true};
   if(d.vac){if(await viaje(d.vac,{estado:"Confirmada"}))vistaMisServicios();return}
   if(d.vcl){if(!confirm("¿Cancelar esta solicitud?"))return;if(await viaje(d.vcl,{estado:"Cancelada"}))vistaMisServicios();return}
@@ -1540,6 +1579,7 @@ function ruta(){
   if(r==="admin")return vistaAdmin();
   if(r==="pedidos")return vistaPedidos();
   if(r==="mis-servicios")return vistaMisServicios();
+  if(r==="compra")return vistaCompra(id);
   if(r==="panel-servicios")return vistaPanelSrv();
   vistaInicio();
 }
@@ -1815,7 +1855,7 @@ function agregar(tid,mid){
 }
 // Rebote del botón de la bolsa (y su numerito) cada vez que se agrega algo al carrito
 function reboteBolsa(){for(const el of [$("bMenuR"),$("bBadge")]){if(!el)continue;el.classList.remove("bump");void el.offsetWidth;el.classList.add("bump")}}
-function cambia(mid,d){if(!carrito.items[mid])return;carrito.items[mid]+=d;const q=carrito.items[mid];if(q<=0)delete carrito.items[mid];
+function cambia(mid,d){if(!carrito.items[mid])return;const of=mid.startsWith("cq:")&&(carrito.ofertas||{})[mid];if(of&&d>0&&carrito.items[mid]>=(of.max||1))return alert("El comercio tiene "+(of.max||1)+" pieza(s) para ti.");carrito.items[mid]+=d;const q=carrito.items[mid];if(q<=0){delete carrito.items[mid];if(carrito.ofertas)delete carrito.ofertas[mid]}
   if(!Object.keys(carrito.items).length)carrito.tienda=null;gcar();
   if(!carrito.tienda||!actualizaLinea(mid,q))pintaCarrito()}
 // Cambio rápido de cantidad: solo toca el número, los totales y (si llega a 0) quita esa línea
@@ -1828,7 +1868,7 @@ function actualizaLinea(mid,q){
   $("csub").textContent=din(subtotal(t));$("entrega").onchange();
   return true}
 function gcar(){$s("carrito",carrito)}
-function subtotal(t){return Object.entries(carrito.items).reduce((s,[id,c])=>{const m=(t.menu||[]).find(x=>x.id===id);return s+(m?m.precio*c:0)},0)}
+function subtotal(t){return Object.entries(carrito.items).reduce((s,[id,c])=>{const m=itemCar(t,id);return s+(m?m.precio*c:0)},0)}
 function pintaCarrito(){
   const t=tienda(carrito.tienda), ids=Object.keys(carrito.items);
   $("n").textContent=Object.values(carrito.items).reduce((a,b)=>a+b,0);
@@ -1836,13 +1876,13 @@ function pintaCarrito(){
   if(!t.menu){   // el menú de esta tienda aún no está en el teléfono: se descarga y se vuelve a pintar
     if(db&&!menuPend[t.id]&&reintento(t))cargarMenu(t.id).then(c=>{if(c===null)t._mErr=Date.now();pintaCarrito()});
     $("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>${esc(t.nombre)}</h2><p class="suave">${t._mErr?"No se pudo cargar tu carrito. Revisa tu conexión.":"Cargando tu carrito…"}</p>`;return}
-  {let quito=0;for(const id of ids)if(!t.menu.find(x=>x.id===id)){delete carrito.items[id];quito=1}   // productos que ya no están disponibles
+  {let quito=0;for(const id of ids)if(!itemCar(t,id)){delete carrito.items[id];quito=1}   // productos que ya no están disponibles
    if(quito){if(!Object.keys(carrito.items).length)carrito.tienda=null;gcar();return pintaCarrito()}}
   const sub=subtotal(t), dom=t.domicilio&&($("entrega")?$("entrega").value==="domicilio":true), env=dom?t.envio:0;
   const st0=$("cCarrito").scrollTop;   // se conserva la posición al repintar
   const keep=["entrega","pago","ck_c","ck_n","ck_l","notas"].reduce((o,k)=>(o[k]=$(k)?$(k).value:"",o),{});keep.gdom=$("gdom")?$("gdom").checked:undefined;
   $("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>${t.nombre}</h2>`+
-   ids.map((id,i)=>{const m=t.menu.find(x=>x.id===id);return `<div class="linea"><span><i class="vchk" style="--i:${Math.min(i,6)}" aria-hidden="true"></i>${m.nombre}<br><small>${din(m.precio)}</small></span>
+   ids.map((id,i)=>{const m=itemCar(t,id);return `<div class="linea"><span><i class="vchk" style="--i:${Math.min(i,6)}" aria-hidden="true"></i>${esc(m.nombre)}${id.startsWith("cq:")?" <small class='suave'>🛒 de tu consulta</small>":""}<br><small>${din(m.precio)}</small></span>
     <span class="q"><button data-menos="${id}" aria-label="Quitar uno">−</button><b>${carrito.items[id]}</b><button data-mas="${id}" aria-label="Agregar uno">+</button></span></div>`}).join("")+
    `<label>¿Cómo lo quieres?<select id="entrega">${t.domicilio?`<option value="domicilio">Entrega a domicilio</option>`:""}<option value="recoger">Recoger en tienda</option></select></label>
     <div id="dirBox" style="display:grid;gap:12px"><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("ck",null)}${db&&sesion&&sesion.id?`<label style="display:flex;gap:8px;align-items:center;font-size:.85rem"><input type="checkbox" id="gdom" style="width:auto"> 💾 Guardar este domicilio para mis próximos pedidos</label>`:""}</div>
@@ -1869,8 +1909,8 @@ async function confirmar(t,sub){
   if(dom&&db&&sesion.id&&$("gdom")&&$("gdom").checked&&(D.dir_calle!==sesion.dir_calle||D.dir_num!==sesion.dir_num||D.dir_col!==sesion.dir_col)){
     try{const g=await db.auth.updateUser({data:D});if(!g.error){Object.assign(sesion,D);$s("sesion",sesion)}}catch(e){}}
   const env=dom?t.envio:0, total=sub+env, pago=$("pago").value;
-  const lineas=Object.entries(carrito.items).map(([id,c])=>{const m=t.menu.find(x=>x.id===id);return m?`${c} x ${m.nombre} - ${din(m.precio*c)}`:""}).filter(Boolean);
-  const items=Object.entries(carrito.items).map(([id,cant])=>({id,cant}));
+  const lineas=Object.entries(carrito.items).map(([id,c])=>{const m=itemCar(t,id);return m?`${c} x ${m.nombre} - ${din(m.precio*c)}`:""}).filter(Boolean);
+  const items=Object.entries(carrito.items).map(([id,cant])=>id.startsWith("cq:")?{cq:id.slice(3),cant}:{id,cant});
   // Nota: la base de datos recalcula total y detalle con los precios reales del menú.
   const fila={comprador_id:sesion.id,cliente_nombre:sesion.nombre,cliente_tel:sesion.tel,comercio_id:t.id,lineas,items,total,entrega:dom?"domicilio":"recoger",pago,direccion:dir,notas:$("notas").value,estado:"Enviado al comercio"};
 
@@ -1992,7 +2032,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v175";
+const BUILD="valle-go-v176";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{

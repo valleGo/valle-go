@@ -75,6 +75,10 @@ async function servicios(p, res) {
     } else return res.status(200).json({ ok: true, omitido: true });
   } else {
     if (p.type === "INSERT") { ids = dueño; titulo = `🔎 Nueva consulta de stock · ${per.nombre}`; cuerpo = `${r.cliente_nombre || "Cliente"}: ${String(r.texto || "").slice(0, 140)}${r.foto_url ? "\n📷 Con foto" : ""}\nToca para responder.`; url = "./index.html#/panel-servicios"; }
+    else if (r.oferta_precio && (r.oferta_precio !== old.oferta_precio || r.oferta_nombre !== old.oferta_nombre) && !r.oferta_pedido_id) {   // enlace de compra creado
+      ids = [r.cliente_id]; titulo = `🛒 Ya puedes comprarlo · ${per.nombre}`;
+      cuerpo = `${r.oferta_nombre}: $${Number(r.oferta_precio).toFixed(2)}${Number(r.oferta_max) > 1 ? ` (hasta ${r.oferta_max} piezas)` : ""}\nToca para comprarlo en la app.`; url = `./index.html#/compra/${r.id}`;
+    }
     else if (r.estado !== old.estado || r.respuesta !== old.respuesta) {
       if (r.estado === "Pendiente") return res.status(200).json({ ok: true, omitido: true });
       const E = { Hay: "✅ ¡Sí lo tienen!", "No hay": "😕 No lo tienen por ahora", Consultar: "ℹ️ Respuesta del comercio" }[r.estado];

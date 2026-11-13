@@ -33,12 +33,18 @@ module.exports = async (req, res) => {
     if (ped.pago !== "en_linea" || ped.estado_pago !== "Pendiente")
       return res.status(409).json({ error: "Este pedido no tiene un pago pendiente." });
 
-    // 3. Artículos con precios reales del menú
+    // 3. Artículos con precios reales: del menú, o de un enlace de compra de una consulta de stock (cq)
     const items = Array.isArray(ped.items) ? ped.items : [];
-    const ids = items.map(i => i.id).filter(i => UUID.test(i));
-    if (!ids.length) throw new Error("Pedido sin productos");
-    const menu = await sb(`menu_items?id=in.(${ids.join(",")})&select=id,nombre,precio`);
+    const ids = items.map(i => i.id).filter(i => UUID.test(i)), cqs = items.map(i => i.cq).filter(i => UUID.test(i || ""));
+    if (!ids.length && !cqs.length) throw new Error("Pedido sin productos");
+    const menu = ids.length ? await sb(`menu_items?id=in.(${ids.join(",")})&select=id,nombre,precio`) : [];
+    const ofertas = cqs.length ? await sb(`consultas_stock?id=in.(${cqs.join(",")})&select=id,oferta_nombre,oferta_precio,oferta_pedido_id`) : [];
     const lineas = items.map(i => {
+      if (i.cq) {
+        const q = ofertas.find(x => x.id === i.cq);
+        if (!q || q.oferta_pedido_id !== ped.id) throw new Error("Enlace de compra no válido");
+        return { id: "cq-" + q.id, title: q.oferta_nombre, quantity: i.cant, unit_price: Number(q.oferta_precio), currency_id: "MXN" };
+      }
       const m = menu.find(x => x.id === i.id);
       if (!m) throw new Error("Producto no encontrado");
       return { id: m.id, title: m.nombre, quantity: i.cant, unit_price: Number(m.precio), currency_id: "MXN" };
