@@ -2222,7 +2222,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v199";
+const BUILD="valle-go-v200";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2342,7 +2342,7 @@ function vistaInstalar(){
   const paso=(n,t)=>`<div class="paso"><span class="num">${n}</span><div>${t}</div></div>`, yo=k=>sistemaInst===k||(k==="android"&&(sistemaInst==="chrome"||sistemaInst==="otro"));
   const bot=yaApp?`<div class="aviso">✅ Ya estás usando Valle GO como app.</div>`
     :sistemaInst==="otro"?(enOtraApp?`<p class="cen"><a class="btn" href="${esc(urlChrome())}">Abrir Valle GO en Chrome</a></p><p class="suave nota">Estás dentro de otra app: ábrela en Chrome para instalarla.</p>`
-      :`<p class="cen"><button class="btn" id="insOtro" type="button">📲 Instalar aquí</button><a class="btn sec" href="${esc(urlChrome())}">⭐ Abrir en Chrome</a></p><p class="suave nota"><b>Recomendado: Chrome.</b> Ahí se instala sin avisos de seguridad.</p>`)
+      :`<p class="cen"><button class="btn" id="insOtro" type="button">📲 Instalar aquí</button><a class="btn sec" href="${esc(urlChrome())}">⭐ Abrir en Chrome</a></p><p class="suave nota"><b>Recomendado: Chrome</b> para mejor rendimiento e instalación de la App.</p>`)
     :sistemaInst==="ios"?(enOtraApp?`<p class="suave nota">Ábrela en <b>Safari</b> para instalarla: toca <b>⋯</b> y elige <b>Abrir en Safari</b>.</p>`:`<p class="cen"><button class="btn" id="insFl">👇 Muéstrame dónde tocar</button></p><p class="suave nota">Compartir → Agregar a inicio → Agregar</p>`)
     :ev&&sistemaInst!=="pc"?`<p class="cen"><button class="btn" id="insYa">📲 Instalar Valle GO</button></p>`:"";   // en computadora el botón va dentro de su sección
   $("vista").innerHTML=`<div class="ins"><h2>📲 Instala Valle GO</h2>
