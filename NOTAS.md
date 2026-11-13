@@ -19,8 +19,10 @@ Cuando el dueño diga **"EJECUTA LA ORDEN 66"**, ya contrató las versiones Pro.
    - **viaje** con transportista: cotización, completado y 5%;
    - **avisos al celular** en Android e iPhone;
    - asignar la **promoción de apertura** a un comercio y revisar Membresías (mes gratis y 20%), Cobros 3%, Monitoreo, informes corto y completo, y el corte de transporte.
-7. Corregir lo que salga, subir versión, actualizar NOTAS, la ficha legal y los PDFs si cambia algo.
-8. **Respaldo final.**
+7. **Repositorio privado:** hacer privado valleGo/valle-go (valle-go-respaldos ya lo es). **Antes**, confirmar que Vercel puede seguir desplegando desde un repositorio privado de la organización (en plan Hobby no se puede; con Vercel Pro sí) y que la app GitHub de Vercel tiene acceso. Después, probar un despliegue y que la app siga en línea. Revisar que el respaldo y la copia a Drive sigan funcionando.
+8. **Revisión general** de seguridad (asesores de Supabase, reglas RLS, permisos de funciones, encabezados, secretos fuera del código), funcionamiento (todas las secciones y paneles con datos reales) y fluidez (velocidad de carga y respuesta en celular, tableta y PC).
+9. Corregir lo que salga, subir versión, actualizar NOTAS, la ficha legal y los PDFs si cambia algo.
+10. **Respaldo final.**
 
 ## Qué es
 Valle GO ("¡Va, llegó!"): PWA marketplace de comercios locales de Ameca, Jalisco.
