@@ -208,10 +208,13 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .finst:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(93,119,74,.36)}.finst:active{transform:scale(.97)}
 #instR{display:none;flex-basis:100%;align-items:center;gap:8px;margin-top:2px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.55);font-size:.78rem;font-weight:500}#instR b{font-weight:700}#instR>div{flex:1}
 #inst #instC{background:#fff;color:#2B2D22;border:1.5px solid #2B2D22;padding:6px 12px;font-size:.78rem;white-space:nowrap}
-.ins .cen+.suave{text-align:center}
 .ins .cen{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;text-align:center;margin:14px 0}
 #inst span{flex:1}#inst small{display:block;font-weight:500;opacity:.85;font-size:.78rem;margin-top:2px}
-.ins{max-width:640px;margin:0 auto}.ins .paso{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;margin:10px 0}
+.ins{max-width:640px;margin:0 auto;line-height:1.55}.ins h2{text-align:center;margin-bottom:.6em}
+.ins p,.ins .paso>div{text-align:justify;text-align-last:left;-webkit-hyphens:auto;hyphens:auto;hyphenate-limit-chars:10 4 4;-webkit-hyphenate-limit-before:4;-webkit-hyphenate-limit-after:4;margin:.55em 0}.ins .paso>div{margin:0;padding-top:4px}
+.ins .intro,.ins .nota{text-wrap:balance;-webkit-hyphens:manual;hyphens:manual}
+.ins .intro{text-align:center;text-align-last:center;max-width:34em;margin:0 auto .8em}.ins .nota{text-align:center;text-align-last:center;font-size:.86rem}
+.ins details>p:first-of-type{margin-top:.4em}.ins .paso{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;margin:10px 0}
 .ins .num{width:30px;height:30px;border-radius:50%;background:var(--acento);color:var(--on-acento);display:grid;place-items:center;font-weight:800}
 .ins .ico{display:inline-grid;place-items:center;vertical-align:-6px;width:26px;height:26px;border-radius:7px;background:var(--tarjeta);border:1px solid var(--borde);margin:0 2px}
 .ins details{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);padding:10px 14px;margin:10px 0}.ins summary{font-weight:700;cursor:pointer;padding:4px 0}
@@ -2065,7 +2068,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v184";
+const BUILD="valle-go-v185";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2159,25 +2162,25 @@ function vistaInstalar(){
   const icoPuntos='<span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></span>';
   const paso=(n,t)=>`<div class="paso"><span class="num">${n}</span><div>${t}</div></div>`, yo=k=>sistemaInst===k||(k==="android"&&(sistemaInst==="chrome"||sistemaInst==="otro"));
   const bot=yaApp?`<div class="aviso">✅ Ya estás usando Valle GO como app.</div>`
-    :sistemaInst==="otro"?(ev?`<p class="cen"><button class="btn" id="insYa">📲 Instalar Valle GO</button><a class="btn sec" href="${esc(urlChrome())}">Abrir en Chrome</a></p><p class="suave">Si al instalar aparece un aviso de seguridad de Google (Play Protect), ábrela en Chrome: ahí se instala sin avisos.</p>`
-      :`<p class="cen"><a class="btn" href="${esc(urlChrome())}">Abrir Valle GO en Chrome</a></p><p class="suave">Si no tienes Chrome, descárgalo gratis de Play Store y abre <b>${esc(location.host)}</b>.</p>`)
+    :sistemaInst==="otro"?(ev?`<p class="cen"><button class="btn" id="insYa">📲 Instalar Valle GO</button><a class="btn sec" href="${esc(urlChrome())}">Abrir en Chrome</a></p><p class="suave nota">Recomendado: instálala desde Chrome. Si al instalar aparece un aviso de Google (Play Protect), usa el botón «Abrir en Chrome».</p>`
+      :`<p class="cen"><a class="btn" href="${esc(urlChrome())}">Abrir Valle GO en Chrome</a></p><p class="suave nota">¿No tienes Chrome? Descárgalo gratis en Play Store y abre <b>${esc(location.host)}</b>.</p>`)
     :ev?`<p class="cen"><button class="btn" id="insYa">📲 Instalar Valle GO</button></p>`:"";
   $("vista").innerHTML=`<div class="ins"><h2>📲 Instala Valle GO</h2>
-   <p>Valle GO es una <b>app web</b>: se instala desde el navegador en segundos. <b>Es gratis, no ocupa espacio, no pide permisos y se actualiza sola.</b> No se descarga ningún archivo.</p>${bot}
+   <p class="intro">Valle GO es una <b>app web</b>: se instala desde tu navegador en segundos, sin descargar archivos. <b>Es gratis, casi no ocupa espacio, no pide permisos y se actualiza sola.</b></p>${bot}
    <details ${yo("android")?"open":""} class="${yo("android")?"yo":""}"><summary>🤖 Android (celular o tableta)</summary>
-    <p><b>Recomendado: Google Chrome.</b> En Samsung Internet y otros navegadores también se puede (botón Instalar o el icono con flecha junto a la dirección), pero a veces Google muestra un aviso de seguridad porque esos navegadores arman la app de forma antigua. En Chrome no pasa.</p>
+    <p><b>Te recomendamos usar Google Chrome.</b> Desde Samsung Internet u otro navegador también puedes instalarla, con el botón Instalar o con el icono de la flecha junto a la dirección; sin embargo, ahí Google a veces muestra un aviso de seguridad que en Chrome no aparece.</p>
     ${paso(1,`Abre <b>${esc(location.host)}</b> en <b>Chrome</b>.`)}
-    ${paso(2,`Toca <b>Instalar</b> en el aviso de Valle GO, o el menú ${icoPuntos} → <b>Instalar app</b> (o <b>Agregar a la pantalla principal</b>).`)}
-    ${paso(3,`Google te muestra una ventana con Valle GO: toca <b>Instalar</b>. Es la confirmación normal de Google.`)}
-    <p class="suave">¿Te salió un aviso de <b>Play Protect</b>? Cierra el aviso y abre Valle GO en Chrome para instalarla sin avisos.</p></details>
+    ${paso(2,`Toca <b>Instalar</b> en el aviso de Valle GO. También puedes abrir el menú ${icoPuntos} y elegir <b>Instalar app</b> o <b>Agregar a la pantalla principal</b>.`)}
+    ${paso(3,`Google mostrará una ventana con Valle GO. Toca <b>Instalar</b> para confirmar; es un paso normal y seguro.`)}
+    <p class="suave">Si te aparece un aviso de <b>Play Protect</b>, ciérralo y abre Valle GO en Chrome para instalarla sin avisos.</p></details>
    <details ${yo("ios")?"open":""} class="${yo("ios")?"yo":""}"><summary>🍎 iPhone o iPad</summary>
     ${paso(1,`Abre <b>${esc(location.host)}</b> en <b>Safari</b>.`)}
-    ${paso(2,`Toca <b>Compartir</b> ${icoComp} (abajo, o arriba en iPad). Si no lo ves, toca los tres puntos junto a la dirección.`)}
-    ${paso(3,`Elige <b>Agregar a inicio</b> ${icoMas}, deja activado <b>Abrir como app web</b> y toca <b>Agregar</b>.`)}
-    <p class="suave">Para recibir avisos de tus pedidos y citas en iPhone, abre Valle GO desde el icono de tu pantalla de inicio y activa los avisos en Mi cuenta.</p></details>
+    ${paso(2,`Toca <b>Compartir</b> ${icoComp}, que está abajo en iPhone y arriba en iPad. Si no lo ves, toca los tres puntos junto a la dirección.`)}
+    ${paso(3,`Elige <b>Agregar a inicio</b> ${icoMas}, deja activada la opción <b>Abrir como app web</b> y toca <b>Agregar</b>.`)}
+    <p class="suave">Para recibir avisos de tus pedidos y citas, abre Valle GO desde el icono de tu pantalla de inicio y actívalos en Mi cuenta.</p></details>
    <details ${yo("pc")?"open":""} class="${yo("pc")?"yo":""}"><summary>💻 Computadora</summary>
-    <p>No necesitas instalar nada: úsala en tu navegador. Si quieres un acceso directo, en Chrome o Edge toca el icono de instalar en la barra de direcciones.</p></details>
-   <p class="suave">Valle GO no te pide contraseñas por mensaje ni te cobra por instalarla. Si tienes dudas, escríbenos al correo de Contacto de las <a href="terminos.html#cambios">Condiciones del Servicio</a>.</p>
+    <p>No necesitas instalar nada: puedes usarla directo en tu navegador. Si quieres un acceso directo, en Chrome o Edge toca el icono de instalar que aparece en la barra de direcciones.</p></details>
+   <p class="suave nota">Valle GO nunca te pedirá contraseñas por mensaje ni te cobrará por instalarla. Si tienes dudas, escríbenos al correo que aparece en Contacto, en las <a href="terminos.html#cambios">Condiciones del Servicio</a>.</p>
    <p class="cen"><button class="btn sec" id="insComp">Compartir esta guía</button></p></div>`;
   const b=$("insYa");if(b)b.onclick=instalarAhora;
   $("insComp").onclick=()=>{const u=location.origin+location.pathname+"#/instalar";if(navigator.share)navigator.share({title:"Instala Valle GO",url:u}).catch(()=>{});else navigator.clipboard.writeText(u).then(()=>aviso("Enlace copiado")).catch(()=>prompt("Copia el enlace:",u))};
