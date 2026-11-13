@@ -223,11 +223,11 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .btnrec{background:#da9c48;color:#fff;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 22px;box-shadow:0 3px 10px rgba(0,0,0,.2)}.btnrec:active{transform:scale(.97)}.btnrec img{width:170px;height:auto;pointer-events:none}.btnrec span{pointer-events:none}
 .pasos{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.78rem;color:var(--suave,#888)}.paso.ok{color:var(--texto);font-weight:600}.paso.act{color:var(--salvia)}.paso.mal{color:var(--coral);font-weight:600}
 .estado{display:inline-block;background:color-mix(in srgb,var(--salvia) 30%,var(--tarjeta));color:var(--texto);border-radius:999px;padding:3px 12px;font-size:.78rem;font-weight:600}
-#inst{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:5;align-items:center;padding:0;border-radius:999px;overflow:hidden;background:linear-gradient(135deg,#3F5A2E 0%,#5D774A 55%,#7E9A5B 100%);border:2.5px solid #F6C335;box-shadow:0 8px 24px rgba(40,55,25,.45),0 0 0 0 rgba(246,195,53,.6);animation:instSube .35s cubic-bezier(.2,.9,.3,1.2),instLate 2.2s ease-out .6s infinite}
+#inst{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:5;align-items:center;padding:0;border-radius:999px;overflow:hidden;background:linear-gradient(120deg,#E08A3C 0%,#D9733F 45%,#CC5F55 100%);border:2.5px solid #F6C335;box-shadow:0 8px 24px rgba(190,85,50,.45),0 0 0 0 rgba(246,195,53,.6);animation:instSube .35s cubic-bezier(.2,.9,.3,1.2),instLate 2.2s ease-out .6s infinite}
 #inst::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);animation:instBrillo 3.2s ease-in-out 1.2s infinite;pointer-events:none}
 @keyframes instBrillo{0%,55%{left:-60%}100%{left:130%}}
-#inst #instB{border:0;background:transparent;color:#fff;font-weight:800;font-size:.98rem;letter-spacing:.01em;padding:11px 22px;border-radius:999px;white-space:nowrap;min-height:46px;text-shadow:0 1px 2px rgba(0,0,0,.35);position:relative;z-index:1}
-@keyframes instLate{0%{box-shadow:0 8px 24px rgba(40,55,25,.45),0 0 0 0 rgba(246,195,53,.6)}70%{box-shadow:0 8px 24px rgba(40,55,25,.45),0 0 0 14px rgba(246,195,53,0)}100%{box-shadow:0 8px 24px rgba(40,55,25,.45),0 0 0 0 rgba(246,195,53,0)}}
+#inst #instB{border:0;background:transparent;color:#fff;font-weight:800;font-size:.98rem;letter-spacing:.01em;padding:11px 22px;border-radius:999px;white-space:nowrap;min-height:46px;text-shadow:0 1px 2px rgba(110,40,20,.45);position:relative;z-index:1}
+@keyframes instLate{0%{box-shadow:0 8px 24px rgba(190,85,50,.45),0 0 0 0 rgba(246,195,53,.6)}70%{box-shadow:0 8px 24px rgba(190,85,50,.45),0 0 0 14px rgba(246,195,53,0)}100%{box-shadow:0 8px 24px rgba(190,85,50,.45),0 0 0 0 rgba(246,195,53,0)}}
 html[data-tema=oscuro] #inst{box-shadow:0 8px 24px rgba(0,0,0,.6),0 0 0 0 rgba(246,195,53,.6)}
 #inst button:focus-visible{outline:3px solid #F2C230;outline-offset:2px}
 @keyframes instSube{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}@media (prefers-reduced-motion:reduce){#inst,#inst::after{animation:none}}
@@ -382,6 +382,7 @@ header .rbw{position:relative;display:block}
 .pmenu #bCuenta .hav{width:22px;height:22px;margin:0;flex:0 0 auto}.pmenu #bCuenta .nm{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .pmenu #bCont{position:relative;right:auto;top:auto;background:#da9c48;color:#2a1a05;border:1px solid #c0802f}
 .pmenu #bCont .lbl{font-size:.72rem;letter-spacing:.05em;color:#2a1a05}.pmenu #bCont .dot{order:-1;width:auto;height:auto;background:none;border:0;box-shadow:none;border-radius:0;transform:none!important}.pmenu #bCont .dot svg{width:17px;height:17px}
+.pmenu #bComp{background:linear-gradient(120deg,#E08A3C,#CC5F55);color:#fff;border:1px solid #B9533F}.pmenu #bComp .lbl{font-size:.72rem;letter-spacing:.05em;color:#fff}
 .pmenu #bCont.on{background:#a2cce5;border-color:#7fb3d6;color:#1f2a33}.pmenu #bCont.on .lbl{color:#1f2a33}
 .pmenu #bPedidos{background:#d9aa28;color:var(--on-acento);border:1px solid #c39419}
 .pmenu #bCarrito{display:block;line-height:38px;background:var(--acento);color:var(--on-acento);border:1px solid var(--acento);text-align:center}
@@ -535,6 +536,11 @@ html[data-tema=oscuro] .fcard{box-shadow:0 6px 20px rgba(0,0,0,.35)}
 .temaSel button{border:0;background:transparent;color:var(--texto);font-weight:700;font-size:.85rem;padding:8px 14px;border-radius:999px;min-height:40px;cursor:pointer}
 .temaSel button[aria-pressed=true]{background:var(--verde);color:var(--on-verde);box-shadow:var(--sombra)}
 .temaSel button:focus-visible{outline:3px solid var(--acento);outline-offset:2px}
+
+#compPanel .vt{max-width:380px}#compPanel .qr{width:min(230px,62vw);aspect-ratio:1;margin:6px auto 4px;border-radius:16px;background:#fff;padding:8px;box-shadow:0 4px 16px rgba(0,0,0,.12)}#compPanel .qr img{width:100%;height:100%;display:block}
+#compPanel .cgrid{display:grid;gap:8px;margin-top:14px}#compPanel .cgrid button{min-height:46px;border-radius:999px;border:0;font-weight:700;font-size:.95rem;cursor:pointer}
+#compPanel .cPri{background:linear-gradient(120deg,#E08A3C,#CC5F55);color:#fff}#compPanel .cSec{background:var(--crema);color:var(--texto);border:1px solid var(--borde)!important}
+#compPanel .cLink{font-size:.8rem;color:var(--suave);word-break:break-all;margin-top:4px}
 </style>
 </head>
 <body>
@@ -547,7 +553,7 @@ function intenta(){var w=Math.max(0,900-(Date.now()-t0));setTimeout(quitar,w)}
 if(document.readyState!=="loading")intenta();else document.addEventListener("DOMContentLoaded",intenta);setTimeout(quitar,2200)})();
 </script>
 <header>
-  <div class="hz hl"><button class="rb rb-l" id="bMenuL" type="button" aria-label="Perfil y redes" aria-expanded="false" aria-haspopup="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.6-4.2 3.6-6.5 7.5-6.5s6.9 2.3 7.5 6.5"/></svg></button><div class="pmenu" id="popL"><div class="pml">PERFIL:</div><button id="bCuenta"></button><button id="bCont" type="button" aria-label="Contáctanos" aria-expanded="false" aria-controls="contPanel"><span class="lbl">REDES VALLE GO</span><span class="dot"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M15.6 8.4v5.1a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.4 6.9"/></svg></span></button></div></div>
+  <div class="hz hl"><button class="rb rb-l" id="bMenuL" type="button" aria-label="Perfil y redes" aria-expanded="false" aria-haspopup="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.6-4.2 3.6-6.5 7.5-6.5s6.9 2.3 7.5 6.5"/></svg></button><div class="pmenu" id="popL"><div class="pml">PERFIL:</div><button id="bCuenta"></button><button id="bCont" type="button" aria-label="Contáctanos" aria-expanded="false" aria-controls="contPanel"><span class="lbl">REDES VALLE GO</span><span class="dot"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M15.6 8.4v5.1a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.4 6.9"/></svg></span></button><button id="bComp" type="button" aria-label="Compartir Valle GO"><span aria-hidden="true">📤</span><span class="lbl">COMPARTIR VALLE GO</span></button></div></div>
   <div class="hc"><a href="#/" class="logo" aria-label="Valle GO"><img src="logo.png" alt="Valle GO" width="66" height="66"></a><div class="marca"><a href="#/" aria-label="Va, llegó — ir al inicio"><img src="marca.png" alt="Va, llegó" width="450" height="92" decoding="async" fetchpriority="high"></a></div></div>
   <div class="hz hr2"><button id="bPanel" style="display:none"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg><span>PANEL</span></button><span class="rbw"><button class="rb rb-r" id="bMenuR" type="button" aria-label="Pedidos y carrito" aria-expanded="false" aria-haspopup="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l1 12.5h-15z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg><span class="bdg" id="bBadge" hidden>0</span></button><div class="pmenu" id="popR"><button id="bPedidos" style="display:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span class="pl">Ver mis pedidos</span></button><button id="bMisCons" style="display:none" type="button">🗂️ Mis consultas y citas</button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div></span></div>
 </header>
@@ -2234,6 +2240,29 @@ window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
 
 
 // ---- Botón flotante de contacto (WhatsApp, Facebook, Instagram) ----
+const LINK_APP=location.origin+"/?instalar=1";   // abre Valle GO directo en la guía de instalación
+function compartirApp(){
+  const v=$("compPanel");if(v)v.remove();
+  const nfc="NDEFReader" in window,share=!!navigator.share;
+  const d=document.createElement("div");d.id="compPanel";d.className="";d.innerHTML=`<div id="vtFondo" style="position:fixed"><div class="vt" role="dialog" aria-modal="true" aria-labelledby="cpT">
+    <h3 id="cpT">📤 Comparte Valle GO</h3><div class="vtTxt"><p>Que escaneen el código con la cámara para abrir Valle GO e instalarla.</p></div>
+    <div class="qr"><img src="qr-instalar.svg" alt="Código QR para abrir e instalar Valle GO" width="230" height="230"></div>
+    <div class="cLink">${esc(LINK_APP.replace(/^https?:\/\//,""))}</div>
+    <div class="cgrid">${share?`<button type="button" class="cPri" data-cp="share">📲 Compartir (WhatsApp, Quick Share…)</button>`:""}
+     <button type="button" class="${share?"cSec":"cPri"}" data-cp="copiar">🔗 Copiar link</button>
+     ${nfc?`<button type="button" class="cSec" data-cp="nfc">📡 Grabar en etiqueta NFC</button>`:""}
+     <button type="button" class="cSec" data-cp="cerrar">Cerrar</button></div></div></div>`;
+  document.body.appendChild(d);
+  const cerrar=()=>d.remove();
+  d.addEventListener("click",async e=>{if(e.target.id==="vtFondo")return cerrar();const b=e.target.closest("[data-cp]");if(!b)return;const a=b.dataset.cp;
+    if(a==="cerrar")return cerrar();
+    if(a==="share"){try{await navigator.share({title:"Valle GO",text:"Instala Valle GO, la app de Ameca para pedir, agendar y consultar:",url:LINK_APP})}catch(err){}return}
+    if(a==="copiar"){try{await navigator.clipboard.writeText(LINK_APP);aviso("Link copiado")}catch(err){pregunta("Copia el link:",LINK_APP)}return}
+    if(a==="nfc"){try{const w=new NDEFReader();aviso("Acerca una etiqueta NFC a tu celular…");await w.write({records:[{recordType:"url",data:LINK_APP}]});aviso("Listo: la etiqueta NFC ya abre Valle GO")}catch(err){alert("No se pudo grabar la etiqueta NFC: "+(err.message||err))}}});
+  document.addEventListener("keydown",function esc_(e){if(e.key==="Escape"){cerrar();document.removeEventListener("keydown",esc_)}});
+  setTimeout(()=>{const f=d.querySelector(".cPri");if(f)f.focus()},60);
+}
+document.addEventListener("click",async e=>{if(e.target.closest("#bComp")){e.preventDefault();await cierraTodasCapas();compartirApp()}});
 function cierraContacto(){const d=$("contPanel");if(d)d.remove();const b=$("bCont");if(b){b.classList.remove("on");b.setAttribute("aria-expanded","false")}}
 function toggleContacto(){
   if($("contPanel")){cierraCapa();return}
@@ -2288,7 +2317,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v207";
+const BUILD="valle-go-v208";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2440,7 +2469,7 @@ function vistaInstalar(){
    <p class="cen"><button class="btn sec" id="insComp">Compartir esta guía</button></p></div>`;
 
   const ba=$("insAqui");if(ba)ba.onclick=instalarDirecto;if(sistemaInst==="ios"&&!enOtraApp&&!yaApp){if(!vistaInstalar.vista){vistaInstalar.vista=1;setTimeout(()=>{if(location.hash==="#/instalar")flechaIOS()},700)}}
-  $("insComp").onclick=()=>{const u=location.origin+location.pathname+"#/instalar";if(navigator.share)navigator.share({title:"Instala Valle GO",url:u}).catch(()=>{});else navigator.clipboard.writeText(u).then(()=>aviso("Enlace copiado")).catch(()=>pregunta("Copia el enlace:",u))};
+  $("insComp").onclick=compartirApp;
 }
 
 if(/[?&]mp=(ok|error)/.test(location.search)){const bien=/mp=ok/.test(location.search);history.replaceState(null,"",location.pathname+location.hash);
