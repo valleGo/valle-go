@@ -4,7 +4,7 @@
 --   enlace         → el comercio ya envió el enlace de compra (el cliente aún puede comprarlo)
 --   no_hay         → el comercio respondió "No hay"
 --   respondida     → respondió "Hay" y pasaron 24 h sin crear enlace de compra
---   sin_respuesta  → quedó "Pendiente" o "Consultar" más de 48 h (cierre automático)
+--   sin_respuesta  → quedó "Pendiente" o "Consultar" más de 1 hora (cierre automático; v213, antes 48 h)
 -- Mientras está abierta, el comercio la responde en "Mi panel". Ya cerrada, el comercio solo la ve
 -- (historial); cualquier corrección la hace la administración de Valle GO.
 -- No cambia precios ni cobros.
@@ -20,7 +20,7 @@ as $$
     when c.oferta_precio is not null then 'enlace'
     when c.estado = 'No hay' then 'no_hay'
     when c.estado = 'Hay' and coalesce(c.respondida_en, c.creado) < now() - interval '24 hours' then 'respondida'
-    when c.estado in ('Pendiente','Consultar') and c.creado < now() - interval '48 hours' then 'sin_respuesta'
+    when c.estado in ('Pendiente','Consultar') and c.creado < now() - interval '1 hour' then 'sin_respuesta'
     else null
   end
 $$;
