@@ -6,7 +6,12 @@
 <title>Valle GO</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#E6E6E6">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
+<script>(function(){var t="auto";try{t=localStorage.getItem("valle_tema")||"auto"}catch(e){}
+var o=t==="oscuro"||(t==="auto"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);
+document.documentElement.setAttribute("data-tema",o?"oscuro":"claro");
+var m=document.querySelector('meta[name=theme-color]');if(m)m.content=o?"#121410":"#E6E6E6";
+var c=document.querySelector('meta[name=color-scheme]');if(c)c.content=o?"dark":"light";})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://mfvyhgyhhqoxfzjjlpvm.supabase.co" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"></noscript>
@@ -24,6 +29,16 @@
   --claro-verde:#EEF3DF;--claro-amarillo:#FFF6D6;--claro-cielo:#E6F4FA;
   --sombra:0 1px 2px rgba(93,119,74,.08),0 6px 20px rgba(93,119,74,.08);
   --radio:16px;
+}
+/* ===== Modo oscuro (solo con data-tema="oscuro"; el modo claro queda igual) ===== */
+html[data-tema=oscuro]{
+  color-scheme:dark;
+  --fondo:#121410;--tarjeta:#1C1F17;--texto:#F2F0E6;--suave:#B9B5A3;--borde:#353B2B;--crema:#232819;
+  --verde:#9BC27A;--on-verde:#14190F;
+  --acento:#F6C335;--on-acento:#1E1F17;
+  --coral:#F08A70;--naranja:#F2A55C;--salvia:#B9C98A;--cielo:#8DCEE8;--arena:#C4A574;
+  --claro-verde:#20271A;--claro-amarillo:#2C2716;--claro-cielo:#17262E;
+  --sombra:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
 }
 *{box-sizing:border-box;margin:0}
 html{-webkit-text-size-adjust:100%}
@@ -207,13 +222,15 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .btnrec{background:#da9c48;color:#fff;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 22px;box-shadow:0 3px 10px rgba(0,0,0,.2)}.btnrec:active{transform:scale(.97)}.btnrec img{width:170px;height:auto;pointer-events:none}.btnrec span{pointer-events:none}
 .pasos{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.78rem;color:var(--suave,#888)}.paso.ok{color:var(--texto);font-weight:600}.paso.act{color:var(--salvia)}.paso.mal{color:var(--coral);font-weight:600}
 .estado{display:inline-block;background:color-mix(in srgb,var(--salvia) 30%,var(--tarjeta));color:var(--texto);border-radius:999px;padding:3px 12px;font-size:.78rem;font-weight:600}
-#inst{display:none;flex-wrap:wrap;position:fixed;bottom:14px;left:14px;right:14px;background:var(--acento);color:var(--on-acento);border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:4;align-items:center;gap:8px;font-size:.9rem;box-shadow:var(--sombra)}
+#inst{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:5;align-items:center;gap:2px;padding:4px;border-radius:999px;background:linear-gradient(135deg,#5D774A,#7C9A5E);box-shadow:0 8px 22px rgba(40,50,25,.32);animation:instSube .35s cubic-bezier(.2,.9,.3,1.2)}
+#inst #instB{border:0;background:transparent;color:#fff;font-weight:800;font-size:.9rem;padding:9px 6px 9px 14px;border-radius:999px;white-space:nowrap;min-height:40px}
+#inst #instX{border:0;background:rgba(255,255,255,.18);color:#fff;width:32px;height:32px;border-radius:50%;font-size:1.05rem;line-height:1;display:grid;place-items:center;padding:0}
+#inst button:focus-visible{outline:3px solid #F2C230;outline-offset:2px}
+@keyframes instSube{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}@media (prefers-reduced-motion:reduce){#inst{animation:none}}
 #fInstW{margin:0 0 10px}.finst{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;background:linear-gradient(135deg,#5D774A,#7C9A5E);color:#fff!important;font-weight:700;font-size:.74rem;letter-spacing:.02em;text-decoration:none!important;box-shadow:0 3px 10px rgba(93,119,74,.28);transition:transform .15s,box-shadow .15s}
 .finst:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(93,119,74,.36)}.finst:active{transform:scale(.97)}
-#instR{display:none;flex-basis:100%;align-items:center;gap:8px;margin-top:2px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.55);font-size:.78rem;font-weight:500}#instR b{font-weight:700}#instR>div{flex:1}
-#inst #instC{background:#fff;color:#2B2D22;border:1.5px solid #2B2D22;padding:6px 12px;font-size:.78rem;white-space:nowrap}
 .ins .cen{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;text-align:center;margin:14px 0}
-#inst span{flex:1}#inst small{display:block;font-weight:500;opacity:.85;font-size:.78rem;margin-top:2px}
+
 .panc{max-width:900px;margin:0 auto}.tabcli.tabpan{position:sticky;top:calc(var(--hh,0px) + 4px);z-index:3;padding:6px;background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.08);width:max-content;max-width:100%;margin:6px auto 14px}
 .tabpan button{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:999px;border:1.5px solid var(--borde);background:var(--tarjeta);color:var(--texto);font-weight:700;font-size:.88rem;min-height:44px;cursor:pointer}.tabpan button.on{background:#d9aa28;border-color:#c39419;color:var(--on-acento)}
 .tabpan button:focus-visible,.lnk:focus-visible{outline:3px solid #5D774A;outline-offset:2px}.tabpan .cnt{background:#C0392B;color:#fff;border-radius:999px;padding:1px 8px;font-size:.75rem}
@@ -241,7 +258,7 @@ h3.sec{margin:20px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--borde)
 .ins .num{width:30px;height:30px;border-radius:50%;background:var(--acento);color:var(--on-acento);display:grid;place-items:center;font-weight:800}
 .ins .ico{display:inline-grid;place-items:center;vertical-align:-6px;width:26px;height:26px;border-radius:7px;background:var(--tarjeta);border:1px solid var(--borde);margin:0 2px}
 .ins details{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);padding:10px 14px;margin:10px 0}.ins summary{font-weight:700;cursor:pointer;padding:4px 0}
-.ins .yo{border:2px solid var(--acento)}.ins ul{margin:.3em 0;padding-left:1.2em}#inst button{border:0;border-radius:999px;padding:8px 14px;background:#2B2D22;color:#fff;font-weight:600}#inst #instX{background:none;color:var(--on-acento);font-size:1.3rem;padding:2px 8px}
+.ins .yo{border:2px solid var(--acento)}.ins ul{margin:.3em 0;padding-left:1.2em}
 .pista{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:20px;margin-bottom:18px;scrollbar-width:none;box-shadow:var(--sombra)}.pista::-webkit-scrollbar{display:none}
 .sl{flex:0 0 100%;scroll-snap-align:start;aspect-ratio:16/7;background:var(--crema) center/cover;display:grid;place-items:center;font-size:1.3rem;font-weight:700;text-align:center;padding:10px;color:var(--texto);text-decoration:none}
 #bCont{position:absolute;right:10px;top:3px;z-index:2;display:flex;align-items:center;gap:6px;background:none;border:0;padding:0;cursor:pointer;color:inherit;-webkit-tap-highlight-color:transparent}
@@ -479,6 +496,45 @@ button,.btn,a,select,label,input[type=checkbox]{touch-action:manipulation}
 @media(max-width:360px){.avPriv a{white-space:normal}}
 .avPriv{font-size:.8rem;line-height:1.55;padding:12px 14px!important;color:var(--suave);background:var(--crema);border-radius:10px;padding:8px 11px;margin:6px 0 10px}
 .avPriv a{color:var(--verde);font-weight:700}
+
+/* ---- Modo oscuro: elementos con colores fijos ---- */
+html[data-tema=oscuro] body{background:var(--fondo);color:var(--texto)}
+html[data-tema=oscuro] input,html[data-tema=oscuro] select,html[data-tema=oscuro] textarea{background-color:#262A20;color:var(--texto);border-color:#454C38}
+html[data-tema=oscuro] input::placeholder,html[data-tema=oscuro] textarea::placeholder{color:#8E8A78}
+html[data-tema=oscuro] input:focus,html[data-tema=oscuro] select:focus,html[data-tema=oscuro] textarea:focus{border-color:var(--verde);outline-color:rgba(155,194,122,.35)}
+html[data-tema=oscuro] select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%239BC27A' stroke-width='2'/%3E%3C/svg%3E")}
+html[data-tema=oscuro] .tabcli.tabpan{background:rgba(28,31,23,.88)}
+html[data-tema=oscuro] .resumen .alerta{background:#3A3016;border-color:#8A6D1E;color:#FFE08A}
+html[data-tema=oscuro] .candado{background:#24301B;color:#B9D99B;border-color:#3E5230}
+html[data-tema=oscuro] .tabcli a.on,html[data-tema=oscuro] .tabpan button.on{color:#1E1F17}
+html[data-tema=oscuro] .tabpan .cnt{background:#E5584A}
+html[data-tema=oscuro] #flechaIOS .fiTxt,html[data-tema=oscuro] #flechaIOS .fiX{background:#23271D;color:var(--texto)}html[data-tema=oscuro] #flechaIOS .fiTxt b{color:var(--verde)}html[data-tema=oscuro] #flechaIOS .fiTxt small{color:var(--suave)}
+html[data-tema=oscuro] #vtFondo{background:rgba(0,0,0,.6)}
+html[data-tema=oscuro] #vtFondo .vt{background:#1E2219;color:var(--texto);box-shadow:0 24px 60px rgba(0,0,0,.6)}
+html[data-tema=oscuro] #vtFondo .vtTxt{color:#D6D2C2}
+html[data-tema=oscuro] #vtFondo .vtIco{background:#283322;color:var(--verde)}
+html[data-tema=oscuro] #vtFondo .vt.ok .vtIco{background:#22351B;color:#A9DB88}html[data-tema=oscuro] #vtFondo .vt.error .vtIco{background:#3D1F1B;color:#F59A8B}html[data-tema=oscuro] #vtFondo .vt.peligro .vtIco{background:#3A2E14;color:#F2C46A}
+html[data-tema=oscuro] #vtFondo input{background:#262A20;color:var(--texto);border-color:#454C38}
+html[data-tema=oscuro] #vtFondo .vtSi{background:var(--verde);color:var(--on-verde)}html[data-tema=oscuro] #vtFondo .vt.peligro .vtSi{background:#D9564A;color:#fff}
+html[data-tema=oscuro] #vtFondo .vtNo{background:#2E3326;color:var(--texto)}
+html[data-tema=oscuro] #toast{background:#F2F0E6;color:#1E1F17}
+html[data-tema=oscuro] .pmenu,html[data-tema=oscuro] #contPanel{background:rgba(30,34,25,.94);border-color:#3A4030;color:var(--texto)}
+html[data-tema=oscuro] .pmenu #bCuenta,html[data-tema=oscuro] header .hb #bCuenta{background:#262A20;color:var(--texto);border-color:#3A4030}
+html[data-tema=oscuro] #bTop{background:rgba(38,42,32,.9);color:var(--verde);border-color:#3A4030}html[data-tema=oscuro] #bTop:hover{background:#2E3326}
+html[data-tema=oscuro] .avPriv a.mail{background:rgba(0,0,0,.25);color:var(--verde)}
+html[data-tema=oscuro] .avPriv,html[data-tema=oscuro] .avPriv p{color:#CFCBBB}
+html[data-tema=oscuro] .aviso{color:var(--texto)}
+html[data-tema=oscuro] .dock{background:rgba(30,34,25,.75);border-color:rgba(255,255,255,.06)}
+html[data-tema=oscuro] #bnueva button{background:#F2F0E6}
+html[data-tema=oscuro] main a:not(.btn):not(.finst),html[data-tema=oscuro] footer a:not(.finst),html[data-tema=oscuro] .avPriv a{color:#B9D99B}
+html[data-tema=oscuro] .finst,html[data-tema=oscuro] .instH{color:#fff!important}
+html[data-tema=oscuro] img.logo-c{background:#1C1F17}
+html[data-tema=oscuro] .fcard{box-shadow:0 6px 20px rgba(0,0,0,.35)}
+/* selector de tema en Mi perfil */
+.temaSel{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--crema);border:1px solid var(--borde);flex-wrap:wrap}
+.temaSel button{border:0;background:transparent;color:var(--texto);font-weight:700;font-size:.85rem;padding:8px 14px;border-radius:999px;min-height:40px;cursor:pointer}
+.temaSel button[aria-pressed=true]{background:var(--verde);color:var(--on-verde);box-shadow:var(--sombra)}
+.temaSel button:focus-visible{outline:3px solid var(--acento);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -499,7 +555,7 @@ if(document.readyState!=="loading")intenta();else document.addEventListener("DOM
 <main id="vista" style="padding-top:48px"></main>
 <footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><div id="fInstW"><a href="#/instalar" id="fInst" class="finst"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg>Instalar la app</a></div><a href="privacidad.html">Aviso de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
 <div class="panel" id="pCarrito"><div class="caja" id="cCarrito"></div></div>
-<button id="bTop" type="button" aria-label="Subir al inicio de la página" title="Subir"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><div id="toast"></div><div id="inst"><span id="instT"></span><button id="instB">Instalar</button><button id="instX" aria-label="Cerrar">×</button><div id="instR"><div>⭐ <b>Recomendado:</b> instálala desde Chrome, sin avisos de seguridad.</div><button id="instC">Abrir en Chrome</button></div></div>
+<button id="bTop" type="button" aria-label="Subir al inicio de la página" title="Subir"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><div id="toast"></div><div id="inst" role="region" aria-label="Instalar Valle GO"><button id="instB" type="button">📲 Instalar app</button><button id="instX" type="button" aria-label="Cerrar">×</button></div>
 
 <script>
 // ============ CONFIGURACIÓN (edita aquí tus comerciantes) ============
@@ -979,7 +1035,7 @@ async function admTab(){
     $("selCom").onchange=e=>{adm.com=e.target.value;admTab()};
   }
   if(t==="perfil"){
-    box.innerHTML=`<p class="suave">${esc(sesion.email)} · Administrador</p>`+perfilHTML();
+    box.innerHTML=`<p class="suave">${esc(sesion.email)} · Administrador</p>`+temaHTML()+"<br>"+perfilHTML();
     bindPerfil(admTab);
   }
   if(t==="monitoreo"){
@@ -1211,6 +1267,16 @@ const notifBtnHTML=()=>notifOK()
     ?`<p class="aviso">🔔 Avisos de pedidos activados en este dispositivo. <span class="nbtns"><button class="btn sec mini" id="bProbar">Probar aviso</button><button class="btn sec mini" id="bNotif">Reactivar</button></span></p>`
     :`<p class="aviso">Recibe avisos en tu celular de pedidos, citas y consultas. <button class="btn" id="bNotif">Activar notificaciones</button></p>`)
   :iosViejo()?`<p class="aviso">${MSG_IOS_VIEJO(iosViejo())}</p>`:`<p class="aviso">Para recibir avisos en iPhone: 1) abre esta página en Safari, 2) toca Compartir ⬆️ → «Agregar a pantalla de inicio», 3) abre Valle GO desde ese ícono nuevo (no desde Safari) y 4) toca «Activar notificaciones». Requiere iOS 16.4 o más nuevo.</p>`;
+// ---- Tema: claro, oscuro o automático (sigue al teléfono). Se guarda en este aparato ----
+const temaGuardado=()=>{try{return localStorage.getItem("valle_tema")||"auto"}catch(e){return "auto"}};
+function aplicarTema(t){const o=t==="oscuro"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.setAttribute("data-tema",o?"oscuro":"claro");
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=o?"#121410":"#E6E6E6";
+  const c=document.querySelector('meta[name=color-scheme]');if(c)c.content=o?"dark":"light";}
+function ponerTema(t){try{localStorage.setItem("valle_tema",t)}catch(e){}aplicarTema(t);document.querySelectorAll(".temaSel button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tema===t))}
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if(temaGuardado()==="auto")aplicarTema("auto")})}catch(e){}
+const temaHTML=()=>{const t=temaGuardado();return `<div class="aviso perfilC" style="display:grid;gap:10px;max-width:420px;justify-items:start"><b>🎨 Apariencia</b><div class="temaSel" role="group" aria-label="Apariencia de la app">${[["claro","☀️ Claro"],["oscuro","🌙 Oscuro"],["auto","📱 Automático"]].map(([k,n])=>`<button type="button" data-tema="${k}" aria-pressed="${t===k}">${n}</button>`).join("")}</div><span class="suave" style="font-size:.78rem">Automático usa el modo de tu celular o computadora.</span></div>`};
+document.addEventListener("click",e=>{const b=e.target.closest(".temaSel [data-tema]");if(b)ponerTema(b.dataset.tema)});
 // ---- Ventanas propias de Valle GO (en lugar de las del navegador "valle-go.vercel.app dice…") ----
 let vtCola=Promise.resolve();
 function ventana(o){const r=vtCola.then(()=>new Promise(fin=>{
@@ -1864,7 +1930,7 @@ if($("fPerfil"))$("fPerfil").onchange=async e=>{const f=e.target.files[0];if(!f)
 function vistaCuenta(){
   if(sesion){ $("vista").innerHTML=`<h2>Hola, ${esc(sesion.nombre)}</h2><p class="suave">${esc(sesion.email)}</p><br>
    <button class="btn sec" id="salir">Cerrar sesión</button><br><br>${notifBtnHTML()}`+
-   (db&&sesion.id?"<br><br>"+perfilHTML():"")+
+   "<br><br>"+temaHTML()+(db&&sesion.id?"<br><br>"+perfilHTML():"")+
    (db&&sesion.id?`<br><br><div class="aviso" style="display:grid;gap:8px;max-width:360px"><b>Cambiar contraseña</b>
     <label>Nueva contraseña (mínimo 8)<input id="np1" type="password" autocomplete="new-password"></label>
     <label>Repite la nueva contraseña<input id="np2" type="password" autocomplete="new-password"></label>
@@ -2222,7 +2288,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v201";
+const BUILD="valle-go-v202";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2292,7 +2358,7 @@ const chromeAndroid=esAndroid&&/Chrome\/\d/.test(NAV)&&!enOtraApp&&!/SamsungBrow
 const sistemaInst=esIOS?"ios":esAndroid?(chromeAndroid?"chrome":"otro"):"pc";
 const urlChrome=()=>"intent://"+location.host+location.pathname+"?instalar=1#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url="+encodeURIComponent(location.origin+location.pathname+"?instalar=1")+";end";
 const cerrado=()=>Date.now()-Number($$("instX",0))<6048e5; // no molestar por 7 días
-function banner(txt,sub,btn,accion,conChrome){ if(yaApp||cerrado()||location.hash==="#/instalar")return; $("instT").innerHTML=esc(txt)+(sub?`<small>${esc(sub)}</small>`:""); $("instB").textContent=btn; $("instB").dataset.a=accion; $("instR").style.display=conChrome?"flex":"none"; $("inst").style.display="flex"; }
+function banner(txt,sub,btn,accion){ if(yaApp||cerrado()||location.hash==="#/instalar")return; $("instB").dataset.a=accion==="chrome"?"chrome":"directo"; $("instB").textContent=accion==="chrome"?"📲 Instalar en Chrome":"📲 Instalar app"; $("inst").style.display="flex"; }   // aviso breve; los textos largos ya no se muestran
 if(yaApp){const f=$("fInstW");if(f)f.remove()}
 // Botón "Instalar" bajo el carrito: visible para todos hasta que la app quede instalada en este aparato
 const INST_K="valle_instalada";
@@ -2344,8 +2410,7 @@ if(!yaApp)setTimeout(()=>{
   else if(sistemaInst==="ios")banner("Instala Valle GO en tu "+(/ipad|Macintosh/i.test(NAV)?"iPad":"iPhone"),"Se instala desde Safari en pocos toques. Te enseñamos cómo.","Ver cómo","guia");
 },2500);
 if(/[?&]instalar=1/.test(location.search)){history.replaceState(null,"",location.pathname+"#/instalar")}
-$("instC").onclick=()=>{location.href=urlChrome()};
-$("instB").onclick=async()=>{const a=$("instB").dataset.a;if(a==="instalar"&&await instalarAhora())return;if(a==="chrome"){location.href=urlChrome();return}$("inst").style.display="none";location.hash="#/instalar"};
+$("instB").onclick=()=>{$("inst").style.display="none";if($("instB").dataset.a==="chrome"){location.href=urlChrome();return}instalarDirecto()};
 // Guía de instalación (también se puede compartir: valle-go.vercel.app/#/instalar)
 function vistaInstalar(){
   $("inst").style.display="none";
