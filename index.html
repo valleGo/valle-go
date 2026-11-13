@@ -1058,7 +1058,7 @@ async function admTab(){
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="cPdf">Descargar PDF</button><button class="btn sec" id="cCsv">Descargar CSV</button></div>`;
     $("cPdf").onclick=()=>bajarBlob(pdfCobros1(adm.mes,F,S,PGC,nomC),"valle-go-cobros-3porciento-"+adm.mes+".pdf");
     $("cMes").onchange=e=>{if(e.target.value){adm.mes=e.target.value;admTab()}};
-    $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Plan","Pedidos","Pagos en linea","Transferencia/efectivo","Citas atendidas","Monto de citas","Total vendido","3% Valle GO","Pagado","Saldo"]].concat(F.map(f=>[f.nombre,f.plan,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.nc,f.cit.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.pag.toFixed(2),f.saldo.toFixed(2)])).concat([["Total","",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.nc,S.cit.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.pag.toFixed(2),S.saldo.toFixed(2)]]);
+    $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Plan","Pedidos","Pagos en línea","Transferencia/efectivo","Citas atendidas","Monto de citas","Total vendido","3% Valle GO","Pagado","Saldo"]].concat(F.map(f=>[f.nombre,f.plan,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.nc,f.cit.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.pag.toFixed(2),f.saldo.toFixed(2)])).concat([["Total","",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.nc,S.cit.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.pag.toFixed(2),S.saldo.toFixed(2)]]);
       const b=new Blob(["\ufeff"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="valle-go-cobros-3porciento-"+adm.mes+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
   }
   if(t==="membresias"){
@@ -1127,7 +1127,7 @@ document.addEventListener("click",async e=>{
   if(d.mdl!==undefined||d.mshare!==undefined){const D=adm.mon;if(!D)return;try{const b=await svgAPng(svgInformeAdmin(D),820,992),n="valle-go-informe-"+D.mes+".png";
       if(d.mdl!==undefined)bajarBlob(b,n);else await compartirInforme(b,n,"Informe Valle GO de "+nomMes(D.mes),"")}catch(err){alert(err.message)}return}
   if(d.mpdf!==undefined){const D=adm.mon;if(!D)return;try{bajarBlob(pdfMonitoreo(D),"valle-go-monitoreo-"+D.mes+".pdf")}catch(err){alert(err.message)}return}
-  if(d.mcsv!==undefined){const D=adm.mon;if(!D)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Mes","Pedidos","Total vendido","Pagos en linea","Transferencia/efectivo","Citas atendidas","Monto de citas","Comision 3%","Membresias sin IVA","Ingresos","Ganancia estimada","3% cobrado","3% por cobrar","Membresias cobradas","Membresias por cobrar","IVA cobrado","Gastos","IVA de gastos","IVA por pagar"]];
+  if(d.mcsv!==undefined){const D=adm.mon;if(!D)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Mes","Pedidos","Total vendido","Pagos en línea","Transferencia/efectivo","Citas atendidas","Monto de citas","Comision 3%","Membresías sin IVA","Ingresos","Ganancia estimada","3% cobrado","3% por cobrar","Membresías cobradas","Membresías por cobrar","IVA cobrado","Gastos","IVA de gastos","IVA por pagar"]];
     D.keys.forEach(k=>{const T=D.M[k];L.push([k,T.n,T.tot.toFixed(2),T.linea.toFixed(2),T.otro.toFixed(2),T.nc,T.cit.toFixed(2),T.com.toFixed(2),T.mem.toFixed(2),T.ing.toFixed(2),T.gan.toFixed(2),T.pagC.toFixed(2),T.saldoC.toFixed(2),T.pagM.toFixed(2),T.saldoM.toFixed(2),T.ivaC.toFixed(2),T.gast.toFixed(2),T.ivaG.toFixed(2),T.ivaP.toFixed(2)])});
     bajarBlob(new Blob(["﻿"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),"valle-go-monitoreo-"+D.mes+".csv");return}
   if(d.mcd||d.mcs){const D=adm.mon;if(!D)return;const R=(D.C[D.mes]||{})[d.mcd||d.mcs];if(!R)return;
@@ -1404,7 +1404,7 @@ const tienda=id=>COMERCIANTES.find(t=>t.id===id);
 const logoHTML=(t,g)=>t.logo?`<img class="logo-c${g?" g":""}" src="${esc(t.logo)}" alt="Logotipo de ${esc(t.nombre)}" loading="lazy">`:"";
 
 // ---------- SERVICIOS: agenda y citas, transporte y consulta de stock ----------
-const SV={agenda:{e:"📅",t:"Agenda y citas",d:"Servicios por cita: doctores, tatuajes, masajes, clases, consultas y viajes. Elige un día y una hora y el prestador te la confirma."},
+const SV={agenda:{e:"📅",t:"Agenda y citas",d:"Servicios por cita: doctores, tatuajes, masajes, clases, consultas y viajes. Elige el día y la hora, y el prestador te confirma la cita."},
   transporte:{e:"🚕",t:"Transporte",d:"Taxistas, fletes, mudanzas y transportistas del Valle: llama o escribe directo por WhatsApp."},
   consulta:{e:"🔎",t:"Consulta de stock",d:"Manda una foto y un texto al comercio para saber si lo tiene en existencia y a qué precio."}};
 let svTab="agenda",misSrv=[],canalSrv=null;
@@ -1618,7 +1618,7 @@ async function vistaPanelSrv(){
   const idsTr=misSrv.filter(s=>s.tipo==="transporte").map(s=>s.id),mesAct=mkey(new Date());let cortes=[];
   if(idsTr.length){try{cortes=await corteTransporte(mesAct,idsTr)}catch(e){cortes=[]}}
   const corteHTML=p=>{const r=cortes.find(c=>c.id===p.id);if(!r)return"";
-    return `<div class="aviso" style="margin:10px 0"><b>Mi corte de ${nomMes(mesAct)}</b><br>Viajes completados: ${r.n} · Total: ${mxn(r.tot)}<br>Comisión 5% de uso y mantenimiento (sin IVA, se paga al final del mes): <b>${mxn(r.com)}</b>${r.comMP?`<br>Ya descontada por Mercado Pago: ${mxn(r.comMP)}`:""}<br>Membresía plan Simple (IVA incluido, se paga al inicio del mes): <b>${mxn(r.mem)}</b><br>Total del mes: <b>${mxn(r.cobrar)}</b> · Pagado: ${mxn(r.pag)} · ${r.saldo<=0.004?"✅ Al corriente":"Saldo: <b>"+mxn(r.saldo)+"</b>"}<br><span class="suave" style="font-size:.78rem">Se cobra junto el último día del mes. Solo cuentan los viajes que marcas como "Completado" en la app.</span></div>`};
+    return `<div class="aviso" style="margin:10px 0"><b>Mi corte de ${nomMes(mesAct)}</b><br>Viajes completados: ${r.n} · Total: ${mxn(r.tot)}<br>Comisión 5% de uso y mantenimiento (sin IVA, se paga al final del mes): <b>${mxn(r.com)}</b>${r.comMP?`<br>Ya descontada por Mercado Pago: ${mxn(r.comMP)}`:""}<br>Membresía plan Simple (IVA incluido, se paga al inicio del mes): <b>${mxn(r.mem)}</b><br>Total del mes: <b>${mxn(r.cobrar)}</b> · Pagado: ${mxn(r.pag)} · ${r.saldo<=0.004?"✅ Al corriente":"Saldo: <b>"+mxn(r.saldo)+"</b>"}<br><span class="suave" style="font-size:.78rem">Se cobra el último día del mes. Solo cuentan los viajes que marcas como "Completado" en la app.</span></div>`};
   const viajeHTML=x=>`<div class="item"><div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${x.tipo==="agenda"?"Viaje agendado":"Cotización"}: ${esc(x.origen)} → ${esc(x.destino)}</span>
     ${x.fecha?`<span class="suave">📅 ${fMX(x.fecha)}${x.hora?" · "+esc(x.hora):""}</span>`:""}${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.detalle?`<span class="suave">📝 ${esc(x.detalle)}</span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <span class="svbtns">${["Solicitada","Cotizada"].includes(x.estado)?`<button class="btn mini" data-vq="${x.id}">${x.estado==="Cotizada"?"Cambiar precio":"Cotizar"}</button>`:""}${x.estado==="Solicitada"&&x.tipo==="agenda"?`<button class="btn mini" data-vcf="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-vfn="${x.id}">Completado</button>`:""}${["Solicitada","Cotizada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-vrc="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
@@ -1824,7 +1824,7 @@ function perfilHTML(){return `<div class="aviso perfilC" style="display:grid;gap
     <button class="btn sec" id="gCorreo" type="button">Cambiar correo</button><span id="cMsg" class="suave"></span>
     <label style="width:100%">Nombre<input id="dn" autocomplete="name" value="${esc(sesion.nombre)}"></label>
     <label style="width:100%">Teléfono<input id="dt" type="tel" autocomplete="tel" value="${esc(sesion.tel)}"></label>
-    <b style="width:100%;font-size:.85rem">Dirección de entrega</b>${dirCampos("pf",sesion)}
+    <b style="width:100%;font-size:.85rem">Dirección para tus envíos</b>${dirCampos("pf",sesion)}
     <button class="btn" id="gDatos">Guardar mis datos</button></div>`}
 function bindPerfil(volver){
 if($("fPerfil"))$("fPerfil").onchange=async e=>{const f=e.target.files[0];if(!f)return;
@@ -1881,7 +1881,7 @@ function vistaCuenta(){
      <label>Nombre<input id="rn" autocomplete="name" enterkeyhint="next" required></label>
      <label>Correo<input id="re" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" enterkeyhint="next" required></label>
      <label><span>Teléfono <span class="opc">(opcional)</span></span><input id="rt" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="next"></label>
-     <fieldset class="fdir"><legend>Dirección de entrega <span class="opc">(opcional)</span></legend>${dirCampos("rg",null)}</fieldset>
+     <fieldset class="fdir"><legend>Dirección para tus envíos</legend>${dirCampos("rg",null)}</fieldset>
      <label><span>Contraseña <span class="opc">(mínimo 6 caracteres)</span></span><span class="fpass"><input id="rp" type="password" autocomplete="new-password" enterkeyhint="done" minlength="6" required><button type="button" class="verPass" data-verpass="rp" aria-label="Mostrar contraseña">👁</button></span></label>
      <div class="avPriv" role="note"><p><b>Aviso de privacidad simplificado:</b> Valle&nbsp;GO (Ameca, Jalisco) usará tus datos para crear tu cuenta y hacer llegar tus pedidos, citas, consultas y viajes al comercio o transportista que elijas. No pedimos datos sensibles.</p><p>Puedes ejercer tus derechos ARCO o revocar tu consentimiento en contacto.vallego@<wbr>gmail.com.</p><p class="acepta">Al crear tu cuenta aceptas el <a href="privacidad.html" target="_blank" rel="noopener">Aviso de privacidad integral</a> y las <a href="terminos.html" target="_blank" rel="noopener">Condiciones del Servicio</a>.</p></div>
      <button class="btn fbtn" id="reg" type="button">Crear cuenta</button>
@@ -1964,7 +1964,7 @@ async function hash(s){const b=await crypto.subtle.digest("SHA-256",new TextEnco
 async function registrar(){
   const u={nombre:$("rn").value.trim(),email:$("re").value.trim().toLowerCase(),tel:$("rt").value.trim(),...leeDir("rg")};
   const p=$("rp").value;
-  if(!u.nombre||!u.email.includes("@")||p.length<6)return alert("Completa nombre, correo válido y una contraseña de 6 o más caracteres.");
+  if(!u.nombre||!u.email.includes("@")||p.length<6)return alert("Completa tu nombre, un correo válido y una contraseña de al menos 6 caracteres.");
   if(db){const {data,error}=await db.auth.signUp({email:u.email,password:p,options:{data:{nombre:u.nombre,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle,dir_num:u.dir_num,dir_col:u.dir_col}}});
     if(error)return alert(error.message);
     if(!data.session)return avisoConfirmar(u.email);
@@ -1977,7 +1977,7 @@ function avisoConfirmar(email){
   $("vista").innerHTML=`<h2>📧 Confirma tu correo</h2><div class="aviso" style="font-size:1rem;line-height:1.6">
    <p>¡Tu cuenta fue creada! Para poder entrar, <b>confirma tu correo</b>:</p>
    <p>1. Abre la bandeja de entrada de <b>${esc(email)}</b>.<br>2. Busca el correo de confirmación de Valle GO (si no lo ves, revisa <b>Spam</b> o <b>Promociones</b>).<br>3. Toca el enlace del correo.<br>4. Regresa aquí e inicia sesión.</p>
-   <p class="suave">Mientras no confirmes tu correo no podrás acceder a tu cuenta.</p>
+   <p class="suave">Mientras no confirmes tu correo, no podrás entrar a tu cuenta.</p>
    <button class="btn sec" id="reenv">Reenviar correo de confirmación</button> <a class="btn" href="#/cuenta">Ya confirmé, iniciar sesión</a></div>`;
   $("reenv").onclick=async()=>{const r=await db.auth.resend({type:"signup",email});alert(r.error?"No se pudo reenviar: "+r.error.message:"Listo, te reenviamos el correo. Revisa tu bandeja y Spam.")};
 }
@@ -2085,7 +2085,7 @@ async function confirmar(t,sub){
   const fila={comprador_id:sesion.id,cliente_nombre:sesion.nombre,cliente_tel:sesion.tel,comercio_id:t.id,lineas,items,total,entrega:dom?"domicilio":"recoger",pago,direccion:dir,notas:$("notas").value,estado:"Enviado al comercio"};
 
   if(pago==="en_linea"){   // Pago con Mercado Pago: se guarda el pedido y se abre la página de pago
-    if(!db||!sesion.id)return alert("El pago en línea requiere la base de datos conectada.");
+    if(!db||!sesion.id)return alert("El pago en línea no está disponible en este momento. Intenta de nuevo más tarde.");
     const b=$("pedir");b.disabled=true;b.textContent="Preparando pago...";
     try{
       const r=await db.from("pedidos").insert(fila).select("id").single(); if(r.error)throw r.error;
@@ -2212,7 +2212,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v195";
+const BUILD="valle-go-v196";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2263,7 +2263,7 @@ if("serviceWorker"in navigator){
   async function revisa(){if(avisado||!navigator.onLine)return;
     try{const h=await huella();if(base===null)base=BUILD;
       if(h!==base){avisado=true;const b=document.createElement("div");b.id="bnuevo";b.setAttribute("role","status");
-        b.innerHTML='<span>✨ Hay una versión nueva de Valle GO</span><button id="bnuevoOk">Actualizar</button><button class="x" id="bnuevoX" aria-label="Cerrar">×</button>';
+        b.innerHTML='<span>✨ Hay una nueva versión de Valle GO</span><button id="bnuevoOk">Actualizar</button><button class="x" id="bnuevoX" aria-label="Cerrar">×</button>';
         document.body.appendChild(b);
         $("bnuevoOk").onclick=async()=>{try{const r=await navigator.serviceWorker.getRegistration();if(r)await r.update();const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}location.reload()};
         $("bnuevoX").onclick=()=>b.remove()}
@@ -2310,7 +2310,7 @@ window.addEventListener("appinstalled",()=>{$("inst").style.display="none";ev=nu
 if(!yaApp)setTimeout(()=>{
   if(sistemaInst==="otro"&&!ev&&!enOtraApp)banner("Instala Valle GO gratis","Usa el icono de instalar junto a la dirección o el menú del navegador.","Cómo instalar","guia",true);
   else if(sistemaInst==="otro"&&!ev)banner("Para instalar Valle GO, ábrela en Chrome",enOtraApp?"Estás dentro de otra app. En Chrome se instala sin avisos de seguridad.":"Así se instala sin avisos de seguridad de Google.","Abrir en Chrome","chrome");
-  else if(sistemaInst==="ios")banner("Instala Valle GO en tu "+(/ipad|Macintosh/i.test(NAV)?"iPad":"iPhone"),"Son 3 toques desde Safari. Te enseñamos cómo.","Ver cómo","guia");
+  else if(sistemaInst==="ios")banner("Instala Valle GO en tu "+(/ipad|Macintosh/i.test(NAV)?"iPad":"iPhone"),"Se instala desde Safari en pocos toques. Te enseñamos cómo.","Ver cómo","guia");
 },2500);
 if(/[?&]instalar=1/.test(location.search)){history.replaceState(null,"",location.pathname+"#/instalar")}
 $("instC").onclick=()=>{location.href=urlChrome()};
