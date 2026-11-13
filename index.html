@@ -242,6 +242,7 @@ html[data-tema=oscuro] #inst{box-shadow:0 8px 24px rgba(0,0,0,.6),0 0 0 0 rgba(2
 .resumen{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 4px}.resumen span{background:var(--tarjeta);border:1px solid var(--borde);border-radius:999px;padding:6px 12px;font-size:.85rem}.resumen .alerta{background:#FFF4D6;border-color:#E9C46A;font-weight:700}
 h3.sec{margin:20px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--borde)}.vacio{text-align:center;color:var(--suave,#6F6A5A);padding:14px;border:1px dashed var(--borde);border-radius:14px}
 .lnk{background:none;border:0;padding:0;color:#5D774A;font-weight:700;text-decoration:underline;cursor:pointer;font:inherit}
+.cierre{display:block;margin-top:4px;font-size:.8rem;font-weight:700;color:var(--verde)}
 .candado{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:999px;background:#EEF2E6;color:#3F5A2E;border:1px solid #C9D6B5;font-weight:700;font-size:.85rem}
 .tabcli{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:4px 0 14px}.tabcli a{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--borde);background:var(--tarjeta);color:var(--texto);font-weight:700;font-size:.88rem;text-decoration:none}.tabcli a.on{background:#d9aa28;border-color:#c39419;color:var(--on-acento)}
 .pmenu #bMisCons{background:var(--tarjeta);border:1px solid #c39419;color:var(--texto);display:inline-flex;align-items:center;gap:6px;font-weight:700}
@@ -692,13 +693,13 @@ async function vistaPanel(){
   const P=pe.data||[], M=me.data||[], Q=cq.data||[];
   // Activo = todavía requiere algo del comercio. Historial = ya terminado.
   const pedCerrado=p=>p.estado==="Cancelado"||(p.estado==="Entregado"&&(p.estado_pago==="Pagado"||p.pago==="en_linea"));
-  const consCerrada=c=>c.estado==="No hay"||!!c.oferta_pedido_id;
+  const consCerrada=c=>!!cqCierre(c);
   const PA=P.filter(p=>!pedCerrado(p)),PH=P.filter(pedCerrado),QA=Q.filter(c=>!consCerrada(c)),QH=Q.filter(consCerrada);
   const ventas=P.filter(p=>p.estado!=="Cancelado").reduce((a,p)=>a+Number(p.total),0);
   const nuevos=PA.filter(p=>p.estado==="Enviado al comercio").length,sinResp=QA.filter(c=>c.estado==="Pendiente").length;
   const tab=["act","his","neg"].includes(panTab)?panTab:"act";
   const tabBtn=(k,txt,n)=>`<button type="button" role="tab" id="pt_${k}" aria-controls="pp_${k}" aria-selected="${tab===k}" tabindex="${tab===k?0:-1}" class="${tab===k?"on":""}" data-pantab="${k}">${txt}${n?` <span class="cnt" aria-label="${n} pendientes">${n}</span>`:""}</button>`;
-  const consHist=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span class="suave">${new Date(x.creado).toLocaleString("es-MX")}</span><span>${esc(x.texto)}</span>${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}${x.oferta_pedido_id?`<span class="suave">✅ El cliente lo compró con el enlace de compra.</span>`:""}</div></div>`;
+  const consHist=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span class="suave">${new Date(x.creado).toLocaleString("es-MX")}</span><span>${esc(x.texto)}</span>${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}${x.oferta_precio!=null?`<span><b>🛒 ${esc(x.oferta_nombre||"")}</b> · ${din(Number(x.oferta_precio))}${x.oferta_max>1?" · hasta "+x.oferta_max+" piezas":""}</span>`:""}<span class="cierre">${CQ_CIERRE[cqCierre(x)]||""}</span></div></div>`;
   const vacio=t=>`<p class="vacio">${t}</p>`;
   let cuerpo="";
   if(tab==="act")cuerpo=`<div class="resumen"><span><b>${PA.length}</b> ${PA.length===1?"pedido activo":"pedidos activos"}</span>${idsCq.length?`<span><b>${QA.length}</b> ${QA.length===1?"consulta abierta":"consultas abiertas"}</span>`:""}${nuevos?`<span class="alerta">🛎️ ${nuevos} por confirmar</span>`:""}${sinResp?`<span class="alerta">🔎 ${sinResp} sin responder</span>`:""}</div>
@@ -1660,7 +1661,7 @@ async function vistaMisServicios(){
     <span class="svbtns">${x.estado==="Reprogramada"?`<button class="btn mini" data-svok="${x.id}">Aceptar nueva hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-svcan="${x.id}">Cancelar cita</button>`:""}${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no tienes citas.</p>")+
    `<h3>Consultas de stock</h3>`+(Q.map(x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(nomPerfil(x))}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
     ${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
-    ${x.oferta_pedido_id?`<span class="suave">✅ Ya lo compraste. <a href="#/pedidos">Ver en Mis pedidos</a></span>`:x.estado==="Hay"&&x.oferta_precio?`<span><b>🛒 ${esc(x.oferta_nombre)}</b> · ${din(Number(x.oferta_precio))}${x.oferta_max>1?" · hasta "+x.oferta_max+" piezas":""}</span><span class="svbtns"><a class="btn mini" href="#/compra/${x.id}">🛒 Comprar ahora</a></span>`:""}<span class="svbtns">${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no has enviado consultas.</p>")+
+    ${cqCierre(x)==="sin_respuesta"?`<span class="suave">⏱️ Se cerró porque el comercio no respondió en 48 horas. Puedes enviar una nueva consulta.</span>`:""}${x.oferta_pedido_id?`<span class="suave">✅ Ya lo compraste. <a href="#/pedidos">Ver en Mis pedidos</a></span>`:x.estado==="Hay"&&x.oferta_precio?`<span><b>🛒 ${esc(x.oferta_nombre)}</b> · ${din(Number(x.oferta_precio))}${x.oferta_max>1?" · hasta "+x.oferta_max+" piezas":""}</span><span class="svbtns"><a class="btn mini" href="#/compra/${x.id}">🛒 Comprar ahora</a></span>`:""}<span class="svbtns">${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no has enviado consultas.</p>")+
    `<h3>Viajes y cotizaciones</h3>`+(V.map(x=>`<div class="item"><div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${x.tipo==="agenda"?"Viaje agendado":"Cotización"}: ${esc(x.origen)} → ${esc(x.destino)}</span>
     ${x.fecha?`<span class="suave">📅 ${fMX(x.fecha)}${x.hora?" · "+esc(x.hora):""}</span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <span class="svbtns">${x.estado==="Cotizada"?`<button class="btn mini" data-vac="${x.id}">Aceptar cotización</button>`:""}${["Solicitada","Cotizada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-vcl="${x.id}">Cancelar</button>`:""}${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no has pedido viajes ni cotizaciones.</p>");
@@ -1674,6 +1675,11 @@ function svForm(titulo,cs,v,guardar){
     try{const o=await leerForm(cs,$("vista"),v);if(!o.nombre)throw new Error("Falta el nombre.");await guardar(o);borrBorrar(bk);cierraCapa()}
     catch(err){alert(err.message);$("gSF").disabled=false;$("gSF").textContent="Guardar"}};
 }
+// Cierre de consultas: misma regla que la base de datos (consulta_cierre). Cerrada = va al historial, solo lectura.
+const cqCierre=c=>{const h=t=>(Date.now()-new Date(t).getTime())/36e5;
+  if(c.oferta_pedido_id)return "comprada";if(c.oferta_precio!=null)return "enlace";if(c.estado==="No hay")return "no_hay";
+  if(c.estado==="Hay"&&h(c.respondida_en||c.creado)>24)return "respondida";if((c.estado==="Pendiente"||c.estado==="Consultar")&&h(c.creado)>48)return "sin_respuesta";return null};
+const CQ_CIERRE={comprada:"✅ El cliente lo compró con el enlace de compra.",enlace:"🛒 Se envió enlace de compra al cliente.",no_hay:"Respondida: no hay.",respondida:"Respondida: sí hay (sin enlace de compra).",sin_respuesta:"⏱️ Cerrada automáticamente: quedó sin respuesta final en 48 horas."};
 // Consultas de stock (las responde el comercio; se muestran en Mi panel)
 const consHTML=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
     ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
@@ -2317,7 +2323,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v211";
+const BUILD="valle-go-v212";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{

@@ -1,5 +1,5 @@
 // Service worker de Valle GO: abre sin internet, siempre intenta traer la versión nueva y recibe notificaciones.
-const CACHE = "valle-go-v211";
+const CACHE = "valle-go-v212";
 // Imágenes propias, librería de Supabase y fuente: se sirven al instante desde aquí y se actualizan en segundo plano.
 // Este caché no cambia de nombre con cada versión, así no se vuelven a descargar en cada actualización.
 const ESTATICO = "valle-go-estatico-v1";
