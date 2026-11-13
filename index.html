@@ -2118,7 +2118,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v189";
+const BUILD="valle-go-v190";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2190,7 +2190,7 @@ const urlChrome=()=>"intent://"+location.host+location.pathname+"?instalar=1#Int
 const cerrado=()=>Date.now()-Number($$("instX",0))<6048e5; // no molestar por 7 días
 function banner(txt,sub,btn,accion,conChrome){ if(yaApp||cerrado()||location.hash==="#/instalar")return; $("instT").innerHTML=esc(txt)+(sub?`<small>${esc(sub)}</small>`:""); $("instB").textContent=btn; $("instB").dataset.a=accion; $("instR").style.display=conChrome?"flex":"none"; $("inst").style.display="flex"; }
 if(yaApp){const f=$("fInstW");if(f)f.remove()}   // el botón del pie solo se muestra a quien todavía no la instala
-async function instalarAhora(){if(ev){ev.prompt();const r=await ev.userChoice;ev=null;$("inst").style.display="none";if(r&&r.outcome==="accepted")aviso("Listo: Valle GO quedó en tu pantalla de inicio.");return true}return false}
+async function instalarAhora(){if(ev){ev.prompt();const r=await ev.userChoice;ev=null;$("inst").style.display="none";if(r&&r.outcome==="accepted")aviso(sistemaInst==="pc"?"Listo: Valle GO quedó instalada en tu computadora.":"Listo: Valle GO quedó en tu pantalla de inicio.");if(location.hash==="#/instalar")vistaInstalar();return true}return false}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;
   if(sistemaInst==="otro")banner("Instala Valle GO gratis","Toca Instalar y confirma. No ocupa espacio ni pide permisos.","Instalar","instalar",true);   // mismo efecto que el icono de instalar de la barra de dirección
   else banner("Instala Valle GO gratis","No ocupa espacio ni pide permisos. Google te pedirá confirmar: es normal y seguro.","Instalar","instalar");
@@ -2214,7 +2214,7 @@ function vistaInstalar(){
   const bot=yaApp?`<div class="aviso">✅ Ya estás usando Valle GO como app.</div>`
     :sistemaInst==="otro"?(ev?`<p class="cen"><button class="btn" id="insYa">📲 Instalar Valle GO</button><a class="btn sec" href="${esc(urlChrome())}">Abrir en Chrome</a></p><p class="suave nota">Recomendado: instálala desde Chrome. Si al instalar aparece un aviso de Google (Play Protect), usa el botón «Abrir en Chrome».</p>`
       :`<p class="cen"><a class="btn" href="${esc(urlChrome())}">Abrir Valle GO en Chrome</a></p><p class="suave nota">¿No tienes Chrome? Descárgalo gratis en Play Store y abre <b>${esc(location.host)}</b>.</p>`)
-    :ev?`<p class="cen"><button class="btn" id="insYa">📲 Instalar Valle GO</button></p>`:"";
+    :ev&&sistemaInst!=="pc"?`<p class="cen"><button class="btn" id="insYa">📲 Instalar Valle GO</button></p>`:"";   // en computadora el botón va dentro de su sección
   $("vista").innerHTML=`<div class="ins"><h2>📲 Instala Valle GO</h2>
    <p class="intro">Valle GO es una <b>app web</b>: se instala desde tu navegador en segundos, sin descargar archivos. <b>Es gratis, casi no ocupa espacio, no pide permisos y se actualiza sola.</b></p>${bot}
    <details ${yo("android")?"open":""} class="${yo("android")?"yo":""}"><summary>🤖 Android (celular o tableta)</summary>
@@ -2229,10 +2229,12 @@ function vistaInstalar(){
     ${paso(3,`Elige <b>Agregar a inicio</b> ${icoMas}, deja activada la opción <b>Abrir como app web</b> y toca <b>Agregar</b>.`)}
     <p class="suave">Para recibir avisos de tus pedidos y citas, abre Valle GO desde el icono de tu pantalla de inicio y actívalos en Mi cuenta.</p></details>
    <details ${yo("pc")?"open":""} class="${yo("pc")?"yo":""}"><summary>💻 Computadora</summary>
-    <p>No necesitas instalar nada: puedes usarla directo en tu navegador. Si quieres un acceso directo, en Chrome o Edge toca el icono de instalar que aparece en la barra de direcciones.</p></details>
+    <p>No necesitas instalar nada: puedes usarla directo en tu navegador. Si quieres tenerla como app, con su propia ventana y su icono en el escritorio, instálala en un clic.</p>
+    ${yaApp?`<div class="aviso">✅ Ya estás usando Valle GO como app.</div>`:ev&&sistemaInst==="pc"?`<p class="cen"><button class="btn" id="insPc">💻 Instalar en esta computadora</button></p><p class="suave nota">Es lo mismo que el icono de instalar de la barra de direcciones: tu navegador te pedirá confirmar con «Instalar».</p>`
+      :`<p>En <b>Chrome</b> o <b>Edge</b>, toca el icono de instalar que aparece a la derecha de la barra de direcciones y luego <b>Instalar</b>. En <b>Safari</b> de Mac, entra al menú <b>Archivo</b> y elige <b>Agregar al Dock</b>.</p>`}</details>
    <p class="suave nota">Valle GO nunca te pedirá contraseñas por mensaje ni te cobrará por instalarla. Si tienes dudas, escríbenos al correo que aparece en Contacto, en las <a href="terminos.html#cambios">Condiciones del Servicio</a>.</p>
    <p class="cen"><button class="btn sec" id="insComp">Compartir esta guía</button></p></div>`;
-  const b=$("insYa");if(b)b.onclick=instalarAhora;
+  const b=$("insYa");if(b)b.onclick=instalarAhora;const bp=$("insPc");if(bp)bp.onclick=instalarAhora;
   $("insComp").onclick=()=>{const u=location.origin+location.pathname+"#/instalar";if(navigator.share)navigator.share({title:"Instala Valle GO",url:u}).catch(()=>{});else navigator.clipboard.writeText(u).then(()=>aviso("Enlace copiado")).catch(()=>prompt("Copia el enlace:",u))};
 }
 $("instX").onclick=()=>{$s("instX",Date.now());$("inst").style.display="none"};
