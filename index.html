@@ -7,7 +7,8 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#E6E6E6">
 <meta name="color-scheme" content="light dark">
-<script>(function(){var t="auto";try{t=localStorage.getItem("valle_tema")||"auto"}catch(e){}
+<script>window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__bip=e});window.addEventListener("appinstalled",function(){window.__bip=null});
+(function(){var t="auto";try{t=localStorage.getItem("valle_tema")||"auto"}catch(e){}
 var o=t==="oscuro"||(t==="auto"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);
 document.documentElement.setAttribute("data-tema",o?"oscuro":"claro");
 var m=document.querySelector('meta[name=theme-color]');if(m)m.content=o?"#121410":"#E6E6E6";
@@ -2288,7 +2289,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v202";
+const BUILD="valle-go-v203";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2350,7 +2351,7 @@ if("serviceWorker"in navigator){
 })();
 // ---- Instalar como app (PWA). Solo Chrome en Android instala la app oficial (WebAPK) sin avisos de Play Protect;
 // Samsung Internet y otros navegadores crean un paquete para una versión vieja de Android y Play Protect lo bloquea.
-let ev;
+let ev=window.__bip||null;   // permiso de instalación guardado desde el <head>
 const NAV=navigator.userAgent,yaApp=matchMedia("(display-mode: standalone)").matches||navigator.standalone;
 const esIOS=/iphone|ipad|ipod/i.test(NAV)||(/Macintosh/.test(NAV)&&navigator.maxTouchPoints>1), esAndroid=/android/i.test(NAV);
 const enOtraApp=/FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|TikTok|Snapchat|; wv\)/i.test(NAV);
@@ -2386,23 +2387,16 @@ function flechaIOS(){
   setTimeout(()=>{if(d.isConnected)d.remove()},15000);
 }
 async function instalarDirecto(){
-  if(yaApp)return ventana({tipo:"ok",titulo:"Ya la tienes",texto:"Ya estás usando Valle GO como app."});
-  if(await instalarAhora())return;                       // Android y PC con Chrome, Edge, Samsung Internet…: ventana de instalación del navegador
-  if(esIOS)return enOtraApp?ventana({titulo:"Ábrela en Safari",texto:"Estás dentro de otra app. Toca ⋯ y elige «Abrir en Safari»; ahí podrás instalarla."}):flechaIOS();
-  const mac=/Macintosh/.test(NAV)&&!esIOS,safari=/Safari/.test(NAV)&&!/Chrome|Chromium|CriOS|Edg|OPR|Firefox/.test(NAV),firefox=/Firefox/.test(NAV);
-  let t;
-  if(esAndroid&&sistemaInst==="chrome")t="Toca el menú ⋮ (arriba a la derecha) y elige «Instalar app» o «Agregar a la pantalla principal».";
-  else if(esAndroid)t="Toca el icono ⬇ junto a la dirección, o abre el menú ☰ y elige «Agregar página a» → «Pantalla de inicio».\nSi no te aparece, usa el botón «Abrir en Chrome».";
-  else if(mac&&safari)t="En Safari, abre el menú «Archivo» y elige «Agregar al Dock».";
-  else if(firefox)t="Firefox no instala apps web. Abre el Link de Valle GO en Chrome o Edge y toca «Instalar».";
-  else t="Toca el icono de instalar que aparece a la derecha de la barra de direcciones y luego «Instalar».";
-  ventana({titulo:"Instalar Valle GO",texto:t+"\nSi ya la instalaste, ábrela desde tu pantalla de inicio o escritorio."});
+  if(yaApp)return aviso("Ya estás usando Valle GO como app.");
+  if(await instalarAhora())return;                         // Android, tableta y PC: abre directo la instalación del navegador
+  if(esIOS)return enOtraApp?aviso("Ábrela en Safari para instalarla."):flechaIOS();   // iPhone/iPad: Apple solo permite instalar desde Compartir
+  if(esAndroid){location.href=urlChrome();return}          // Android sin permiso del navegador: abre en Chrome (si ya está instalada, abre la app)
+  aviso("Toca el icono de instalar ⊕ de la barra de direcciones.");   // computadora sin permiso (Firefox, Safari o ya instalada)
 }
-async function instalarAhora(){if(ev){ev.prompt();const r=await ev.userChoice;ev=null;$("inst").style.display="none";if(r&&r.outcome==="accepted")aviso(sistemaInst==="pc"?"Listo: Valle GO quedó instalada en tu computadora.":"Listo: Valle GO quedó en tu pantalla de inicio.");if(location.hash==="#/instalar")vistaInstalar();return true}return false}
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;
-  if(sistemaInst==="otro")banner("Instala Valle GO gratis","Es gratis, casi no ocupa espacio y se actualiza sola.","Instalar","instalar",true);   // mismo efecto que el icono de instalar de la barra de dirección
-  else banner("Instala Valle GO gratis","Es gratis, casi no ocupa espacio y se actualiza sola.","Instalar","instalar");
-  if(location.hash==="#/instalar")vistaInstalar()});
+async function instalarAhora(){if(!ev&&window.__bip)ev=window.__bip;if(ev){ev.prompt();const r=await ev.userChoice;ev=null;$("inst").style.display="none";if(r&&r.outcome==="accepted")aviso(sistemaInst==="pc"?"Listo: Valle GO quedó instalada en tu computadora.":"Listo: Valle GO quedó en tu pantalla de inicio.");if(location.hash==="#/instalar")vistaInstalar();return true}return false}
+const hayPermiso=()=>{banner("","","Instalar","instalar");if(location.hash==="#/instalar")vistaInstalar()};
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;window.__bip=e;hayPermiso()});
+if(ev)setTimeout(hayPermiso,0);
 window.addEventListener("appinstalled",()=>{$("inst").style.display="none";ev=null;marcaInstalada()});
 if(!yaApp)setTimeout(()=>{
   if(sistemaInst==="otro"&&!ev&&!enOtraApp)banner("Instala Valle GO gratis","Usa el icono de instalar junto a la dirección o el menú del navegador.","Cómo instalar","guia",true);
