@@ -530,7 +530,11 @@ const $=i=>document.getElementById(i);
 const $$=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
 const $s=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const din=n=>n.toLocaleString("es-MX",{style:"currency",currency:MONEDA});
-const foto=o=>o.foto?`style="background-image:url('${o.foto}')"`:"";
+// Fotos de comercios y productos: se cargan solo cuando están por verse en pantalla (más rápido con menús grandes y datos móviles)
+const foto=o=>o.foto?`data-bg="${esc(o.foto)}"`:"";
+const fotoIO="IntersectionObserver" in window?new IntersectionObserver(L=>L.forEach(x=>{if(x.isIntersecting){const el=x.target;el.style.backgroundImage=`url("${el.dataset.bg.replace(/"/g,"%22")}")`;el.removeAttribute("data-bg");fotoIO.unobserve(el)}}),{rootMargin:"400px 0px"}):null;
+const verFotos=raiz=>{(raiz||document).querySelectorAll("[data-bg]").forEach(el=>{if(fotoIO)fotoIO.observe(el);else{el.style.backgroundImage=`url("${el.dataset.bg}")`;el.removeAttribute("data-bg")}})};
+new MutationObserver(M=>{for(const m of M)for(const n of m.addedNodes)if(n.nodeType===1){if(n.hasAttribute("data-bg"))verFotos(n.parentNode);else if(n.querySelector&&n.querySelector("[data-bg]"))verFotos(n)}}).observe(document.documentElement,{childList:true,subtree:true});
 const em=o=>o.foto?"":o.emoji;
 function diasTxt(x){const a=(x||"").split(",").filter(Boolean).map(d=>DIAS.indexOf(d)).filter(i=>i>=0).sort((m,n)=>m-n);
   if(!a.length)return"";if(a.length===7)return"Todos los días";const g=[];let i=0;
@@ -2217,7 +2221,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v197";
+const BUILD="valle-go-v198";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
