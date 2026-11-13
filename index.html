@@ -342,6 +342,11 @@ header .lcol #bCont{position:relative!important;left:auto!important;right:auto!i
 
 /* ===== Barra superior minimalista: un botón a cada lado con submenú ===== */
 header .hz{position:relative;display:flex;align-items:center;gap:8px;align-self:center}
+.instH{position:absolute;top:calc(100% + 7px);left:50%;translate:-50% 0;display:inline-flex;align-items:center;gap:3px;padding:4px 7px;border-radius:999px;background:linear-gradient(135deg,#5D774A,#7C9A5E);color:#fff!important;font-size:.64rem;font-weight:800;letter-spacing:.01em;text-decoration:none!important;white-space:nowrap;box-shadow:0 3px 10px rgba(93,119,74,.3);z-index:2;animation:instHsale .5s ease .8s both}
+@media(max-width:380px){.instH{left:auto;right:-8px;translate:none}}
+.instH[hidden]{display:none}.instH:active{transform:scale(.95)}.instH:focus-visible{outline:3px solid #F2C230;outline-offset:2px}
+@keyframes instHsale{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.instH{animation:none}}
 header .hl{grid-area:l;justify-self:start}header .hr2{grid-area:r;justify-self:end}
 header .rbw{position:relative;display:block}
 .rb{position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;padding:0;cursor:pointer;color:#2a1a05;box-shadow:0 4px 12px rgba(0,0,0,.28);transition:transform .15s,box-shadow .15s,background .15s;-webkit-tap-highlight-color:transparent;overflow:visible}
@@ -487,7 +492,7 @@ if(document.readyState!=="loading")intenta();else document.addEventListener("DOM
 <header>
   <div class="hz hl"><button class="rb rb-l" id="bMenuL" type="button" aria-label="Perfil y redes" aria-expanded="false" aria-haspopup="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.6-4.2 3.6-6.5 7.5-6.5s6.9 2.3 7.5 6.5"/></svg></button><div class="pmenu" id="popL"><div class="pml">PERFIL:</div><button id="bCuenta"></button><button id="bCont" type="button" aria-label="Contáctanos" aria-expanded="false" aria-controls="contPanel"><span class="lbl">REDES VALLE GO</span><span class="dot"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M15.6 8.4v5.1a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.4 6.9"/></svg></span></button></div></div>
   <div class="hc"><a href="#/" class="logo" aria-label="Valle GO"><img src="logo.png" alt="Valle GO" width="66" height="66"></a><div class="marca"><a href="#/" aria-label="Va, llegó — ir al inicio"><img src="marca.png" alt="Va, llegó" width="450" height="92" decoding="async" fetchpriority="high"></a></div></div>
-  <div class="hz hr2"><button id="bPanel" style="display:none"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg><span>PANEL</span></button><span class="rbw"><button class="rb rb-r" id="bMenuR" type="button" aria-label="Pedidos y carrito" aria-expanded="false" aria-haspopup="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l1 12.5h-15z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg><span class="bdg" id="bBadge" hidden>0</span></button><div class="pmenu" id="popR"><button id="bPedidos" style="display:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span class="pl">Ver mis pedidos</span></button><button id="bMisCons" style="display:none" type="button">🗂️ Mis consultas y citas</button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div></span></div>
+  <div class="hz hr2"><button id="bPanel" style="display:none"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg><span>PANEL</span></button><span class="rbw"><button class="rb rb-r" id="bMenuR" type="button" aria-label="Pedidos y carrito" aria-expanded="false" aria-haspopup="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l1 12.5h-15z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg><span class="bdg" id="bBadge" hidden>0</span></button><div class="pmenu" id="popR"><button id="bPedidos" style="display:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span class="pl">Ver mis pedidos</span></button><button id="bMisCons" style="display:none" type="button">🗂️ Mis consultas y citas</button><button id="bCarrito">Carrito (<span id="n">0</span>)</button></div></span><a href="#/instalar" id="bInstH" class="instH" hidden aria-label="Instalar la app Valle GO"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg>Instalar</a></div>
 </header>
 <div class="dirbar"><div class="dock"><a class="dk" href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a><a class="dk" href="#" id="bAg" role="button" aria-expanded="false" aria-controls="agPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2.2 2.2 4.3-4.4"/></svg>AGENDA SERVICIOS</a><button class="dk" id="bCq" type="button" aria-label="Consulta de stock" aria-expanded="false" aria-controls="cqPanel" title="Consulta de stock"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="11.5" cy="11.5" r="3.5"/><path d="M14.2 14.2L17 17"/></svg>CONSULTA DE STOCK</button></div></div>
 <main id="vista" style="padding-top:48px"></main>
@@ -2212,7 +2217,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v196";
+const BUILD="valle-go-v197";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2283,7 +2288,15 @@ const sistemaInst=esIOS?"ios":esAndroid?(chromeAndroid?"chrome":"otro"):"pc";
 const urlChrome=()=>"intent://"+location.host+location.pathname+"?instalar=1#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url="+encodeURIComponent(location.origin+location.pathname+"?instalar=1")+";end";
 const cerrado=()=>Date.now()-Number($$("instX",0))<6048e5; // no molestar por 7 días
 function banner(txt,sub,btn,accion,conChrome){ if(yaApp||cerrado()||location.hash==="#/instalar")return; $("instT").innerHTML=esc(txt)+(sub?`<small>${esc(sub)}</small>`:""); $("instB").textContent=btn; $("instB").dataset.a=accion; $("instR").style.display=conChrome?"flex":"none"; $("inst").style.display="flex"; }
-if(yaApp){const f=$("fInstW");if(f)f.remove()}   // el botón del pie solo se muestra a quien todavía no la instala
+if(yaApp){const f=$("fInstW");if(f)f.remove()}
+// Botón "Instalar" bajo el carrito: visible para todos hasta que la app quede instalada en este aparato
+const INST_K="valle_instalada";
+const marcaInstalada=()=>{try{localStorage.setItem(INST_K,"1")}catch(e){}const b=$("bInstH");if(b)b.hidden=true};
+const instaladaAntes=()=>{try{return localStorage.getItem(INST_K)==="1"}catch(e){return false}};
+if(yaApp)marcaInstalada();
+else if(!instaladaAntes()){const b=$("bInstH");if(b){b.hidden=false;b.onclick=async e=>{e.preventDefault();if(!(await instalarAhora()))location.hash="#/instalar"}}
+  // Chrome/Edge (Android y PC) pueden decir si la app ya está instalada en este aparato
+  if(navigator.getInstalledRelatedApps)navigator.getInstalledRelatedApps().then(l=>{if(l&&l.length)marcaInstalada()}).catch(()=>{})}   // el botón del pie solo se muestra a quien todavía no la instala
 function flechaIOS(){
   if(!esIOS||yaApp)return;const v=+((NAV.match(/Version\/(\d+)/)||[])[1]||0),ipad=/ipad|Macintosh/i.test(NAV),crios=/CriOS/i.test(NAV);
   let pos,txt;
@@ -2306,7 +2319,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;
   if(sistemaInst==="otro")banner("Instala Valle GO gratis","Es gratis, casi no ocupa espacio y se actualiza sola.","Instalar","instalar",true);   // mismo efecto que el icono de instalar de la barra de dirección
   else banner("Instala Valle GO gratis","Es gratis, casi no ocupa espacio y se actualiza sola.","Instalar","instalar");
   if(location.hash==="#/instalar")vistaInstalar()});
-window.addEventListener("appinstalled",()=>{$("inst").style.display="none";ev=null});
+window.addEventListener("appinstalled",()=>{$("inst").style.display="none";ev=null;marcaInstalada()});
 if(!yaApp)setTimeout(()=>{
   if(sistemaInst==="otro"&&!ev&&!enOtraApp)banner("Instala Valle GO gratis","Usa el icono de instalar junto a la dirección o el menú del navegador.","Cómo instalar","guia",true);
   else if(sistemaInst==="otro"&&!ev)banner("Para instalar Valle GO, ábrela en Chrome",enOtraApp?"Estás dentro de otra app. En Chrome se instala sin avisos de seguridad.":"Así se instala sin avisos de seguridad de Google.","Abrir en Chrome","chrome");

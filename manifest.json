@@ -72,5 +72,11 @@
       "form_factor": "wide",
       "label": "Valle GO en la computadora"
     }
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://valle-go.vercel.app/manifest.json"
+    }
   ]
 }
