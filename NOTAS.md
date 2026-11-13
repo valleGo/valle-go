@@ -8,7 +8,7 @@ Guía para retomar el proyecto en una conversación nueva. **Repo público: aqu�
 Cuando el dueño diga **"EJECUTA LA ORDEN 66"**, ya contrató las versiones Pro. Hacer en este orden y avisar el avance:
 
 1. **Respaldo antes de empezar** (flujo "Respaldo Valle GO" en valleGo/valle-go-respaldos, por la API REST de GitHub).
-2. **Confirmar los planes Pro** (Supabase y, si aplica, Vercel) con las herramientas de cada servicio.
+2. **Confirmar los planes Pro:** el dueño tendrá **Supabase Pro y Vercel Pro** (confirmado el 13 nov 2026). Revisarlo con las herramientas de cada servicio.
 3. **Supabase Pro:** guiar al dueño para activar la protección contra contraseñas filtradas (Authentication → contraseñas) y confirmar los respaldos diarios. Volver a correr los asesores de seguridad y rendimiento.
 4. **Datos de ejemplo:** listar los comercios, menús y pedidos de prueba y **preguntar antes de borrar** cualquiera.
 5. **App pública:** preguntar qué falta para "hacerla pública" (dominio propio, quitar protección de Vercel, publicar el enlace, etc.) y hacerlo.
