@@ -497,7 +497,7 @@ async function cargarRolReal(){
     try{[a,c,sv]=await Promise.all([db.from("admins").select("user_id").eq("user_id",sesion.id),db.from("comercios").select("id,nombre,mp_conectado,plan,ofrece_citas,ofrece_consulta").eq("dueno_id",sesion.id),db.from("servicios_perfiles").select("id,nombre,tipo").eq("dueno_id",sesion.id)])}catch(e){a=c=sv={error:e}}
     if(!a.error&&!c.error&&!sv.error)break;await new Promise(r=>setTimeout(r,1200*(i+1)))}
   if(a.error||c.error||sv.error){pintaHeader();notifAuto();return}   // falló la red: se conserva lo último que se sabía, no se oculta el botón
-  esAdmin=!!(a.data&&a.data.length);misCom=(c.data||[]).map(x=>x.plan==="simple"?{...x,ofrece_citas:false,ofrece_consulta:false}:x);misSrv=sv.data||[];rolOK=true;   // agenda y consulta de stock: solo plan Básico
+  esAdmin=!!(a.data&&a.data.length);misCom=(c.data||[]).map(x=>x.plan==="simple"?{...x,ofrece_consulta:false}:x);misSrv=sv.data||[];rolOK=true;   // agenda y citas: ambos planes; consulta de stock: solo Básico (PRODUCTOS)
   
   try{localStorage.setItem("valle_rol_"+sesion.id,JSON.stringify({a:esAdmin,c:misCom,s:misSrv}))}catch(e){}
   pintaHeader();escucharPedidos();escucharMisPedidos();escucharServicios();notifAuto();
@@ -525,7 +525,7 @@ const ped2html=(p,admin)=>`<div class="item"><div class="in"><b>${esc(p.comercio
 
 // ---- Panel del comerciante: confirma y actualiza sus pedidos; el menú y las fotos solo los edita el administrador ----
 const cobroHTML=()=>`<div class="aviso" style="display:grid;gap:8px"><b>💳 Cobros en línea</b>
-  <span class="suave">Conecta tu cuenta de Mercado Pago para que el dinero de los pedidos pagados en línea llegue directo a tu cuenta. Mercado Pago descuenta su comisión por procesar cada pago en línea. Aparte, Valle GO cobra 1% del total de todos los pedidos (en línea, transferencia, depósito o efectivo) y de las citas atendidas por el uso y mantenimiento de la app; el 1% se paga al final de cada mes y tu membresía al inicio del mes. Tu tarjeta de débito o tu cuenta bancaria se agregan dentro de tu cuenta de Mercado Pago, para retirar tu dinero cuando quieras.</span>
+  <span class="suave">Conecta tu cuenta de Mercado Pago para que el dinero de los pedidos pagados en línea llegue directo a tu cuenta. Mercado Pago descuenta su comisión por procesar cada pago en línea. Aparte, Valle GO cobra 3% del total de todos los pedidos (en línea, transferencia, depósito o efectivo) y de las citas atendidas por el uso y mantenimiento de la app; el 3% se paga al final de cada mes y tu membresía al inicio del mes. Tu tarjeta de débito o tu cuenta bancaria se agregan dentro de tu cuenta de Mercado Pago, para retirar tu dinero cuando quieras.</span>
   ${misCom.map(c=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span><b>${esc(c.nombre)}</b>: ${c.mp_conectado?"✅ cuenta conectada":"sin conectar"}</span>
    ${c.mp_conectado?`<button class="btn sec" data-mpd="${c.id}">Desconectar</button>`:`<button class="btn" data-mpc="${c.id}">Conectar mi Mercado Pago</button>`}</div>`).join("")}</div>`;
 async function llamaMp(cuerpo){const {data}=await db.auth.getSession();
@@ -538,7 +538,7 @@ async function vistaPanel(){
   if(!misCom.length&&esAdmin){location.hash="#/admin";return}
   if(!misCom.length){$("vista").innerHTML=`<h2>Panel de comerciante</h2><p>Esta cuenta aún no está vinculada a un comercio. Pide al administrador de Valle GO que la vincule con tu correo.</p>`;return}
   if(misCom.every(c=>c.plan==="simple")&&(misSrv.length||misCom.some(c=>c.ofrece_citas||c.ofrece_consulta))){location.hash="#/panel-servicios";return}
-  if(misCom.every(c=>c.plan==="simple")){$("vista").innerHTML=`<h2>Mi panel</h2><div class="aviso"><b>Plan Simple</b><br>Tu comercio tiene un perfil de presentación en Valle GO: logo, portada, nombre, domicilio, horarios, días disponibles y teléfono. Este plan no incluye menú, pedidos, agenda de servicios, consulta de stock ni transporte. Para cambiar tus datos o pasar al plan Básico, contacta al administrador de Valle GO.</div>`;return}
+  if(misCom.every(c=>c.plan==="simple")){$("vista").innerHTML=`<h2>Mi panel</h2><div class="aviso"><b>SERVICIOS · Plan Simple</b><br>Tu negocio tiene su tarjeta de presentación en el DIRECTORIO (logo, portada, nombre, domicilio, horarios, días y teléfono), agenda y citas con tus clientes por medio de la app y un reporte mensual corto. Tu agenda aún no está activada: pídele al administrador de Valle GO que la active. Para vender productos con menú, pedidos y consulta de stock, pasa al plan Básico (PRODUCTOS).</div>`;return}
   const ids=misCom.map(c=>c.id);
   const [pe,me]=await Promise.all([
     db.from("pedidos").select("*, comercios(nombre)").in("comercio_id",ids).order("creado",{ascending:false}).limit(100),
@@ -557,8 +557,8 @@ let adm={tab:"anuncios",com:null};
 try{const g=JSON.parse(localStorage.getItem("valle_adm")||"null");if(g&&typeof g.tab==="string")Object.assign(adm,{tab:g.tab,mes:g.mes,mesM:g.mesM})}catch(e){}   // recuerda la pestaña del panel de administración al recargar
 
 const CF_AD=[{k:"titulo",l:"Título (opcional)"},{k:"enlace",l:"Enlace al tocar (opcional)"},{k:"imagen_url",l:"Imagen",t:"file",carpeta:"anuncios"}];
-const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Plan del comercio",t:"plan"},{k:"giro",l:"Giro (Taquería, Panadería...)"},{k:"categoria_id",l:"Categoría (para organizar los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario",t:"horario"},{k:"direccion",l:"Domicilio del comercio",t:"direccion"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"ofrece_citas",l:"Ofrece agenda de servicios (solo plan Básico)",t:"check"},{k:"ofrece_consulta",l:"Ofrece consulta de stock con foto y texto (solo plan Básico)",t:"check"},{k:"whatsapp",l:"WhatsApp o teléfono (52...) — se muestra en el perfil"},{k:"correo_publico",l:"Correo para mostrar en el perfil (opcional)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
-const CF_CAT=[{k:"nombre",l:"Nombre de la categoría (Comida, Cafeterías, Servicios...)"},{k:"emoji",l:"Emoji (opcional)"},{k:"orden",l:"Orden de aparición (1, 2, 3...)",t:"number"}];
+const CF_COM=[{k:"nombre",l:"Nombre"},{k:"plan",l:"Categoría y plan",t:"plan"},{k:"promo_inicio",l:"Promoción de apertura: mes gratis",t:"promo"},{k:"giro",l:"Giro (Taquería, Tatuajes, Papelería...)"},{k:"categoria_id",l:"Subcategoría (del mismo grupo que el plan; organiza los comercios en la app)",t:"select"},{k:"descripcion",l:"Descripción"},{k:"horario",l:"Horario",t:"horario"},{k:"direccion",l:"Domicilio del comercio",t:"direccion"},{k:"dias_abiertos",l:"Días abiertos",t:"dias"},{k:"ofrece_domicilio",l:"Ofrece entrega a domicilio",t:"check"},{k:"ofrece_citas",l:"Ofrece agenda y citas (SERVICIOS y PRODUCTOS)",t:"check"},{k:"ofrece_consulta",l:"Ofrece consulta de stock con foto y texto (solo PRODUCTOS · Básico)",t:"check"},{k:"whatsapp",l:"WhatsApp o teléfono (52...) — se muestra en el perfil"},{k:"correo_publico",l:"Correo para mostrar en el perfil (opcional)"},{k:"envio",l:"Costo de envío",t:"number"},{k:"minimo",l:"Pedido mínimo",t:"number"},{k:"banco",l:"Banco (para transferencias)"},{k:"titular",l:"Titular de la cuenta"},{k:"clabe",l:"CLABE (18 dígitos)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:"comercios"},{k:"logo_url",l:"Logotipo del comercio (cuadrado, mejor con fondo transparente)",t:"file",carpeta:"logos"},{k:"activo",l:"Visible en la app",t:"check"}];
+const CF_CAT=[{k:"grupo",l:"Pertenece a",t:"grupo"},{k:"nombre",l:"Nombre de la subcategoría (Pizza, Cafetería, Tatuajes, Spa...)"},{k:"emoji",l:"Emoji (opcional)"},{k:"orden",l:"Orden de aparición (1, 2, 3...)",t:"number"}];
 const CF_MENU=[{k:"categoria",l:"Categoría"},{k:"nombre",l:"Nombre"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio",t:"number"},{k:"foto_url",l:"Foto",t:"file",carpeta:"menu"},{k:"disponible",l:"Disponible",t:"check"}];
 const DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
 const HORAS=(()=>{const a=[];for(let h=0;h<24;h++)for(const m of["00","30"])a.push((h%12||12)+":"+m+" "+(h<12?"am":"pm"));return a})();
@@ -576,8 +576,10 @@ const formHTML=(cs,v)=>cs.map(c=>c.t==="horario"?(()=>{const[a,b]=parseHor(v[c.k
   :c.t==="file"?`<label>${c.l}<input type="file" accept="image/*" data-f="${c.k}">${v[c.k]?`<img src="${esc(v[c.k])}" alt="" style="height:60px;border-radius:8px">`:""}</label>`
   :c.t==="srvtipo"?`<label>${c.l}<select data-f="${c.k}">${["transporte"].map(k=>`<option value="${k}" ${(v[c.k]||"transporte")===k?"selected":""}>${({transporte:"Transporte (taxistas, transportistas)",consulta:"Consulta de stock (comercio con mucho inventario)"})[k]}</option>`).join("")}</select></label>`
   :c.t==="check"?`<label><span><input type="checkbox" data-f="${c.k}" ${v[c.k]?"checked":""} style="width:auto"> ${c.l}</span></label>`
-  :c.t==="plan"?`<label>${c.l}<select data-f="${c.k}"><option value="basico" ${(v[c.k]||"basico")==="basico"?"selected":""}>Básico: menú, pedidos, agenda de servicios, consulta de stock y transporte ($24 al día, $720 al mes IVA incluido)</option><option value="simple" ${v[c.k]==="simple"?"selected":""}>Simple: solo perfil de presentación en el directorio ($12 al día, $360 al mes IVA incluido)</option></select></label>`
-  :c.t==="select"?`<label>${c.l}<select data-f="${c.k}"><option value="">Sin categoría</option>${CATEGORIAS.map(k=>`<option value="${k.id}" ${v[c.k]===k.id?"selected":""}>${esc((k.emoji?k.emoji+" ":"")+k.nombre)}</option>`).join("")}</select></label>`
+  :c.t==="plan"?`<label>${c.l}<select data-f="${c.k}"><option value="basico" ${(v[c.k]||"basico")==="basico"?"selected":""}>PRODUCTOS · Plan Básico ($${MEM_IVA.basico} al mes, IVA incluido): menú, pedidos, consulta de stock, agenda y citas, página principal, directorio e informe completo</option><option value="simple" ${v[c.k]==="simple"?"selected":""}>SERVICIOS · Plan Simple ($${MEM_IVA.simple} al mes, IVA incluido): agenda y citas, tarjeta en el directorio y reporte mensual corto</option></select><small class="suave">Ambos planes pagan 3% de los pedidos y citas atendidas, al final del mes.</small></label>`
+  :c.t==="promo"?`<label>${c.l}<input type="month" data-f="${c.k}" value="${esc(v[c.k]||"")}"><small class="suave">Primeros ${PROMO_CUPO} comercios: mes gratis y 20% de descuento en los meses 2, 3 y 4. Déjalo vacío si no aplica. Lugares usados: ${PROMO_N} de ${PROMO_CUPO}.</small></label>`
+  :c.t==="grupo"?`<label>${c.l}<select data-f="${c.k}">${[["productos","PRODUCTOS (plan Básico)"],["servicios","SERVICIOS (plan Simple)"]].map(([g,t])=>`<option value="${g}" ${(v[c.k]||"productos")===g?"selected":""}>${t}</option>`).join("")}</select></label>`
+  :c.t==="select"?`<label>${c.l}<select data-f="${c.k}"><option value="">Sin subcategoría</option>${[["servicios","SERVICIOS (plan Simple)"],["productos","PRODUCTOS (plan Básico)"]].map(([g,t])=>`<optgroup label="${t}">${CATEGORIAS.filter(k=>(k.grupo||"productos")===g).map(k=>`<option value="${k.id}" ${v[c.k]===k.id?"selected":""}>${esc((k.emoji?k.emoji+" ":"")+k.nombre)}</option>`).join("")}</optgroup>`).join("")}</select></label>`
   :`<label>${c.l}<input data-f="${c.k}" type="${c.t||"text"}" value="${esc(v[c.k]??"")}"></label>`).join("");
 async function leerForm(cs,raiz,v){const o={};
   for(const c of cs){const el=raiz.querySelector(`[data-f="${c.k}"]`);
@@ -585,20 +587,27 @@ async function leerForm(cs,raiz,v){const o={};
     else if(c.t==="direccion"){const F=el.closest(".fg"),sn=F.querySelector("[data-dsn]").checked;o[c.k]=dirTxt(F.querySelector("[data-dc]").value.trim(),sn?"S/N":F.querySelector("[data-dn]").value.trim(),F.querySelector("[data-dl]").value.trim())}
     else if(c.t==="dias")o[c.k]=[...el.closest("label").querySelectorAll("[data-dia]")].filter(x=>x.checked).map(x=>x.dataset.dia).join(",");
     else if(c.t==="file")o[c.k]=el.files[0]?await subirFoto(el.files[0],c.carpeta):(v[c.k]||null);
-    else if(c.t==="select"||c.t==="srvtipo")o[c.k]=el.value||null; else if(c.t==="check")o[c.k]=el.checked; else if(c.t==="number")o[c.k]=Number(el.value||0); else o[c.k]=el.value.trim();}
+    else if(c.t==="select"||c.t==="srvtipo"||c.t==="promo")o[c.k]=el.value||null; else if(c.t==="grupo")o[c.k]=el.value||"productos"; else if(c.t==="check")o[c.k]=el.checked; else if(c.t==="number")o[c.k]=Number(el.value||0); else o[c.k]=el.value.trim();}
   return o;}
 // ---- Monitoreo y gráficas mensuales (solo admin) ----
 const MESES_C=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"],MESES_L=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-const COSTO_FIJO=1219,MEM_IVA={simple:360,basico:720};
+const COSTO_FIJO=1219,MEM_IVA={simple:299,basico:549},COM_PCT=0.03,PROMO_CUPO=20;   // v171: SERVICIOS=Simple $299, PRODUCTOS=Básico $549 (IVA incluido); 3% de pedidos y citas
 const mkey=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"), r2m=x=>Math.round(x*100)/100, mxn=x=>(Number(x)<0?"-":"")+"$"+Math.abs(Number(x||0)).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
 const mxk=x=>x>=1000?"$"+(x/1000).toFixed(x>=10000?0:1)+"k":"$"+Math.round(x), memConIva=pl=>MEM_IVA[pl==="simple"?"simple":"basico"], memBase=pl=>r2m(memConIva(pl)/1.16);
+// Promoción de apertura (primeros 20): mes 1 gratis y 20% de descuento en los meses 2, 3 y 4. promo_inicio = mes gratis (AAAA-MM)
+const mesDif=(a,b)=>{const[y1,m1]=a.split("-").map(Number),[y2,m2]=b.split("-").map(Number);return(y2-y1)*12+(m2-m1)};
+const promoF=(pi,k)=>{if(!pi||!k)return 1;const d=mesDif(pi,k);return d===0?0:d>=1&&d<=3?0.8:1};
+const promoEt=(pi,k)=>{const f=promoF(pi,k);return f===0?"mes gratis":f<1?"20% promo":""};
+const memMes=(pl,pi,k)=>r2m(memConIva(pl)*promoF(pi,k)), memBaseMes=(pl,pi,k)=>r2m(memMes(pl,pi,k)/1.16);
+const PLAN_TXT=pl=>pl==="simple"?"SERVICIOS · Simple":"PRODUCTOS · Básico";
+let PROMO_N=0;async function promoUsados(){try{const[a,b]=await Promise.all([db.from("comercios").select("id",{count:"exact",head:true}).not("promo_inicio","is",null),db.from("servicios_perfiles").select("id",{count:"exact",head:true}).not("promo_inicio","is",null)]);PROMO_N=(a.count||0)+(b.count||0)}catch(e){}return PROMO_N}
 const nomMes=k=>{const[y,m]=k.split("-").map(Number);return MESES_L[m-1]+" "+y}, etMes=k=>MESES_C[Number(k.split("-")[1])-1];
 async function calcMonitoreo(mes){
   const[Y,M]=mes.split("-").map(Number),keys=[];for(let i=5;i>=0;i--)keys.push(mkey(new Date(Y,M-1-i,1)));
   const d0=new Date(Y,M-6,1).toISOString(),d1=new Date(Y,M,1).toISOString();
   const pedPag=async()=>{let P=[],desde=0;for(;;){const r=await db.from("pedidos").select("comercio_id,total,pago,estado,estado_pago,creado").gte("creado",d0).lt("creado",d1).order("creado").order("id").range(desde,desde+999);
       if(r.error)throw r.error;P=P.concat(r.data||[]);if((r.data||[]).length<1000)break;desde+=1000}return P};
-  const [rc,P,rp,rg,rci]=await Promise.all([db.from("comercios").select("id,nombre,activo,plan,creado,mp_conectado,whatsapp").order("nombre"),pedPag(),db.from("cobros_pagos").select("comercio_id,mes,monto,concepto").in("mes",keys),db.from("gastos").select("id,mes,concepto,monto,con_iva").in("mes",keys).order("creado"),db.from("citas").select("perfil_id,monto,mes").eq("estado","Completada").in("mes",keys)]);
+  const [rc,P,rp,rg,rci]=await Promise.all([db.from("comercios").select("id,nombre,activo,plan,creado,mp_conectado,whatsapp,promo_inicio").order("nombre"),pedPag(),db.from("cobros_pagos").select("comercio_id,mes,monto,concepto").in("mes",keys),db.from("gastos").select("id,mes,concepto,monto,con_iva").in("mes",keys).order("creado"),db.from("citas").select("perfil_id,monto,mes").eq("estado","Completada").in("mes",keys)]);
   if(rc.error)throw rc.error;const cs=rc.data||[],PG=rp.error?[]:(rp.data||[]),GA=rg.error?[]:(rg.data||[]);
   const ag={};let sinPagar=0;
   P.forEach(p=>{const online=p.pago==="en_linea"||p.pago==="tarjeta",k=mkey(new Date(p.creado)),sel=k===mes;
@@ -608,10 +617,10 @@ async function calcMonitoreo(mes){
   const C={},Mes={};
   keys.forEach((k,i)=>{const[y,m]=k.split("-").map(Number),fin=new Date(y,m,1);C[k]={};const T={n:0,nc:0,cit:0,linea:0,otro:0,tot:0,com:0,mem:0,memI:0,cobrar:0,pag:0,saldo:0,pagC:0,pagM:0,saldoC:0,saldoM:0};
     cs.forEach(c=>{const a=(ag[c.id]||{})[k]||{n:0,linea:0,otro:0,nc:0,cit:0};const activo=(c.activo!==false||a.n>0||a.nc>0)&&(!c.creado||new Date(c.creado)<fin);if(!activo&&!a.n&&!a.nc)return;
-      const tot=a.linea+a.otro+a.cit,com=r2m(tot*0.01),mem=activo?memBase(c.plan):0,memI=activo?memConIva(c.plan):0,cobrar=r2m(com+memI),
+      const tot=a.linea+a.otro+a.cit,com=r2m(tot*COM_PCT),mem=activo?memBaseMes(c.plan,c.promo_inicio,k):0,memI=activo?memMes(c.plan,c.promo_inicio,k):0,promo=activo?promoEt(c.promo_inicio,k):"",cobrar=r2m(com+memI),
         pagC=r2m(PG.filter(x=>x.comercio_id===c.id&&x.mes===k&&(x.concepto||"comision")==="comision").reduce((t,x)=>t+Number(x.monto),0)),pagM=r2m(PG.filter(x=>x.comercio_id===c.id&&x.mes===k&&x.concepto==="membresia").reduce((t,x)=>t+Number(x.monto),0)),
         saldoC=Math.max(0,r2m(com-pagC)),saldoM=Math.max(0,r2m(memI-pagM)),pag=r2m(pagC+pagM),saldo=r2m(saldoC+saldoM);
-      C[k][c.id]={id:c.id,nombre:c.nombre,plan:c.plan==="simple"?"simple":"basico",n:a.n,nc:a.nc,cit:a.cit,linea:a.linea,otro:a.otro,tot,com,mem,memI,cobrar,pag,saldo,pagC,pagM,saldoC,saldoM};
+      C[k][c.id]={id:c.id,nombre:c.nombre,plan:c.plan==="simple"?"simple":"basico",promo,n:a.n,nc:a.nc,cit:a.cit,linea:a.linea,otro:a.otro,tot,com,mem,memI,cobrar,pag,saldo,pagC,pagM,saldoC,saldoM};
       T.n+=a.n;T.nc+=a.nc;T.cit+=a.cit;T.linea+=a.linea;T.otro+=a.otro;T.tot+=tot;T.com+=com;T.mem+=mem;T.memI+=memI;T.cobrar+=cobrar;T.pag+=pag;T.saldo+=saldo;T.pagC+=pagC;T.pagM+=pagM;T.saldoC+=saldoC;T.saldoM+=saldoM});
     T.ing=r2m(T.com+T.mem);T.gan=r2m(T.ing-COSTO_FIJO);
     const gk=GA.filter(x=>x.mes===k);T.gast=r2m(gk.reduce((t,x)=>t+Number(x.monto),0));T.ivaG=r2m(gk.reduce((t,x)=>t+(x.con_iva?Number(x.monto)*16/116:0),0));
@@ -621,20 +630,20 @@ async function calcMonitoreo(mes){
   if(sinPagar)alertas.push(sinPagar+" pedido(s) en línea de este mes sin pagar (no cuentan en el reporte).");
   Object.values(C[ant]||{}).filter(r=>r.saldo>0).forEach(r=>alertas.push("Saldo pendiente de "+nomMes(ant)+": "+r.nombre+" ("+mxn(r.saldo)+")"));
   return{mes,keys,cs,C,M:Mes,alertas,sinPagar,GA}}
-function svgBarras(x,y,w,h,titulo,labels,series){
-  const max=Math.max(1,...series.flatMap(s=>s.vals)),n=labels.length,left=52,gw=(w-left-8)/n,bw=Math.min(30,(gw-12)/series.length),apil=series.length>2||titulo.length>30,top=y+(apil?56:34),base=y+h-26,ch=base-top;
+function svgBarras(x,y,w,h,titulo,labels,series,fmt){
+  fmt=fmt||mxk;const max=Math.max(1,...series.flatMap(s=>s.vals)),n=labels.length,left=52,gw=(w-left-8)/n,bw=Math.min(30,(gw-12)/series.length),apil=series.length>2||titulo.length>30,top=y+(apil?56:34),base=y+h-26,ch=base-top;
   let g=`<text x="${x}" y="${y+16}" font-size="15" font-weight="700" fill="#2B2D22">${esc(titulo)}</text>`;
   series.forEach((s,j)=>{const lx=apil?x+left+j*125:x+w-8-(series.length-j)*118,ly=apil?y+30:y+6;g+=`<rect x="${lx}" y="${ly}" width="10" height="10" rx="2" fill="${s.color}"/><text x="${lx+14}" y="${ly+9}" font-size="11" fill="#555">${esc(s.nombre)}</text>`});
-  for(let i=0;i<=4;i++){const yy=base-ch*i/4;g+=`<line x1="${x+left}" y1="${yy}" x2="${x+w}" y2="${yy}" stroke="#e4e6dc"/><text x="${x+left-6}" y="${yy+4}" font-size="10" text-anchor="end" fill="#777">${mxk(max*i/4)}</text>`}
+  for(let i=0;i<=4;i++){const yy=base-ch*i/4;g+=`<line x1="${x+left}" y1="${yy}" x2="${x+w}" y2="${yy}" stroke="#e4e6dc"/><text x="${x+left-6}" y="${yy+4}" font-size="10" text-anchor="end" fill="#777">${fmt(max*i/4)}</text>`}
   labels.forEach((l,i)=>{const gx=x+left+i*gw+(gw-bw*series.length)/2;
     series.forEach((s,j)=>{const v=s.vals[i],bh=ch*v/max;g+=`<rect x="${gx+j*bw}" y="${base-bh}" width="${bw-2}" height="${Math.max(bh,v>0?1:0)}" rx="3" fill="${s.color}"/>`;
-      if(v>0&&series.length===1)g+=`<text x="${gx+j*bw+(bw-2)/2}" y="${base-bh-4}" font-size="9.5" text-anchor="middle" fill="#444">${mxk(v)}</text>`});
+      if(v>0&&series.length===1)g+=`<text x="${gx+j*bw+(bw-2)/2}" y="${base-bh-4}" font-size="9.5" text-anchor="middle" fill="#444">${fmt(v)}</text>`});
     g+=`<text x="${x+left+i*gw+gw/2}" y="${base+16}" font-size="11" text-anchor="middle" fill="#555">${esc(l)}</text>`});
   return g}
 const svgWrap=(w,h,inner)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" font-family="Arial,Helvetica,sans-serif"><rect width="${w}" height="${h}" fill="#ffffff"/>${inner}</svg>`;
 const AZ="#6fa8d6",NA="#da9c48",VE="#5C7648",GR="#9aa58a";
 const SG={ventas:(D)=>[{nombre:"Total vendido",color:VE,vals:D.keys.map(k=>D.M[k].tot)}],
-  ing:(D)=>[{nombre:"Membresías",color:AZ,vals:D.keys.map(k=>D.M[k].mem)},{nombre:"Comisión 1%",color:NA,vals:D.keys.map(k=>D.M[k].com)}],
+  ing:(D)=>[{nombre:"Membresías",color:AZ,vals:D.keys.map(k=>D.M[k].mem)},{nombre:"Comisión 3%",color:NA,vals:D.keys.map(k=>D.M[k].com)}],
   iva:(D)=>[{nombre:"IVA cobrado",color:AZ,vals:D.keys.map(k=>D.M[k].ivaC)},{nombre:"IVA de gastos",color:GR,vals:D.keys.map(k=>D.M[k].ivaG)},{nombre:"IVA por pagar",color:NA,vals:D.keys.map(k=>Math.max(0,D.M[k].ivaP))}],
   pagosC:(D)=>[{nombre:"Cobrado",color:VE,vals:D.keys.map(k=>D.M[k].pagC)},{nombre:"Por cobrar",color:NA,vals:D.keys.map(k=>D.M[k].saldoC)}],
   pagosM:(D)=>[{nombre:"Cobrado",color:VE,vals:D.keys.map(k=>D.M[k].pagM)},{nombre:"Por cobrar",color:NA,vals:D.keys.map(k=>D.M[k].saldoM)}],
@@ -643,20 +652,47 @@ function kpiBox(x,y,w,t,v){return `<rect x="${x}" y="${y}" width="${w}" height="
 function svgInformeAdmin(D){
   const T=D.M[D.mes],et=D.keys.map(etMes),W=820;
   let g=`<rect width="${W}" height="72" fill="${VE}"/><text x="24" y="34" font-size="22" font-weight="700" fill="#fff">Valle GO · Informe de ${esc(nomMes(D.mes))}</text><text x="24" y="56" font-size="12" fill="#e8efdc">Monitoreo mensual de ventas, pagos y ganancias</text>`;
-  const K=[["Pedidos",String(T.n)],["Total vendido",mxn(T.tot)],["Comisión 1% Valle GO",mxn(T.com)],["Membresías (sin IVA)",mxn(T.mem)],["Ingresos Valle GO",mxn(T.ing)],["Ganancia estimada",mxn(T.gan)],["Cobrado",mxn(T.pag)],["Por cobrar",mxn(T.saldo)]];
+  const K=[["Pedidos",String(T.n)],["Total vendido",mxn(T.tot)],["Comisión 3% Valle GO",mxn(T.com)],["Membresías (sin IVA)",mxn(T.mem)],["Ingresos Valle GO",mxn(T.ing)],["Ganancia estimada",mxn(T.gan)],["Cobrado",mxn(T.pag)],["Por cobrar",mxn(T.saldo)]];
   K.forEach((k,i)=>{g+=kpiBox(24+(i%4)*194,92+Math.floor(i/4)*74,184,k[0],k[1])});
-  g+=svgBarras(24,250,W-48,220,"Ventas por mes (todos los pedidos)",et,SG.ventas(D))+svgBarras(24,490,W-48,220,"Ingresos de Valle GO por mes (sin IVA)",et,SG.ing(D))+svgBarras(24,730,W-48,220,"Pagos por mes: cobrado y por cobrar (con IVA)",et,SG.pagos(D));
+  g+=svgBarras(24,250,W-48,220,"Ventas por mes (pedidos y citas)",et,SG.ventas(D))+svgBarras(24,490,W-48,220,"Ingresos de Valle GO por mes (sin IVA)",et,SG.ing(D))+svgBarras(24,730,W-48,220,"Pagos por mes: cobrado y por cobrar (con IVA)",et,SG.pagos(D));
   g+=`<text x="24" y="976" font-size="10" fill="#888">Ganancia estimada = ingresos − costos fijos de ${mxn(COSTO_FIJO)} al mes. Generado el ${new Date().toLocaleDateString("es-MX")}.</text>`;
   return svgWrap(W,992,g)}
-function svgInformeComercio(D,id){
-  const R=D.C[D.mes][id],W=820,et=D.keys.map(etMes);
-  const hist=D.keys.map(k=>(D.C[k][id]||{tot:0}).tot);
-  let g=`<rect width="${W}" height="72" fill="${VE}"/><text x="24" y="34" font-size="22" font-weight="700" fill="#fff">${esc(R.nombre)}</text><text x="24" y="56" font-size="12" fill="#e8efdc">Valle GO · Informe de ${esc(nomMes(D.mes))}</text>`;
-  const K=[["Pedidos · citas",R.n+" · "+R.nc],["Total vendido",mxn(R.tot)],["Pedidos",mxn(R.linea+R.otro)],["Citas atendidas",mxn(R.cit)],["1% Valle GO",mxn(R.com)],["Membresía con IVA",mxn(R.memI)],["Total del mes",mxn(R.cobrar)],["Saldo por pagar",mxn(R.saldo)]];
-  K.forEach((k,i)=>{g+=kpiBox(24+(i%4)*194,92+Math.floor(i/4)*74,184,k[0],k[1])});
-  g+=svgBarras(24,250,W-48,230,"Tus ventas por mes",et,[{nombre:"Total vendido",color:VE,vals:hist}]);
-  g+=`<text x="24" y="504" font-size="10" fill="#888">1% de uso y mantenimiento de la app sobre tus pedidos y citas atendidas. La membresía se paga al inicio del mes y el 1% al final. Pagado este mes: ${esc(mxn(R.pag))}.</text>`;
-  return svgWrap(W,520,g)}
+// Informe por comercio. SERVICIOS (Simple): corto, solo números y una gráfica. PRODUCTOS (Básico): completo, con detalles del negocio (X).
+const cant=x=>{const r=Math.round(x*10)/10;return Number.isInteger(r)?String(r):r.toFixed(1)};
+function kpiTxt(x,y,w,t,v){return `<rect x="${x}" y="${y}" width="${w}" height="62" rx="10" fill="#f3f6ec" stroke="#dde5cf"/><text x="${x+12}" y="${y+22}" font-size="11" fill="#667">${esc(t)}</text><text x="${x+12}" y="${y+48}" font-size="${String(v).length>16?14:19}" font-weight="700" fill="#2B2D22">${esc(v)}</text>`}
+function svgInformeComercio(D,id,X){
+  const R=D.C[D.mes][id],W=820,et=D.keys.map(etMes),H=k=>D.C[k][id]||{n:0,nc:0,linea:0,otro:0,cit:0,tot:0};
+  const memT="Membresía"+(R.promo?" ("+R.promo+")":""),cab=sub=>`<rect width="${W}" height="72" fill="${VE}"/><text x="24" y="34" font-size="22" font-weight="700" fill="#fff">${esc(R.nombre)}</text><text x="24" y="56" font-size="12" fill="#e8efdc">Valle GO · ${esc(sub)} de ${esc(nomMes(D.mes))}</text>`;
+  const nota=y=>`<text x="24" y="${y}" font-size="10" fill="#888">3% de uso y mantenimiento de la app sobre ${R.plan==="simple"?"tus citas atendidas":"tus pedidos y citas atendidas"}. La membresía se paga al inicio del mes y el 3% al final. Pagado este mes: ${esc(mxn(R.pag))}.</text>`;
+  if(R.plan==="simple"){
+    let g=cab("Reporte mensual (SERVICIOS)");
+    [["Citas atendidas",String(R.nc)],["Total cobrado",mxn(R.cit+R.linea+R.otro)],["3% Valle GO",mxn(R.com)],[memT,mxn(R.memI)],["Total del mes",mxn(R.cobrar)],["Saldo por pagar",mxn(R.saldo)]]
+      .forEach((k,i)=>{g+=kpiTxt(24+(i%3)*260,92+Math.floor(i/3)*74,250,k[0],k[1])});
+    g+=svgBarras(24,250,W-48,220,"Tus citas atendidas por mes (total cobrado)",et,[{nombre:"Total cobrado",color:VE,vals:D.keys.map(k=>H(k).cit+H(k).linea+H(k).otro)}]);
+    return[svgWrap(W,512,g+nota(496)),512]}
+  const tk=R.n?r2m((R.linea+R.otro)/R.n):0;
+  let g=cab("Informe mensual completo (PRODUCTOS)");
+  [["Pedidos",String(R.n)],["Citas atendidas",String(R.nc)],["Total vendido",mxn(R.tot)],["Ticket promedio",mxn(tk)],["3% Valle GO",mxn(R.com)],[memT,mxn(R.memI)],["Total del mes",mxn(R.cobrar)],["Saldo por pagar",mxn(R.saldo)]]
+    .forEach((k,i)=>{g+=kpiTxt(24+(i%4)*194,92+Math.floor(i/4)*74,184,k[0],k[1])});
+  g+=svgBarras(24,250,W-48,220,"Tus ventas por mes: pedidos y citas",et,[{nombre:"Pedidos",color:VE,vals:D.keys.map(k=>H(k).linea+H(k).otro)},{nombre:"Citas",color:AZ,vals:D.keys.map(k=>H(k).cit)}]);
+  g+=svgBarras(24,490,W-48,220,"Cuántos pedidos y citas tuviste por mes",et,[{nombre:"Pedidos",color:VE,vals:D.keys.map(k=>H(k).n)},{nombre:"Citas",color:AZ,vals:D.keys.map(k=>H(k).nc)}],cant);
+  g+=svgBarras(24,730,W-48,220,"Cómo te pagan: en línea y transferencia/efectivo",et,[{nombre:"En línea",color:AZ,vals:D.keys.map(k=>H(k).linea)},{nombre:"Transf./efectivo",color:NA,vals:D.keys.map(k=>H(k).otro)}]);
+  X=X||{top:[],dom:0,rec:0,dia:"",srv:""};
+  g+=`<text x="24" y="984" font-size="15" font-weight="700" fill="#2B2D22">Lo más vendido del mes</text><text x="430" y="984" font-size="15" font-weight="700" fill="#2B2D22">Detalles de tu negocio</text>`;
+  (X.top.length?X.top:[["Sin pedidos este mes",0]]).forEach((t,i)=>{g+=`<text x="24" y="${1010+i*22}" font-size="12.5" fill="#333">${i+1}. ${esc(String(t[0]).slice(0,40))}</text>${t[1]?`<text x="400" y="${1010+i*22}" font-size="12.5" font-weight="700" text-anchor="end" fill="#2B2D22">${t[1]} vendidos</text>`:""}`});
+  [["Entregas a domicilio",String(X.dom)],["Para recoger en tienda",String(X.rec)],["Día con más pedidos",X.dia||"—"],["Servicio más agendado",X.srv||"—"],["Pagos en línea",mxn(R.linea)]].forEach((t,i)=>{g+=`<text x="430" y="${1010+i*22}" font-size="12.5" fill="#555">${esc(t[0])}</text><text x="796" y="${1010+i*22}" font-size="12.5" font-weight="700" text-anchor="end" fill="#2B2D22">${esc(t[1].slice(0,26))}</text>`});
+  return[svgWrap(W,1148,g+nota(1132)),1148]}
+// Datos extra del informe completo (PRODUCTOS): lo más vendido, entregas, día con más pedidos y servicio más agendado
+async function datosInformeCom(id,mes){
+  const[Y,M]=mes.split("-").map(Number),d0=new Date(Y,M-1,1).toISOString(),d1=new Date(Y,M,1).toISOString(),X={top:[],dom:0,rec:0,dia:"",srv:""};
+  const[rp,rc]=await Promise.all([db.from("pedidos").select("lineas,entrega,creado,estado,pago,estado_pago").eq("comercio_id",id).gte("creado",d0).lt("creado",d1).limit(2000),db.from("citas").select("servicio_nombre").eq("perfil_id",id).eq("estado","Completada").eq("mes",mes)]);
+  const P=(rp.data||[]).filter(p=>p.estado!=="Cancelado"&&!((p.pago==="en_linea"||p.pago==="tarjeta")&&p.estado_pago!=="Pagado")),cu={},dias=[0,0,0,0,0,0,0];
+  P.forEach(p=>{p.entrega==="domicilio"?X.dom++:X.rec++;dias[new Date(p.creado).getDay()]++;
+    (p.lineas||[]).forEach(l=>{const m=/^\s*(\d+)\s*x\s+(.+?)\s+-\s+\$/.exec(String(l));if(m)cu[m[2]]=(cu[m[2]]||0)+Number(m[1])})});
+  X.top=Object.entries(cu).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const mx=Math.max(...dias);if(P.length&&mx>0)X.dia=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][dias.indexOf(mx)];
+  const cs={};(rc.data||[]).forEach(c=>{const n=c.servicio_nombre||"Cita";cs[n]=(cs[n]||0)+1});X.srv=(Object.entries(cs).sort((a,b)=>b[1]-a[1])[0]||[""])[0];
+  return X}
 function svgAPng(svg,w,h){return new Promise((ok,no)=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");c.width=w*2;c.height=h*2;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):no(new Error("No se pudo crear la imagen")),"image/png")};img.onerror=()=>no(new Error("No se pudo crear la imagen"));img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)})}
 
 // ---- Generador mínimo de PDF (tamaño Carta, vertical) para el reporte de membresías ----
@@ -689,10 +725,10 @@ function pdfMembresias(mes,F,S,PGM,nomC){
   const enc=()=>{ops.push({t:"r",x:36,y:y-14,w:540,h:22,c:CLARO});cols.forEach(c=>ops.push({t:"x",x:c.d?c.x-wd(c.n)*9:c.x,y,v:c.n,s:9,b:1,c:NEG}));y+=20};
   const celda=(c,v,b)=>ops.push({t:"x",x:c.d?c.x-wd(v)*9:c.x,y,v,s:9,b,c:NEG});
   nueva();
-  ops.push({t:"x",x:40,y,v:"Plan Simple: $12 al día = $360 al mes · Plan Básico: $24 al día = $720 al mes · IVA incluido (16%).",s:8.5,c:GRIS});y+=24;enc();
+  ops.push({t:"x",x:40,y,v:"SERVICIOS (Simple): $"+MEM_IVA.simple+" al mes · PRODUCTOS (Básico): $"+MEM_IVA.basico+" al mes · IVA incluido (16%) · Promo: mes gratis y 20% en meses 2 a 4.",s:8.5,c:GRIS});y+=24;enc();
   F.forEach(f=>{if(y>730){nueva();enc()}
     celda(cols[0],f.nombre.length>26?f.nombre.slice(0,24)+"...":f.nombre);celda(cols[1],f.plan);celda(cols[2],mx(f.base));celda(cols[3],mx(f.iva));celda(cols[4],mx(f.tot),1);celda(cols[5],mx(f.pag));
-    celda(cols[6],f.saldo<=0.004?"Pagada":mx(f.saldo),1);y+=6;ops.push({t:"l",x1:36,x2:576,y,c:[.85,.87,.8]});y+=16});
+    celda(cols[6],f.tot<=0.004?"Gratis":f.saldo<=0.004?"Pagada":mx(f.saldo),1);y+=6;ops.push({t:"l",x1:36,x2:576,y,c:[.85,.87,.8]});y+=16});
   if(y>700){nueva();y=104}
   ops.push({t:"r",x:36,y:y-14,w:540,h:22,c:CLARO});celda(cols[0],"Total",1);celda(cols[2],mx(S.base),1);celda(cols[3],mx(S.iva),1);celda(cols[4],mx(S.tot),1);celda(cols[5],mx(S.pag),1);celda(cols[6],mx(S.saldo),1);y+=34;
   if(y>690){nueva();y=104}
@@ -727,31 +763,31 @@ function pdfKit(mes,subt){
   K.fin=()=>{K.pags.forEach((p,i)=>p.push({t:"x",x:40,y:772,v:"Generado el "+new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})+" · Valle GO · Página "+(i+1)+" de "+K.pags.length,s:8,c:GRIS}));return pdfSimple(K.pags)};
   K.nueva();return K}
 function pdfCobros1(mes,F,S,PGC,nomC){
-  const K=pdfKit(mes,"Reporte de cobros del 1%"),mx=K.mx,cols=[{n:"Comercio",x:40},{n:"Plan",x:128},{n:"Pedidos",x:182,d:1},{n:"En línea",x:236,d:1},{n:"Transf./efvo.",x:296,d:1},{n:"Citas",x:352,d:1},{n:"Total vendido",x:416,d:1},{n:"1% Valle GO",x:476,d:1},{n:"Pagado",x:526,d:1},{n:"Saldo",x:574,d:1}];
-  K.txt(40,"El 1% se calcula sobre el total de los pedidos del mes (en línea, transferencia, depósito o efectivo) y de las citas atendidas, sin IVA.",8.5,0,K.GRIS);K.y+=24;K.enc(cols);
+  const K=pdfKit(mes,"Reporte de cobros del 3%"),mx=K.mx,cols=[{n:"Comercio",x:40},{n:"Plan",x:128},{n:"Pedidos",x:182,d:1},{n:"En línea",x:236,d:1},{n:"Transf./efvo.",x:296,d:1},{n:"Citas",x:352,d:1},{n:"Total vendido",x:416,d:1},{n:"3% Valle GO",x:476,d:1},{n:"Pagado",x:526,d:1},{n:"Saldo",x:574,d:1}];
+  K.txt(40,"El 3% se calcula sobre el total de los pedidos del mes (en línea, transferencia, depósito o efectivo) y de las citas atendidas, sin IVA. Aplica a los dos planes.",8.5,0,K.GRIS);K.y+=24;K.enc(cols);
   const fila=(f,b)=>{[f.nombre.length>16?f.nombre.slice(0,15)+"...":f.nombre,f.plan,String(f.n),mx(f.linea),mx(f.otro),mx(f.cit||0),mx(f.tot),mx(f.com),mx(f.pag),f.saldo<=0.004&&!b?"Pagado":mx(f.saldo)].forEach((v,i)=>K.txt(cols[i].x,v,8.5,b||i===7||i===9,K.NEG,cols[i].d))};
   F.forEach(f=>{if(K.y>730){K.nueva();K.enc(cols)}fila(f);K.linea()});
   if(K.y>700)K.nueva();K.ops.push({t:"r",x:36,y:K.y-14,w:540,h:22,c:K.CLARO});fila({nombre:"Total",plan:"",n:S.n,linea:S.linea,otro:S.otro,cit:S.cit,tot:S.tot,com:S.com,pag:S.pag,saldo:S.saldo},1);K.y+=34;
-  if(K.y>690)K.nueva();K.txt(40,"Pagos del 1% registrados en el mes",11,1);K.y+=18;
-  if(!PGC.length){K.txt(40,"Aún no hay pagos del 1% registrados este mes.",9,0,K.GRIS);K.y+=16}
+  if(K.y>690)K.nueva();K.txt(40,"Pagos del 3% registrados en el mes",11,1);K.y+=18;
+  if(!PGC.length){K.txt(40,"Aún no hay pagos del 3% registrados este mes.",9,0,K.GRIS);K.y+=16}
   PGC.forEach(x=>{if(K.y>740)K.nueva();const det=new Date(x.pagado_en).toLocaleDateString("es-MX")+(x.metodo?" · "+x.metodo:"")+(x.nota?" · "+x.nota:"");
     K.txt(40,(nomC[x.comercio_id]||"Comercio").slice(0,28),9,1);K.txt(196,det.slice(0,60),9,0,K.GRIS);K.txt(574,mx(Number(x.monto)),9,1,K.NEG,1);K.y+=16});
   return K.fin()}
 function pdfMonitoreo(D){
   const K=pdfKit(D.mes,"Reporte de monitoreo"),mx=K.mx,T=D.M[D.mes],et=D.keys.map(etMes);
   K.txt(40,"Resumen del mes",12,1);K.y+=18;
-  const items=[["Pedidos",String(T.n)],["Total vendido",mx(T.tot)],["Comisión 1%",mx(T.com)],["Membresías (sin IVA)",mx(T.mem)],["Ingresos Valle GO (sin IVA)",mx(T.ing)],["Ganancia estimada",mx(T.gan)],
-    ["1% cobrado",mx(T.pagC)],["1% por cobrar",mx(T.saldoC)],["Membresías cobradas",mx(T.pagM)],["Membresías por cobrar",mx(T.saldoM)],["IVA cobrado (membresías)",mx(T.ivaC)],["Gastos del mes",mx(T.gast)],["IVA de gastos (acreditable)",mx(T.ivaG)],[T.ivaP<0?"IVA a favor":"IVA por pagar",mx(Math.abs(T.ivaP))]];
+  const items=[["Pedidos · citas",T.n+" · "+T.nc],["Total vendido",mx(T.tot)],["Comisión 3%",mx(T.com)],["Membresías (sin IVA)",mx(T.mem)],["Ingresos Valle GO (sin IVA)",mx(T.ing)],["Ganancia estimada",mx(T.gan)],
+    ["3% cobrado",mx(T.pagC)],["3% por cobrar",mx(T.saldoC)],["Membresías cobradas",mx(T.pagM)],["Membresías por cobrar",mx(T.saldoM)],["IVA cobrado (membresías)",mx(T.ivaC)],["Gastos del mes",mx(T.gast)],["IVA de gastos (acreditable)",mx(T.ivaG)],[T.ivaP<0?"IVA a favor":"IVA por pagar",mx(Math.abs(T.ivaP))]];
   for(let i=0;i<items.length;i+=2){[0,1].forEach(j=>{const it=items[i+j];if(!it)return;const x=40+j*270;K.ops.push({t:"r",x:x-4,y:K.y-13,w:262,h:20,c:j?[1,1,1]:K.CLARO});K.txt(x,it[0],9,0,K.GRIS);K.txt(x+250,it[1],9.5,1,K.NEG,1)});K.y+=22}
   K.y+=10;K.txt(40,"Últimos 6 meses",12,1);K.y+=18;
-  const cols=[{n:"Mes",x:40},{n:"Pedidos",x:120,d:1},{n:"Vendido",x:190,d:1},{n:"1%",x:250,d:1},{n:"Membresías",x:320,d:1},{n:"Ingresos",x:390,d:1},{n:"IVA cobrado",x:462,d:1},{n:"IVA gastos",x:525,d:1},{n:"IVA x pagar",x:576,d:1}];
+  const cols=[{n:"Mes",x:40},{n:"Pedidos",x:120,d:1},{n:"Vendido",x:190,d:1},{n:"3%",x:250,d:1},{n:"Membresías",x:320,d:1},{n:"Ingresos",x:390,d:1},{n:"IVA cobrado",x:462,d:1},{n:"IVA gastos",x:525,d:1},{n:"IVA x pagar",x:576,d:1}];
   K.enc(cols);D.keys.forEach(k=>{const m=D.M[k];[etMes(k)+" "+k.slice(0,4),String(m.n),mx(m.tot),mx(m.com),mx(m.mem),mx(m.ing),mx(m.ivaC),mx(m.ivaG),mx(m.ivaP)].forEach((v,i)=>K.txt(cols[i].x,v,8,i===5,K.NEG,cols[i].d));K.linea()});
   K.nueva();K.y=100;
-  K.barras(40,536,190,"Ventas por mes (todos los pedidos)",et,SG.ventas(D));
+  K.barras(40,536,190,"Ventas por mes (pedidos y citas)",et,SG.ventas(D));
   K.barras(40,536,190,"Ingresos de Valle GO por mes (sin IVA)",et,SG.ing(D));
   K.barras(40,536,190,"Membresías por mes: cobrado y por cobrar",et,SG.pagosM(D));
   K.nueva();K.y=100;
-  K.barras(40,536,190,"1% de comisión por mes: cobrado y por cobrar",et,SG.pagosC(D));
+  K.barras(40,536,190,"3% de comisión por mes: cobrado y por cobrar",et,SG.pagosC(D));
   K.barras(40,536,190,"IVA por mes: cobrado, de gastos y por pagar",et,SG.iva(D));
   K.txt(40,"Alertas",12,1);K.y+=16;
   if(!D.alertas.length)K.txt(40,"Sin alertas.",9,0,K.GRIS);
@@ -768,7 +804,7 @@ async function vistaAdmin(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   if(!esAdmin)await cargarRol();
   if(!esAdmin){$("vista").innerHTML="<h2>Acceso restringido</h2><p>Esta sección es solo para el administrador.</p>";return}
-  const T={anuncios:"Publicidad",comercios:"Comercios",categorias:"Categorías",menu:"Menús",monitoreo:"Monitoreo",cobros:"Cobros 1%",membresias:"Membresías",pedidos:"Pedidos",usuarios:"Usuarios",admins:"Administradores",perfil:"Mi perfil",servicios:"Servicios"};
+  const T={anuncios:"Publicidad",comercios:"Comercios",categorias:"Categorías",menu:"Menús",monitoreo:"Monitoreo",cobros:"Cobros 3%",membresias:"Membresías",pedidos:"Pedidos",usuarios:"Usuarios",admins:"Administradores",perfil:"Mi perfil",servicios:"Servicios"};
   const icoCob='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-7 7"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/></svg>';
   const icoMem='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>';
   const icoMon='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7" rx="1"/><rect x="10.5" y="6" width="3.5" height="12" rx="1"/><rect x="16" y="9" width="3.5" height="9" rx="1"/></svg>';
@@ -794,23 +830,24 @@ async function admTab(){
   if(t==="categorias"){
     const L=(await db.from("categorias").select("*").order("orden").order("nombre")).data||[];CATEGORIAS=L;
     const cm=(await db.from("comercios").select("categoria_id")).data||[];
-    box.innerHTML=`<p class="suave">Crea las categorías y luego asigna cada comercio en <b>Comercios → Editar</b>. Los clientes verán los comercios organizados por categoría.</p><button class="btn" data-canew>+ Nueva categoría</button><br><br>`+
-      (L.map(k=>`<div class="item"><div class="in"><b>${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}</b><span class="suave">Orden ${k.orden} · ${cm.filter(c=>c.categoria_id===k.id).length} comercio(s)</span><span><button class="btn sec" data-caed="${k.id}">Editar</button> <button class="btn sec" data-cadel="${k.id}">Borrar</button></span></div></div>`).join("")||"<p>Aún no hay categorías.</p>");
+    const itK=k=>`<div class="item"><div class="in"><b>${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}</b><span class="suave">Orden ${k.orden} · ${cm.filter(c=>c.categoria_id===k.id).length} comercio(s)</span><span><button class="btn sec" data-caed="${k.id}">Editar</button> <button class="btn sec" data-cadel="${k.id}">Borrar</button></span></div></div>`;
+    box.innerHTML=`<div class="aviso"><b>Los comercios se dividen en 2 categorías</b><br><b>SERVICIOS</b> (plan Simple): masajes, tatuajes, doctores, estéticas, transporte… <b>PRODUCTOS</b> (plan Básico): restaurantes, cafeterías, papelerías, tiendas… Dentro de cada una creas subcategorías (Pizza, Cafetería, Tatuajes…) y las asignas en <b>Comercios → Editar</b>. Los clientes las usan para filtrar.</div><button class="btn" data-canew>+ Nueva subcategoría</button>`+
+      [["servicios","SERVICIOS (plan Simple)"],["productos","PRODUCTOS (plan Básico)"]].map(([g,t])=>`<h3>${t}</h3>`+(L.filter(k=>(k.grupo||"productos")===g).map(itK).join("")||'<p class="suave">Aún no hay subcategorías.</p>')).join("");
   }
   if(t==="comercios"){
     if(!CATEGORIAS.length){const ct=await db.from("categorias").select("*").order("orden").order("nombre");if(ct.data)CATEGORIAS=ct.data}
-    const L=(await db.from("comercios").select("*").order("nombre")).data||[];
-    box.innerHTML=`<button class="btn" data-cnew>+ Nuevo comercio</button><br><br>`+L.map(c=>`<div class="item"><div class="foto" ${foto({foto:c.foto_url})}>${c.foto_url?"":esc(c.emoji||"🏪")}</div><div class="in"><b>${c.logo_url?`<img src="${esc(c.logo_url)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px">`:""}${esc(c.nombre)}</b>
-      <span class="suave">${esc(c.giro)} · ${esc((CATEGORIAS.find(k=>k.id===c.categoria_id)||{nombre:"Sin categoría"}).nombre)} · ${c.activo?"Visible":"Oculto"} · Plan ${c.plan==="simple"?"Simple":"Básico"}</span><button class="btn sec" data-ced="${c.id}">Editar</button></div></div>`).join("");
+    const L=(await db.from("comercios").select("*").order("nombre")).data||[];await promoUsados();
+    box.innerHTML=`<p class="suave">Promoción de apertura: <b>${PROMO_N} de ${PROMO_CUPO}</b> lugares usados (comercios y transportistas).</p><button class="btn" data-cnew>+ Nuevo comercio</button><br><br>`+L.map(c=>`<div class="item"><div class="foto" ${foto({foto:c.foto_url})}>${c.foto_url?"":esc(c.emoji||"🏪")}</div><div class="in"><b>${c.logo_url?`<img src="${esc(c.logo_url)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px">`:""}${esc(c.nombre)}</b>
+      <span class="suave">${esc(c.giro)} · ${esc((CATEGORIAS.find(k=>k.id===c.categoria_id)||{nombre:"Sin subcategoría"}).nombre)} · ${c.activo?"Visible":"Oculto"} · ${PLAN_TXT(c.plan)}${c.promo_inicio?" · Promo desde "+nomMes(c.promo_inicio):""}</span><button class="btn sec" data-ced="${c.id}">Editar</button></div></div>`).join("");
   }
   if(t==="servicios"){
     const L=(await db.from("servicios_perfiles").select("*").order("tipo").order("nombre")).data||[];
     const hoyA=new Date();if(!adm.mes)adm.mes=mkey(hoyA);let CT=[],ctErr="";try{CT=await corteTransporte(adm.mes)}catch(e){ctErr=e.message||String(e)}
-    const ctHTML=`<div class="aviso"><b>Corte mensual de transporte</b><br>Cada transportista paga la membresía del plan Simple (${mxn(memConIva("simple"))} al mes, IVA incluido), que se paga al inicio del mes, más el 5% del total de los viajes completados en la app (sin IVA), que se paga al final del mes.</div>
-      <label>Mes<input type="month" id="tcMes" value="${adm.mes}"></label>`+(ctErr?`<p class="suave">No se pudo cargar el corte: ${esc(ctErr)}</p>`:CT.length?CT.map(r=>`<div class="item"><div class="in"><b>${esc(r.nombre)}</b><span>Viajes completados: ${r.n} · Total: ${mxn(r.tot)}</span><span>Comisión 5%: <b>${mxn(r.com)}</b>${r.comMP?` (+ ${mxn(r.comMP)} descontada por Mercado Pago)`:""}</span><span>Membresía: ${mxn(r.mem)}</span><span>Total a cobrar: <b>${mxn(r.cobrar)}</b> · Pagado: ${mxn(r.pag)}</span><span>${r.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':"Saldo: <b>"+mxn(r.saldo)+"</b>"+(r.pag>0?" (parcial)":"")}</span>
+    const ctHTML=`<div class="aviso"><b>Corte mensual de transporte</b><br>Los transportistas están en SERVICIOS: pagan la membresía del plan Simple (${mxn(memConIva("simple"))} al mes, IVA incluido; con la promoción de apertura, mes gratis y 20% en los meses 2 a 4), que se paga al inicio del mes, más el 5% del total de los viajes completados en la app (sin IVA), que se paga al final del mes.</div>
+      <label>Mes<input type="month" id="tcMes" value="${adm.mes}"></label>`+(ctErr?`<p class="suave">No se pudo cargar el corte: ${esc(ctErr)}</p>`:CT.length?CT.map(r=>`<div class="item"><div class="in"><b>${esc(r.nombre)}</b><span>Viajes completados: ${r.n} · Total: ${mxn(r.tot)}</span><span>Comisión 5%: <b>${mxn(r.com)}</b>${r.comMP?` (+ ${mxn(r.comMP)} descontada por Mercado Pago)`:""}</span><span>Membresía: ${mxn(r.mem)}${r.promo?" ("+r.promo+")":""}</span><span>Total a cobrar: <b>${mxn(r.cobrar)}</b> · Pagado: ${mxn(r.pag)}</span><span>${r.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':"Saldo: <b>"+mxn(r.saldo)+"</b>"+(r.pag>0?" (parcial)":"")}</span>
         ${r.pags.map(x=>`<span class="suave">💵 ${mxn(Number(x.monto))} · ${new Date(x.pagado_en).toLocaleDateString("es-MX")}${x.metodo?" · "+esc(x.metodo):""} <button class="btn sec mini" data-tcdel="${x.id}">Quitar</button></span>`).join("")}
         <span class="svbtns">${r.saldo>0.004?`<button class="btn mini" data-tcpg="${r.id}|${r.saldo}">Registrar pago</button>`:""}${r.whatsapp?`<a class="btn mini sec" target="_blank" rel="noopener" href="${waUrl(r.whatsapp)}?text=${encodeURIComponent(corteResumen(r,adm.mes))}">Enviar corte por WhatsApp</a>`:""}</span></div></div>`).join(""):"<p class='suave'>No hay transportistas activos este mes.</p>")+"<hr>";
-    box.innerHTML=ctHTML+`<p class="suave">Transportistas y taxistas. La agenda de servicios y la consulta de stock se activan en cada comercio del plan Básico (el plan Simple solo tiene perfil en el directorio): Comercios → Editar → «Ofrece agenda de citas» y «Ofrece consulta de stock». Al crear un transportista, escribe el correo de su dueño (debe estar registrado en la app).</p><button class="btn" data-svnew>+ Nuevo transportista</button><br><br>`+
+    box.innerHTML=ctHTML+`<p class="suave">Transportistas y taxistas (categoría SERVICIOS). La agenda y citas se activa en cada comercio de cualquier plan, y la consulta de stock solo en PRODUCTOS (plan Básico): Comercios → Editar → «Ofrece agenda y citas» y «Ofrece consulta de stock». Al crear un transportista, escribe el correo de su dueño (debe estar registrado en la app).</p><button class="btn" data-svnew>+ Nuevo transportista</button><br><br>`+
       (L.map(p=>`<div class="item"><div class="foto" ${foto({foto:p.foto_url})}>${p.foto_url?"":SV[p.tipo].e}</div><div class="in"><b>${esc(p.nombre)}</b><span class="suave">${SV[p.tipo].t} · ${esc(p.giro||"")} · ${p.activo?"Visible":"Oculto"} · ${p.dueno_id?"Con dueño":"Sin dueño"}</span><span class="svbtns"><button class="btn sec mini" data-sved="${p.id}">Editar</button><button class="btn sec mini" data-svdel="${p.id}">Eliminar</button></span></div></div>`).join("")||"<p>Aún no hay transportistas.</p>");
     if($("tcMes"))$("tcMes").onchange=e=>{if(e.target.value){adm.mes=e.target.value;admTab()}};
   }
@@ -839,22 +876,22 @@ async function admTab(){
     adm.mon=D;const T=D.M[D.mes],et=D.keys.map(etMes);
     const card=(t,v,sub)=>`<div class="aviso" style="margin:0"><span class="suave">${t}</span><br><b style="font-size:1.15rem">${v}</b>${sub?`<br><span class="suave">${sub}</span>`:""}</div>`;
     const chart=(tit,ser)=>`<div style="margin:12px 0;background:#fff;border-radius:14px;padding:6px;border:1px solid var(--borde)"><svg viewBox="0 0 640 250" style="width:100%;height:auto" font-family="Arial,Helvetica,sans-serif">${svgBarras(6,2,628,244,tit,et,ser)}</svg></div>`;
-    const bas=Object.values(D.C[D.mes]).filter(r=>r.plan==="basico");
+    const bas=Object.values(D.C[D.mes]).sort((a,b)=>a.plan===b.plan?a.nombre.localeCompare(b.nombre,"es"):a.plan==="basico"?-1:1);
     box.innerHTML=`<label>Mes<input type="month" id="mMes" value="${D.mes}"></label>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0">
-      ${card("Pedidos · citas",T.n+" · "+T.nc,"Citas atendidas")}${card("Total vendido",mxn(T.tot),"En línea "+mxn(T.linea)+" · Otros "+mxn(T.otro)+" · Citas "+mxn(T.cit))}${card("Comisión 1%",mxn(T.com),"")}
+      ${card("Pedidos · citas",T.n+" · "+T.nc,"Citas atendidas")}${card("Total vendido",mxn(T.tot),"En línea "+mxn(T.linea)+" · Otros "+mxn(T.otro)+" · Citas "+mxn(T.cit))}${card("Comisión 3%",mxn(T.com),"Pedidos y citas")}
       ${card("Membresías (sin IVA)",mxn(T.mem),"")}${card("Ingresos Valle GO",mxn(T.ing),"Sin IVA")}${card("Ganancia estimada",mxn(T.gan),"Costos fijos "+mxn(COSTO_FIJO))}
-      ${card("1% cobrado",mxn(T.pagC),"Pagos registrados")}${card("1% por cobrar",mxn(T.saldoC),"Sin IVA")}${card("Membresías cobradas",mxn(T.pagM),"Pagos registrados")}${card("Membresías por cobrar",mxn(T.saldoM),"Con IVA")}
+      ${card("3% cobrado",mxn(T.pagC),"Pagos registrados")}${card("3% por cobrar",mxn(T.saldoC),"Sin IVA")}${card("Membresías cobradas",mxn(T.pagM),"Pagos registrados")}${card("Membresías por cobrar",mxn(T.saldoM),"Con IVA")}
       ${card("IVA cobrado",mxn(T.ivaC),"De membresías")}${card("Gastos del mes",mxn(T.gast),"Registrados")}${card("IVA de gastos",mxn(T.ivaG),"Acreditable")}${card(T.ivaP<0?"IVA a favor":"IVA por pagar",mxn(Math.abs(T.ivaP)),"Cobrado − de gastos")}</div>
-    ${chart("Ventas por mes (pedidos y citas atendidas)",SG.ventas(D))}${chart("Ingresos de Valle GO por mes (sin IVA)",SG.ing(D))}${chart("Membresías por mes: cobrado y por cobrar",SG.pagosM(D))}${chart("1% de comisión por mes: cobrado y por cobrar",SG.pagosC(D))}${chart("IVA por mes: cobrado, de gastos y por pagar",SG.iva(D))}
+    ${chart("Ventas por mes (pedidos y citas atendidas)",SG.ventas(D))}${chart("Ingresos de Valle GO por mes (sin IVA)",SG.ing(D))}${chart("Membresías por mes: cobrado y por cobrar",SG.pagosM(D))}${chart("3% de comisión por mes: cobrado y por cobrar",SG.pagosC(D))}${chart("IVA por mes: cobrado, de gastos y por pagar",SG.iva(D))}
     <h3>Gastos de ${esc(nomMes(D.mes))}</h3><p class="suave">Registra aquí lo que Valle GO paga (Supabase, Vercel, dominio, publicidad…). Si el gasto incluye IVA, déjalo marcado: se calcula el IVA acreditable.</p>
     ${D.GA.filter(x=>x.mes===D.mes).map(x=>`<div class="item"><div class="in" style="flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap"><b style="flex:1">${esc(x.concepto)}</b><span>${mxn(Number(x.monto))}</span><span class="suave">${x.con_iva?"con IVA":"sin IVA"}</span><button class="btn sec" data-gdel="${x.id}">Quitar</button></div></div>`).join("")||'<p class="suave">Aún no hay gastos este mes.</p>'}
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:8px 0 14px"><label style="flex:2;min-width:150px">Concepto<input id="gCon" placeholder="Ej. Supabase Pro"></label><label style="flex:1;min-width:110px">Monto (MXN)<input id="gMon" type="number" step="0.01" min="0" placeholder="0.00"></label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="gIva" checked style="width:auto"> Incluye IVA</label><button class="btn" data-gadd>Agregar gasto</button></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px"><button class="btn" data-mpdf>Descargar PDF</button><button class="btn sec" data-mdl>Descargar informe (imagen)</button><button class="btn sec" data-mcsv>Descargar datos (CSV)</button><button class="btn sec" data-mshare>Compartir informe</button><button class="btn sec" data-mrec>Actualizar</button></div>
     <h3>Alertas</h3>${D.alertas.length?D.alertas.map(a=>`<div class="aviso">⚠️ ${esc(a)}</div>`).join(""):'<p class="suave">Sin alertas.</p>'}
-    <h3>Compartir con comerciantes (plan Básico)</h3><p class="suave">Cada comercio recibe su propio informe del mes: sus ventas, el 1%, su membresía y su saldo. El plan Simple no tiene informe.</p>
-    ${bas.map(r=>`<div class="item"><div class="in"><b>${esc(r.nombre)}</b><span class="suave">${r.n} pedidos · ${mxn(r.tot)} · saldo ${mxn(r.saldo)}</span>
-      <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" data-mcd="${r.id}">Descargar</button><button class="btn" data-mcs="${r.id}">Compartir</button></span></div></div>`).join("")||'<p class="suave">No hay comercios Básico este mes.</p>'}`;
+    <h3>Compartir con comerciantes</h3><p class="suave">Cada comercio recibe su informe del mes. <b>PRODUCTOS (Básico):</b> informe completo con gráficas, lo más vendido, entregas, formas de pago y día con más pedidos. <b>SERVICIOS (Simple):</b> reporte corto con sus números y una gráfica básica.</p>
+    ${bas.map(r=>`<div class="item"><div class="in"><b>${esc(r.nombre)}</b><span class="suave">${PLAN_TXT(r.plan)} · ${r.plan==="simple"?r.nc+" citas":r.n+" pedidos · "+r.nc+" citas"} · ${mxn(r.tot)} · saldo ${mxn(r.saldo)}</span>
+      <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" data-mcd="${r.id}">Descargar</button><button class="btn" data-mcs="${r.id}">Compartir</button></span></div></div>`).join("")||'<p class="suave">No hay comercios activos este mes.</p>'}`;
     $("mMes").onchange=e=>{if(e.target.value){adm.mesM=e.target.value;admTab()}};
   }
   if(t==="admins"){
@@ -887,7 +924,7 @@ async function admTab(){
     for(;;){const r=await db.from("pedidos").select("comercio_id,total,pago,estado,estado_pago").gte("creado",d0).lt("creado",d1).order("creado").range(desde,desde+999);
       if(r.error){err=r.error;break}P=P.concat(r.data||[]);if((r.data||[]).length<1000)break;desde+=1000}
     if(err){box.innerHTML="<p>No se pudo cargar el reporte: "+esc(err.message)+"</p>";return}
-    const PCT=0.01, MEMS={simple:360,basico:720}, IVA=0.16, memDe=pl=>MEMS[pl==="simple"?"simple":"basico"], memIva=memDe("basico"), r2=x=>Math.round(x*100)/100, mx=x=>"$"+x.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const PCT=COM_PCT, r2=x=>Math.round(x*100)/100, mx=x=>"$"+x.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
     const[rp,rci]=await Promise.all([db.from("cobros_pagos").select("*").eq("mes",adm.mes).order("pagado_en"),db.from("citas").select("perfil_id,monto").eq("estado","Completada").eq("mes",adm.mes)]);
     const PGC=rp.error?[]:(rp.data||[]).filter(x=>(x.concepto||"comision")==="comision"), pgErr=rp.error?rp.error.message:"", nomC={};cs.forEach(c=>nomC[c.id]=c.nombre);
     const ag={}; let excl=0;
@@ -902,33 +939,33 @@ async function admTab(){
       return{id:c.id,pag,saldo:r2(com-pag),plan:c.plan==="simple"?"Simple":"Básico",nombre:c.nombre,n:a.n,nc:a.nc,cit:a.cit,linea:a.linea,otro:a.otro,tot,com}});
     const S=F.reduce((x,f)=>({pag:x.pag+f.pag,saldo:x.saldo+f.saldo,n:x.n+f.n,nc:x.nc+f.nc,cit:x.cit+f.cit,linea:x.linea+f.linea,otro:x.otro+f.otro,tot:x.tot+f.tot,com:x.com+f.com}),{pag:0,saldo:0,n:0,nc:0,cit:0,linea:0,otro:0,tot:0,com:0});
     const fila=f=>`<tr><td>${esc(f.nombre)}</td><td>${f.plan}</td><td>${f.n}</td><td>${mx(f.linea)}</td><td>${mx(f.otro)}</td><td>${f.nc?f.nc+" · "+mx(f.cit):"—"}</td><td>${mx(f.tot)}</td><td><b>${mx(f.com)}</b></td><td>${mx(f.pag)}</td><td>${f.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':'<b>'+mx(f.saldo)+'</b>'+(f.pag>0?' (parcial)':'')}</td><td>${f.saldo>0.004?`<button class="btn sec" data-cpg="${f.id}|${f.saldo}" data-cc="comision">Registrar pago</button>`:""}</td></tr>`;
-    box.innerHTML=`<div class="aviso"><b>Cobros del 1%</b><br>Valle GO cobra <b>1% del total de todos los pedidos y de las citas atendidas</b> (en línea, transferencia, depósito o efectivo), sin IVA. Se revisa este reporte y se cobra al final del mes. Las membresías se pagan al inicio del mes y se registran aparte, en el botón <b>Membresías</b>.</div>
+    box.innerHTML=`<div class="aviso"><b>Cobros del 3%</b><br>Valle GO cobra <b>3% del total de todos los pedidos y de las citas atendidas</b>, en los dos planes (en línea, transferencia, depósito o efectivo), sin IVA. Se revisa este reporte y se cobra al final del mes. Las membresías se pagan al inicio del mes y se registran aparte, en el botón <b>Membresías</b>.</div>
     <label>Mes<input type="month" id="cMes" value="${adm.mes}"></label>
     <div style="overflow-x:auto;margin:10px 0"><table style="border-collapse:collapse;width:100%;font-size:.85rem;white-space:nowrap" id="tCob">
-    <thead><tr style="text-align:left"><th>Comercio</th><th>Plan</th><th>Pedidos</th><th>Pagos en línea</th><th>Transf./efectivo</th><th>Citas atendidas</th><th>Total vendido</th><th>1% Valle GO</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead>
+    <thead><tr style="text-align:left"><th>Comercio</th><th>Plan</th><th>Pedidos</th><th>Pagos en línea</th><th>Transf./efectivo</th><th>Citas atendidas</th><th>Total vendido</th><th>3% Valle GO</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead>
     <tbody>${F.map(fila).join("")||'<tr><td colspan="11">No hay comercios.</td></tr>'}</tbody>
     <tfoot><tr style="border-top:2px solid var(--borde)"><td><b>Total</b></td><td></td><td><b>${S.n}</b></td><td><b>${mx(S.linea)}</b></td><td><b>${mx(S.otro)}</b></td><td><b>${S.nc} · ${mx(S.cit)}</b></td><td><b>${mx(S.tot)}</b></td><td><b>${mx(S.com)}</b></td><td><b>${mx(S.pag)}</b></td><td><b>${mx(S.saldo)}</b></td><td></td></tr></tfoot></table></div>
     <p class="suave">Cuentan los pedidos del mes que no están cancelados y las citas que el comercio marcó como atendidas con el total cobrado; los pagos en línea solo si están marcados como Pagado. Los de transferencia y efectivo cuentan aunque se cobren fuera de la app: revisa que estén registrados. ${excl?excl+" pedido(s) no se cuentan (cancelados o pago en línea sin pagar). ":""}</p>
-    <h3>Pagos del 1% registrados del mes</h3>${pgErr?'<p class="suave">No se pudo cargar el registro de pagos: '+esc(pgErr)+'</p>':""}
-    ${PGC.length?PGC.map(x=>`<div class="aviso" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span><b>${esc(nomC[x.comercio_id]||"Comercio")}</b> · ${mx(Number(x.monto))}<br><span class="suave">${new Date(x.pagado_en).toLocaleDateString("es-MX")}${x.metodo?" · "+esc(x.metodo):""}${x.nota?" · "+esc(x.nota):""}</span></span><button class="btn sec" data-cpdel="${x.id}">Quitar</button></div>`).join(""):'<p class="suave">Aún no hay pagos del 1% registrados este mes.</p>'}
+    <h3>Pagos del 3% registrados del mes</h3>${pgErr?'<p class="suave">No se pudo cargar el registro de pagos: '+esc(pgErr)+'</p>':""}
+    ${PGC.length?PGC.map(x=>`<div class="aviso" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span><b>${esc(nomC[x.comercio_id]||"Comercio")}</b> · ${mx(Number(x.monto))}<br><span class="suave">${new Date(x.pagado_en).toLocaleDateString("es-MX")}${x.metodo?" · "+esc(x.metodo):""}${x.nota?" · "+esc(x.nota):""}</span></span><button class="btn sec" data-cpdel="${x.id}">Quitar</button></div>`).join(""):'<p class="suave">Aún no hay pagos del 3% registrados este mes.</p>'}
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="cPdf">Descargar PDF</button><button class="btn sec" id="cCsv">Descargar CSV</button></div>`;
-    $("cPdf").onclick=()=>bajarBlob(pdfCobros1(adm.mes,F,S,PGC,nomC),"valle-go-cobros-1porciento-"+adm.mes+".pdf");
+    $("cPdf").onclick=()=>bajarBlob(pdfCobros1(adm.mes,F,S,PGC,nomC),"valle-go-cobros-3porciento-"+adm.mes+".pdf");
     $("cMes").onchange=e=>{if(e.target.value){adm.mes=e.target.value;admTab()}};
-    $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Plan","Pedidos","Pagos en linea","Transferencia/efectivo","Citas atendidas","Monto de citas","Total vendido","1% Valle GO","Pagado","Saldo"]].concat(F.map(f=>[f.nombre,f.plan,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.nc,f.cit.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.pag.toFixed(2),f.saldo.toFixed(2)])).concat([["Total","",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.nc,S.cit.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.pag.toFixed(2),S.saldo.toFixed(2)]]);
-      const b=new Blob(["\ufeff"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="valle-go-cobros-1porciento-"+adm.mes+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+    $("cCsv").onclick=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Comercio","Plan","Pedidos","Pagos en linea","Transferencia/efectivo","Citas atendidas","Monto de citas","Total vendido","3% Valle GO","Pagado","Saldo"]].concat(F.map(f=>[f.nombre,f.plan,f.n,f.linea.toFixed(2),f.otro.toFixed(2),f.nc,f.cit.toFixed(2),f.tot.toFixed(2),f.com.toFixed(2),f.pag.toFixed(2),f.saldo.toFixed(2)])).concat([["Total","",S.n,S.linea.toFixed(2),S.otro.toFixed(2),S.nc,S.cit.toFixed(2),S.tot.toFixed(2),S.com.toFixed(2),S.pag.toFixed(2),S.saldo.toFixed(2)]]);
+      const b=new Blob(["\ufeff"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="valle-go-cobros-3porciento-"+adm.mes+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
   }
   if(t==="membresias"){
     const hoy=new Date();if(!adm.mes)adm.mes=hoy.getFullYear()+"-"+String(hoy.getMonth()+1).padStart(2,"0");
-    const cs=(await db.from("comercios").select("id,nombre,activo,plan,creado").order("nombre")).data||[];
+    const cs=(await db.from("comercios").select("id,nombre,activo,plan,creado,promo_inicio").order("nombre")).data||[];
     const [Y,M]=adm.mes.split("-").map(Number),fin=new Date(Y,M,1);
-    const MEMS={simple:360,basico:720},r2=x=>Math.round(x*100)/100,mx=x=>"$"+x.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const r2=x=>Math.round(x*100)/100,mx=x=>"$"+x.toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2});
     const rp=await db.from("cobros_pagos").select("*").eq("mes",adm.mes).eq("concepto","membresia").order("pagado_en");
     const PGM=rp.error?[]:(rp.data||[]),pgErr=rp.error?rp.error.message:"",nomC={};cs.forEach(c=>nomC[c.id]=c.nombre);
-    const F=cs.filter(c=>c.activo!==false&&(!c.creado||new Date(c.creado)<fin)).map(c=>{const pl=c.plan==="simple"?"simple":"basico",tot=MEMS[pl],base=r2(tot/1.16),iva=r2(tot-base),pag=r2(PGM.filter(x=>x.comercio_id===c.id).reduce((t,x)=>t+Number(x.monto),0));
-      return{id:c.id,nombre:c.nombre,plan:pl==="simple"?"Simple":"Básico",base,iva,tot,pag,saldo:r2(tot-pag)}});
+    const F=cs.filter(c=>c.activo!==false&&(!c.creado||new Date(c.creado)<fin)).map(c=>{const pl=c.plan==="simple"?"simple":"basico",tot=memMes(pl,c.promo_inicio,adm.mes),pr=promoEt(c.promo_inicio,adm.mes),base=r2(tot/1.16),iva=r2(tot-base),pag=r2(PGM.filter(x=>x.comercio_id===c.id).reduce((t,x)=>t+Number(x.monto),0));
+      return{id:c.id,nombre:c.nombre,plan:(pl==="simple"?"Simple":"Básico")+(pr?" · "+pr:""),base,iva,tot,pag,saldo:r2(tot-pag)}});
     const S=F.reduce((x,f)=>({base:x.base+f.base,iva:x.iva+f.iva,tot:x.tot+f.tot,pag:x.pag+f.pag,saldo:x.saldo+f.saldo}),{base:0,iva:0,tot:0,pag:0,saldo:0});
-    const fila=f=>`<tr><td>${esc(f.nombre)}</td><td>${f.plan}</td><td>${mx(f.base)}</td><td>${mx(f.iva)}</td><td><b>${mx(f.tot)}</b></td><td>${mx(f.pag)}</td><td>${f.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagada</b>':'<b>'+mx(f.saldo)+'</b>'+(f.pag>0?' (parcial)':'')}</td><td>${f.saldo>0.004?`<button class="btn sec" data-cpg="${f.id}|${f.saldo}" data-cc="membresia">Registrar pago</button>`:""}</td></tr>`;
-    box.innerHTML=`<div class="aviso"><b>Membresías del mes</b><br>Plan Simple: $12 al día = ${mx(MEMS.simple)} al mes. Plan Básico: $24 al día = ${mx(MEMS.basico)} al mes. Precios con IVA incluido (16%). Aquí solo se registran las membresías; el 1% de comisión está en el botón <b>Cobros 1%</b>.</div>
+    const fila=f=>`<tr><td>${esc(f.nombre)}</td><td>${f.plan}</td><td>${mx(f.base)}</td><td>${mx(f.iva)}</td><td><b>${mx(f.tot)}</b></td><td>${mx(f.pag)}</td><td>${f.tot<=0.004?'<b style="color:var(--verde)">🎁 Gratis</b>':f.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagada</b>':'<b>'+mx(f.saldo)+'</b>'+(f.pag>0?' (parcial)':'')}</td><td>${f.saldo>0.004?`<button class="btn sec" data-cpg="${f.id}|${f.saldo}" data-cc="membresia">Registrar pago</button>`:""}</td></tr>`;
+    box.innerHTML=`<div class="aviso"><b>Membresías del mes</b><br>SERVICIOS · plan Simple: ${mx(MEM_IVA.simple)} al mes. PRODUCTOS · plan Básico: ${mx(MEM_IVA.basico)} al mes. Precios con IVA incluido (16%); se pagan al inicio del mes. Promoción de apertura (primeros ${PROMO_CUPO}): mes gratis y 20% de descuento en los meses 2, 3 y 4. Aquí solo se registran las membresías; el 3% de comisión está en el botón <b>Cobros 3%</b>.</div>
     <label>Mes<input type="month" id="mbMes" value="${adm.mes}"></label>
     <div style="overflow-x:auto;margin:10px 0"><table style="border-collapse:collapse;width:100%;font-size:.85rem;white-space:nowrap">
     <thead><tr style="text-align:left"><th>Comercio</th><th>Plan</th><th>Precio sin IVA</th><th>IVA</th><th>Total con IVA</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead>
@@ -968,6 +1005,8 @@ function formAdm(tabla,cs,v){
   $("gF").onclick=async()=>{$("gF").disabled=true;$("gF").textContent="Guardando...";
     try{const o=await leerForm(cs,$("adm"),v); if(!o.nombre)throw new Error("Falta el nombre.");
       if(tabla==="menu_items")o.comercio_id=v.comercio_id;
+      if(tabla==="comercios"&&o.categoria_id){const k=CATEGORIAS.find(x=>x.id===o.categoria_id),g=o.plan==="simple"?"servicios":"productos";if(k&&(k.grupo||"productos")!==g)throw new Error("La subcategoría «"+k.nombre+"» es de "+((k.grupo||"productos")==="servicios"?"SERVICIOS":"PRODUCTOS")+", pero el plan elegido es de "+(g==="servicios"?"SERVICIOS":"PRODUCTOS")+". Cambia el plan o la subcategoría.")}
+      if(tabla==="comercios"&&o.plan==="simple")o.ofrece_consulta=false;
       if((tabla==="comercios"||tabla==="servicios_perfiles")&&$("dueno").value.trim()){const r=await db.rpc("usuario_por_correo",{correo:$("dueno").value.trim()});if(!r.data)throw new Error("Ese correo no está registrado en la app.");o.dueno_id=r.data}
       const r=await (v.id?db.from(tabla).update(o).eq("id",v.id):db.from(tabla).insert(o)); if(r.error)throw r.error;
       borrBorrar(bk);cargarDatos(); cierraCapa();
@@ -981,12 +1020,14 @@ document.addEventListener("click",async e=>{
   if(d.mdl!==undefined||d.mshare!==undefined){const D=adm.mon;if(!D)return;try{const b=await svgAPng(svgInformeAdmin(D),820,992),n="valle-go-informe-"+D.mes+".png";
       if(d.mdl!==undefined)bajarBlob(b,n);else await compartirInforme(b,n,"Informe Valle GO de "+nomMes(D.mes),"")}catch(err){alert(err.message)}return}
   if(d.mpdf!==undefined){const D=adm.mon;if(!D)return;try{bajarBlob(pdfMonitoreo(D),"valle-go-monitoreo-"+D.mes+".pdf")}catch(err){alert(err.message)}return}
-  if(d.mcsv!==undefined){const D=adm.mon;if(!D)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Mes","Pedidos","Total vendido","Pagos en linea","Transferencia/efectivo","Citas atendidas","Monto de citas","Comision 1%","Membresias sin IVA","Ingresos","Ganancia estimada","1% cobrado","1% por cobrar","Membresias cobradas","Membresias por cobrar","IVA cobrado","Gastos","IVA de gastos","IVA por pagar"]];
+  if(d.mcsv!==undefined){const D=adm.mon;if(!D)return;const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=[["Mes","Pedidos","Total vendido","Pagos en linea","Transferencia/efectivo","Citas atendidas","Monto de citas","Comision 3%","Membresias sin IVA","Ingresos","Ganancia estimada","3% cobrado","3% por cobrar","Membresias cobradas","Membresias por cobrar","IVA cobrado","Gastos","IVA de gastos","IVA por pagar"]];
     D.keys.forEach(k=>{const T=D.M[k];L.push([k,T.n,T.tot.toFixed(2),T.linea.toFixed(2),T.otro.toFixed(2),T.nc,T.cit.toFixed(2),T.com.toFixed(2),T.mem.toFixed(2),T.ing.toFixed(2),T.gan.toFixed(2),T.pagC.toFixed(2),T.saldoC.toFixed(2),T.pagM.toFixed(2),T.saldoM.toFixed(2),T.ivaC.toFixed(2),T.gast.toFixed(2),T.ivaG.toFixed(2),T.ivaP.toFixed(2)])});
     bajarBlob(new Blob(["﻿"+L.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),"valle-go-monitoreo-"+D.mes+".csv");return}
-  if(d.mcd||d.mcs){const D=adm.mon;if(!D)return;const R=(D.C[D.mes]||{})[d.mcd||d.mcs];if(!R||R.plan!=="basico"){alert("Solo los comercios del plan Básico reciben informe.");return}
-    try{const b=await svgAPng(svgInformeComercio(D,R.id),820,520),n="informe-"+R.nombre.replace(/[^a-z0-9]+/gi,"-").toLowerCase()+"-"+D.mes+".png";
-      if(d.mcd)bajarBlob(b,n);else{const c=D.cs.find(x=>x.id===R.id)||{};await compartirInforme(b,n,"Informe Valle GO · "+R.nombre+" · "+nomMes(D.mes)+"\nPedidos: "+R.n+" · Ventas: "+mxn(R.tot)+"\nCitas atendidas: "+R.nc+" ("+mxn(R.cit)+")\n1% Valle GO: "+mxn(R.com)+" · Membresía: "+mxn(R.memI)+"\nTotal del mes: "+mxn(R.cobrar)+" · Saldo: "+mxn(R.saldo),c.whatsapp)}}catch(err){alert(err.message)}return}
+  if(d.mcd||d.mcs){const D=adm.mon;if(!D)return;const R=(D.C[D.mes]||{})[d.mcd||d.mcs];if(!R)return;
+    try{const X=R.plan==="basico"?await datosInformeCom(R.id,D.mes):null,[svg,h]=svgInformeComercio(D,R.id,X),b=await svgAPng(svg,820,h),n="informe-"+R.nombre.replace(/[^a-z0-9]+/gi,"-").toLowerCase()+"-"+D.mes+".png";
+      if(d.mcd)bajarBlob(b,n);else{const c=D.cs.find(x=>x.id===R.id)||{},memL="Membresía"+(R.promo?" ("+R.promo+")":"")+": "+mxn(R.memI);
+        const txt="Informe Valle GO · "+R.nombre+" · "+nomMes(D.mes)+"\n"+(R.plan==="simple"?"Citas atendidas: "+R.nc+" · Total cobrado: "+mxn(R.tot):"Pedidos: "+R.n+" · Citas atendidas: "+R.nc+" · Ventas: "+mxn(R.tot))+"\n3% Valle GO: "+mxn(R.com)+" · "+memL+"\nTotal del mes: "+mxn(R.cobrar)+" · Saldo: "+mxn(R.saldo);
+        await compartirInforme(b,n,txt,c.whatsapp)}}catch(err){alert(err.message)}return}
   if(d.aadd!==undefined){const c=($("aCorreo").value||"").trim();if(!c){$("aMsg").textContent=" Escribe un correo.";return}
     if(!confirm("¿Dar permisos de administrador a "+c+"?"))return;
     const r=await db.rpc("admin_agregar_admin",{correo:c});if(r.error){$("aMsg").textContent=" "+r.error.message;return}return admTab()}
@@ -1021,12 +1062,12 @@ document.addEventListener("click",async e=>{
     e.target.disabled=true;const r=await db.from("pedidos").delete().eq("id",d.pdel).select("id");
     if(r.error||!(r.data&&r.data.length)){alert(r.error?r.error.message:"No se pudo eliminar el pedido.");e.target.disabled=false;return}
     return admTab()}
-  if(d.svnew!==undefined)return formAdm("servicios_perfiles",cfSrv("servicios"),{activo:true,tipo:"transporte"});
-  if(d.sved){const r=await db.from("servicios_perfiles").select("*").eq("id",d.sved).single();return formAdm("servicios_perfiles",cfSrv("servicios"),r.data)}
+  if(d.svnew!==undefined){await promoUsados();return formAdm("servicios_perfiles",cfSrv("servicios"),{activo:true,tipo:"transporte"})}
+  if(d.sved){await promoUsados();const r=await db.from("servicios_perfiles").select("*").eq("id",d.sved).single();return formAdm("servicios_perfiles",cfSrv("servicios"),r.data)}
   if(d.svdel){if(!confirm("¿Eliminar este prestador y todas sus citas y consultas?\nNo se puede deshacer."))return;const r=await db.from("servicios_perfiles").delete().eq("id",d.svdel);if(r.error)return alert(r.error.message);return admTab()}
-  if(d.cnew!==undefined)return formAdm("comercios",CF_COM,{activo:true,plan:"basico",envio:30,minimo:0,ofrece_domicilio:true,dias_abiertos:DIAS.join(",")});
-  if(d.ced){const r=await db.from("comercios").select("*").eq("id",d.ced).single();return formAdm("comercios",CF_COM,r.data)}
-  if(d.canew!==undefined)return formAdm("categorias",CF_CAT,{orden:CATEGORIAS.length+1});
+  if(d.cnew!==undefined){await promoUsados();return formAdm("comercios",CF_COM,{activo:true,plan:"basico",envio:30,minimo:0,ofrece_domicilio:true,dias_abiertos:DIAS.join(",")})}
+  if(d.ced){await promoUsados();const r=await db.from("comercios").select("*").eq("id",d.ced).single();return formAdm("comercios",CF_COM,r.data)}
+  if(d.canew!==undefined)return formAdm("categorias",CF_CAT,{orden:CATEGORIAS.length+1,grupo:"productos"});
   if(d.caed){const r=await db.from("categorias").select("*").eq("id",d.caed).single();return formAdm("categorias",CF_CAT,r.data)}
   if(d.cadel&&confirm("¿Borrar esta categoría?\nLos comercios que la tengan quedarán sin categoría.")){const r=await db.from("categorias").delete().eq("id",d.cadel);if(r.error){alert(r.error.message);return}cargarDatos();return admTab()}
   if(d.mnew!==undefined)return formAdm("menu_items",CF_MENU,{disponible:true,comercio_id:adm.com});
@@ -1201,7 +1242,7 @@ async function cargarDatos(){
   if(error||!data)return false;   // sin red: se conserva lo último que se tenía
   const prevMenu=new Map(COMERCIANTES.map(x=>[x.id,x.menu]));menuFresco.clear();
   COMERCIANTES=data.map(c=>({id:c.id,plan:c.plan==="simple"?"simple":"basico",nombre:c.nombre,giro:c.giro||"",cat:c.categoria_id||"",emoji:c.emoji||"🏪",foto:c.foto_url||"",logo:c.logo_url||"",horario:c.horario||"",direccion:c.direccion||"",dias:c.dias_abiertos||"",domicilio:c.ofrece_domicilio!==false,
-    desc:c.descripcion||"",citas:c.plan!=="simple"&&!!c.ofrece_citas,consulta:c.plan!=="simple"&&!!c.ofrece_consulta,whatsapp:c.whatsapp,correo:c.correo_publico||"",envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
+    desc:c.descripcion||"",citas:!!c.ofrece_citas,consulta:c.plan!=="simple"&&!!c.ofrece_consulta,whatsapp:c.whatsapp,correo:c.correo_publico||"",envio:Number(c.envio),minimo:Number(c.minimo),clabe:c.clabe||"",banco:c.banco||"",titular:c.titular||"",
     menu:prevMenu.get(c.id)||null}));   // el menú se carga al abrir la tienda (cargarMenu)
   datosListos=true;
   guardaDatos();
@@ -1234,7 +1275,7 @@ const SV={agenda:{e:"📅",t:"Agenda y citas",d:"Servicios por cita: doctores, t
   transporte:{e:"🚕",t:"Transporte",d:"Taxistas, fletes, mudanzas y transportistas del Valle: llama o escribe directo por WhatsApp."},
   consulta:{e:"🔎",t:"Consulta de stock",d:"Manda una foto y un texto al comercio para saber si lo tiene en existencia y a qué precio."}};
 let svTab="agenda",misSrv=[],canalSrv=null;
-const cfSrv=carp=>[{k:"tipo",l:"Tipo de prestador",t:"srvtipo"},{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Dentista, Tatuajes, Taxi, Papelería...)"},{k:"descripcion",l:"Descripción"},{k:"zona",l:"Zona o colonias donde atiende"},{k:"horario",l:"Horario",t:"horario"},{k:"dias_abiertos",l:"Días que atiende",t:"dias"},{k:"telefono",l:"Teléfono"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"vehiculo",l:"Vehículo (solo transporte: marca, modelo, color)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:carp},{k:"logo_url",l:"Logotipo (opcional)",t:"file",carpeta:carp},{k:"activo",l:"Visible en la app",t:"check"}];
+const cfSrv=carp=>[{k:"tipo",l:"Tipo de prestador",t:"srvtipo"},{k:"nombre",l:"Nombre"},{k:"giro",l:"Giro (Dentista, Tatuajes, Taxi, Papelería...)"},{k:"descripcion",l:"Descripción"},{k:"zona",l:"Zona o colonias donde atiende"},{k:"horario",l:"Horario",t:"horario"},{k:"dias_abiertos",l:"Días que atiende",t:"dias"},{k:"promo_inicio",l:"Promoción de apertura: mes gratis",t:"promo"},{k:"telefono",l:"Teléfono"},{k:"whatsapp",l:"WhatsApp (52...)"},{k:"vehiculo",l:"Vehículo (solo transporte: marca, modelo, color)"},{k:"foto_url",l:"Foto de portada",t:"file",carpeta:carp},{k:"logo_url",l:"Logotipo (opcional)",t:"file",carpeta:carp},{k:"activo",l:"Visible en la app",t:"check"}];
 const CF_SITEM=[{k:"nombre",l:"Nombre del servicio"},{k:"descripcion",l:"Descripción"},{k:"precio",l:"Precio (0 = a consultar)",t:"number"},{k:"duracion_min",l:"Duración en minutos (opcional)",t:"number"},{k:"activo",l:"Disponible",t:"check"}];
 const waUrl=n=>"https://wa.me/"+String(n||"").replace(/\D/g,""),telUrl=n=>"tel:"+String(n||"").replace(/[^\d+]/g,"");
 const hoyISO=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
@@ -1358,16 +1399,16 @@ const COM_TR=0.05;
 const numMX=s=>{const v=Math.round(parseFloat(String(s||"").replace(/[$,\s]/g,""))*100)/100;return isNaN(v)?0:v};
 async function corteTransporte(mes,ids){
   const[Y,M]=mes.split("-").map(Number),fin=new Date(Y,M,1);
-  let q=db.from("servicios_perfiles").select("id,nombre,activo,creado,whatsapp").eq("tipo","transporte").order("nombre");if(ids)q=q.in("id",ids);
+  let q=db.from("servicios_perfiles").select("id,nombre,activo,creado,whatsapp,promo_inicio").eq("tipo","transporte").order("nombre");if(ids)q=q.in("id",ids);
   const[pf,vj,pg]=await Promise.all([q,db.from("viajes").select("perfil_id,precio_num,comision,cobro_mp").eq("estado","Completada").eq("mes",mes),db.from("cobros_transporte").select("*").eq("mes",mes).order("pagado_en")]);
   if(pf.error)throw pf.error;
   const V=vj.data||[],PG=pg.data||[],R=[];
   (pf.data||[]).forEach(p=>{const v=V.filter(x=>x.perfil_id===p.id),n=v.length,activo=p.activo!==false&&(!p.creado||new Date(p.creado)<fin);if(!activo&&!n)return;
     const tot=r2m(v.reduce((t,x)=>t+Number(x.precio_num||0),0)),com=r2m(v.filter(x=>!x.cobro_mp).reduce((t,x)=>t+Number(x.comision||0),0)),comMP=r2m(v.filter(x=>x.cobro_mp).reduce((t,x)=>t+Number(x.comision||0),0)),
-      mem=activo?memConIva("simple"):0,cobrar=r2m(com+mem),pags=PG.filter(x=>x.perfil_id===p.id),pag=r2m(pags.reduce((t,x)=>t+Number(x.monto),0));
-    R.push({id:p.id,nombre:p.nombre,whatsapp:p.whatsapp,n,tot,com,comMP,mem,cobrar,pag,pags,saldo:Math.max(0,r2m(cobrar-pag))})});
+      mem=activo?memMes("simple",p.promo_inicio,mes):0,promo=promoEt(p.promo_inicio,mes),cobrar=r2m(com+mem),pags=PG.filter(x=>x.perfil_id===p.id),pag=r2m(pags.reduce((t,x)=>t+Number(x.monto),0));
+    R.push({id:p.id,nombre:p.nombre,whatsapp:p.whatsapp,promo,n,tot,com,comMP,mem,cobrar,pag,pags,saldo:Math.max(0,r2m(cobrar-pag))})});
   return R}
-const corteResumen=(r,mes)=>`Corte de ${nomMes(mes)} · ${r.nombre}\nViajes completados: ${r.n} · Total: ${mxn(r.tot)}\nComisión 5% (uso y mantenimiento, sin IVA): ${mxn(r.com)}${r.comMP?" (+ "+mxn(r.comMP)+" ya descontada por Mercado Pago)":""}\nMembresía plan Simple (IVA incluido): ${mxn(r.mem)}\nTotal a pagar: ${mxn(r.cobrar)} · Pagado: ${mxn(r.pag)} · Saldo: ${mxn(r.saldo)}`;
+const corteResumen=(r,mes)=>`Corte de ${nomMes(mes)} · ${r.nombre}\nViajes completados: ${r.n} · Total: ${mxn(r.tot)}\nComisión 5% (uso y mantenimiento, sin IVA): ${mxn(r.com)}${r.comMP?" (+ "+mxn(r.comMP)+" ya descontada por Mercado Pago)":""}\nMembresía plan Simple (IVA incluido${r.promo?", "+r.promo:""}): ${mxn(r.mem)}\nTotal a pagar: ${mxn(r.cobrar)} · Pagado: ${mxn(r.pag)} · Saldo: ${mxn(r.saldo)}`;
 
 // --- Mis solicitudes (cliente) ---
 async function vistaMisServicios(){
@@ -1417,7 +1458,7 @@ async function vistaPanelSrv(){
     <span class="svbtns">${["Solicitada","Cotizada"].includes(x.estado)?`<button class="btn mini" data-vq="${x.id}">${x.estado==="Cotizada"?"Cambiar precio":"Cotizar"}</button>`:""}${x.estado==="Solicitada"&&x.tipo==="agenda"?`<button class="btn mini" data-vcf="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-vfn="${x.id}">Completado</button>`:""}${["Solicitada","Cotizada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-vrc="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
     <div class="aviso" id="vq_${x.id}" style="display:none;gap:8px"><label>Precio total del viaje (pesos)<input id="vqP_${x.id}" type="number" inputmode="decimal" min="1" step="0.01" value="${x.precio_num||""}" placeholder="150"></label><label>Mensaje (opcional)<input id="vqM_${x.id}" placeholder="Llego en 10 minutos..."></label><button class="btn mini" data-vqok="${x.id}">Enviar cotización</button></div></div></div>`;
   const citaHTML=x=>`<div class="item"><div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
-    ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.notas?`<span class="suave">📝 ${esc(x.notas)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}${x.estado==="Completada"&&x.monto?`<span><b>Cobrado:</b> ${mxn(x.monto)} · 1% Valle GO: ${mxn(x.comision||0)}</span>`:""}
+    ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.notas?`<span class="suave">📝 ${esc(x.notas)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}${x.estado==="Completada"&&x.monto?`<span><b>Cobrado:</b> ${mxn(x.monto)} · 3% Valle GO: ${mxn(x.comision||0)}</span>`:""}
     <span class="svbtns">${x.estado==="Solicitada"?`<button class="btn mini" data-cok="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-cfin="${x.id}">Completada</button>`:""}${["Solicitada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-crep="${x.id}">Otra hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-ccan="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
     <div class="aviso" id="rep_${x.id}" style="display:none;gap:8px"><label>Nueva fecha<input type="date" id="repF_${x.id}" min="${hoyISO()}" value="${esc(x.fecha)}"></label><label>Nueva hora<input type="time" id="repH_${x.id}" value="${esc(x.hora)}"></label><label>Mensaje (opcional)<input id="repM_${x.id}"></label><button class="btn mini" data-crepok="${x.id}">Enviar propuesta</button></div></div></div>`;
   const consHTML=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
@@ -1447,7 +1488,7 @@ document.addEventListener("click",async e=>{
   if(d.svok){if(await cita(d.svok,{estado:"Confirmada"}))vistaMisServicios();return}
   if(d.svcan){if(!confirm("¿Cancelar esta cita?"))return;if(await cita(d.svcan,{estado:"Cancelada"}))vistaMisServicios();return}
   if(d.cok){if(await cita(d.cok,{estado:"Confirmada",respuesta:null}))vistaPanelSrv();return}
-  if(d.cfin){const c=(window._ci||{})[d.cfin]||{},pre=(window._itP||{})[c.servicio_id];const t=prompt("Total cobrado por la cita (pesos).\nSe usa para calcular el 1% de uso de la app:",pre>0?pre:"");if(t===null)return;const pn=numMX(t);if(!(pn>0))return alert("Escribe un total válido.");
+  if(d.cfin){const c=(window._ci||{})[d.cfin]||{},pre=(window._itP||{})[c.servicio_id];const t=prompt("Total cobrado por la cita (pesos).\nSe usa para calcular el 3% de uso de la app:",pre>0?pre:"");if(t===null)return;const pn=numMX(t);if(!(pn>0))return alert("Escribe un total válido.");
     if(await cita(d.cfin,{estado:"Completada",monto:pn}))vistaPanelSrv();return}
   if(d.ccan){const m=prompt("Motivo para el cliente (opcional):");if(m===null)return;if(await cita(d.ccan,{estado:"Cancelada",respuesta:m.trim()||null}))vistaPanelSrv();return}
   if(d.crep){const r=$("rep_"+d.crep);if(r)r.style.display=r.style.display==="none"?"grid":"none";return}
@@ -1569,7 +1610,8 @@ function toggleDirectorio(){
   if(db)db.from("servicios_perfiles").select("*").eq("activo",true).eq("tipo","transporte").then(r=>{dirTr=(r.data||[]).map(transDir);L=todos();if($("dirL"))$("dirL").innerHTML=lista()});
   d.addEventListener("click",async e=>{const a=e.target.closest('a[href^="#/"]');if(!a)return;e.preventDefault();const h=a.getAttribute("href");await cierraTodasCapas();location.hash=h});
 }
-document.addEventListener("click",e=>{const g=e.target.closest("#bAg,#bCq");if(g){e.preventDefault();g.id==="bAg"?toggleAgenda():toggleConsulta();return}
+document.addEventListener("click",e=>{const ac=e.target.closest("[data-agcom]");if(ac){e.preventDefault();agTab="agenda";agSel=ac.dataset.agcom;if($("agPanel"))svAgPinta();else toggleAgenda();return}
+  const g=e.target.closest("#bAg,#bCq");if(g){e.preventDefault();g.id==="bAg"?toggleAgenda():toggleConsulta();return}
   for(const pid of["agPanel","cqPanel"])if($(pid)&&!e.target.closest("#"+pid+",#bDir,#bTop")&&e.target.isConnected&&!e.target.closest(".x"))cierraCapa();
   const b=e.target.closest("#bDir");if(b){e.preventDefault();toggleDirectorio();return}if($("dirPanel")&&!e.target.closest("#dirPanel,#bTop")&&e.target.isConnected)cierraCapa()});
 function vistaTienda(id){
@@ -1582,7 +1624,7 @@ function vistaTienda(id){
      ${t.horario?`<span class="suave">🕒 Horario: ${esc(t.horario)}</span>`:""}
      ${t.dias?`<span class="suave">📅 Días: ${diasTxt(t.dias)}</span>`:""}
      ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
-     ${tel?`<span class="suave">📞 <a href="tel:+${tel}">${esc(t.whatsapp)}</a></span>`:""}${t.correo?`<span class="suave">✉️ <a href="mailto:${esc(t.correo)}">${esc(t.correo)}</a></span>`:""}</div></div>`;
+     ${tel?`<span class="suave">📞 <a href="tel:+${tel}">${esc(t.whatsapp)}</a></span>`:""}${t.correo?`<span class="suave">✉️ <a href="mailto:${esc(t.correo)}">${esc(t.correo)}</a></span>`:""}${t.citas?`<button class="btn" data-agcom="${t.id}" style="justify-self:start">📅 Agendar cita</button>`:""}</div></div>`;
     return}
   if(!menuFresco.has(id)&&!menuPend[id]&&reintento(t))cargarMenu(id).then(c=>{if(c===null)t._mErr=Date.now();if((c||(c===null&&!t.menu))&&enTienda(id))vistaTienda(id)});
   const M=t.menu||[];
@@ -1592,7 +1634,7 @@ function vistaTienda(id){
    <span class="suave">${t.giro} · Abierto ${t.horario}</span>
    ${t.direccion?`<span class="suave">📍 ${esc(t.direccion)}</span>`:""}
    ${t.dias?`<span class="suave">📅 Días: ${diasTxt(t.dias)}</span>`:""}
-   <span class="suave">${t.domicilio?"Envío "+din(t.envio)+" · ":"Solo recoger en tienda · "}Pedido mínimo ${din(t.minimo)}</span></div></div>
+   <span class="suave">${t.domicilio?"Envío "+din(t.envio)+" · ":"Solo recoger en tienda · "}Pedido mínimo ${din(t.minimo)}</span>${t.citas?`<button class="btn sec" data-agcom="${t.id}" style="justify-self:start">📅 Agendar cita</button>`:""}</div></div>
    `+(!t.menu?`<p class="suave" style="text-align:center;padding:28px 0">${t._mErr?"No se pudo cargar el menú. Revisa tu conexión e intenta de nuevo.":"Cargando menú…"}</p>`:"")+
    (t.menu?`<div class="cats">${cats.map(c=>`<button class="${c===cat?"on":""}" data-cat="${c}">${c}</button>`).join("")}</div>`:"")+
    M.filter(m=>cat==="Todo"||m.cat===cat).map(m=>`
@@ -1950,7 +1992,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v170";
+const BUILD="valle-go-v171";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
