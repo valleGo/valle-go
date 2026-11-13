@@ -2,18 +2,75 @@
   "id": "./",
   "name": "Valle GO",
   "short_name": "Valle GO",
-  "description": "Pide a los comercios de tu valle",
+  "description": "La app del comercio local de Ameca, Jalisco: pide a domicilio o para recoger, agenda citas, pregunta si hay un producto y solicita transporte con los negocios del valle.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#000000",
   "theme_color": "#FAF7F0",
   "lang": "es",
-  "categories": ["food", "shopping"],
+  "categories": [
+    "shopping",
+    "food",
+    "lifestyle",
+    "business"
+  ],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "capturas/cel-1-inicio.png",
+      "sizes": "780x1560",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Lugares del Valle Hoy: los comercios de Ameca"
+    },
+    {
+      "src": "capturas/cel-2-tienda.png",
+      "sizes": "780x1560",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Menú de un comercio con pedido a domicilio"
+    },
+    {
+      "src": "capturas/cel-3-agenda.png",
+      "sizes": "780x1560",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Agenda de servicios: citas con negocios del valle"
+    },
+    {
+      "src": "capturas/cel-4-directorio.png",
+      "sizes": "780x1560",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Directorio con buscador"
+    },
+    {
+      "src": "capturas/pc-1-inicio.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Valle GO en la computadora"
+    }
   ]
 }
