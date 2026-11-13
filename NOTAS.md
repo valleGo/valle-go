@@ -2,6 +2,26 @@
 
 Guía para retomar el proyecto en una conversación nueva. **Repo público: aquí nunca van contraseñas, llaves ni tokens.**
 
+
+## ⚡ ORDEN 66 · Paso a Pro, app pública y pruebas reales (guardada el 13 nov 2026)
+
+Cuando el dueño diga **"EJECUTA LA ORDEN 66"**, ya contrató las versiones Pro. Hacer en este orden y avisar el avance:
+
+1. **Respaldo antes de empezar** (flujo "Respaldo Valle GO" en valleGo/valle-go-respaldos, por la API REST de GitHub).
+2. **Confirmar los planes Pro** (Supabase y, si aplica, Vercel) con las herramientas de cada servicio.
+3. **Supabase Pro:** guiar al dueño para activar la protección contra contraseñas filtradas (Authentication → contraseñas) y confirmar los respaldos diarios. Volver a correr los asesores de seguridad y rendimiento.
+4. **Datos de ejemplo:** listar los comercios, menús y pedidos de prueba y **preguntar antes de borrar** cualquiera.
+5. **App pública:** preguntar qué falta para "hacerla pública" (dominio propio, quitar protección de Vercel, publicar el enlace, etc.) y hacerlo.
+6. **Pruebas reales con el dueño** (con cuentas reales; él hace los pagos, nunca se piden contraseñas ni tarjetas en el chat):
+   - pedido en efectivo, por transferencia y una **compra real con Mercado Pago** (pago, aviso al comercio, estado del pedido);
+   - **cita** en un comercio del plan SIMPLE: marcarla atendida con el total y revisar el 3%;
+   - **consulta de stock → enlace de compra → pedido** (aviso "Ya puedes comprarlo");
+   - **viaje** con transportista: cotización, completado y 5%;
+   - **avisos al celular** en Android e iPhone;
+   - asignar la **promoción de apertura** a un comercio y revisar Membresías (mes gratis y 20%), Cobros 3%, Monitoreo, informes corto y completo, y el corte de transporte.
+7. Corregir lo que salga, subir versión, actualizar NOTAS, la ficha legal y los PDFs si cambia algo.
+8. **Respaldo final.**
+
 ## Qué es
 Valle GO ("¡Va, llegó!"): PWA marketplace de comercios locales de Ameca, Jalisco.
 - Sitio: https://valle-go.vercel.app
