@@ -203,7 +203,11 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .btnrec{background:#da9c48;color:#fff;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 22px;box-shadow:0 3px 10px rgba(0,0,0,.2)}.btnrec:active{transform:scale(.97)}.btnrec img{width:170px;height:auto;pointer-events:none}.btnrec span{pointer-events:none}
 .pasos{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.78rem;color:var(--suave,#888)}.paso.ok{color:var(--texto);font-weight:600}.paso.act{color:var(--salvia)}.paso.mal{color:var(--coral);font-weight:600}
 .estado{display:inline-block;background:color-mix(in srgb,var(--salvia) 30%,var(--tarjeta));color:var(--texto);border-radius:999px;padding:3px 12px;font-size:.78rem;font-weight:600}
-#inst{display:none;position:fixed;bottom:14px;left:14px;right:14px;background:var(--acento);color:var(--on-acento);border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:4;align-items:center;gap:8px;font-size:.9rem;box-shadow:var(--sombra)}
+#inst{display:none;flex-wrap:wrap;position:fixed;bottom:14px;left:14px;right:14px;background:var(--acento);color:var(--on-acento);border-radius:var(--radio);padding:10px 12px;font-weight:600;z-index:4;align-items:center;gap:8px;font-size:.9rem;box-shadow:var(--sombra)}
+#fInstW{margin:0 0 10px}.finst{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;background:linear-gradient(135deg,#5D774A,#7C9A5E);color:#fff!important;font-weight:700;font-size:.74rem;letter-spacing:.02em;text-decoration:none!important;box-shadow:0 3px 10px rgba(93,119,74,.28);transition:transform .15s,box-shadow .15s}
+.finst:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(93,119,74,.36)}.finst:active{transform:scale(.97)}
+#instR{display:none;flex-basis:100%;align-items:center;gap:8px;margin-top:2px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.55);font-size:.78rem;font-weight:500}#instR b{font-weight:700}#instR>div{flex:1}
+#inst #instC{background:#fff;color:#2B2D22;border:1.5px solid #2B2D22;padding:6px 12px;font-size:.78rem;white-space:nowrap}
 #inst span{flex:1}#inst small{display:block;font-weight:500;opacity:.85;font-size:.78rem;margin-top:2px}
 .ins{max-width:640px;margin:0 auto}.ins .paso{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;margin:10px 0}
 .ins .num{width:30px;height:30px;border-radius:50%;background:var(--acento);color:var(--on-acento);display:grid;place-items:center;font-weight:800}
@@ -425,9 +429,9 @@ if(document.readyState==="complete")intenta();else window.addEventListener("load
 </header>
 <div class="dirbar"><div class="dock"><a class="dk" href="#" id="bDir" role="button" aria-expanded="false" aria-controls="dirPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4M4 12h4M4 19h4"/><path d="M12 5h8M12 12h8M12 19h8"/><circle cx="4" cy="5" r=".6"/><circle cx="4" cy="12" r=".6"/><circle cx="4" cy="19" r=".6"/></svg>DIRECTORIO</a><a class="dk" href="#" id="bAg" role="button" aria-expanded="false" aria-controls="agPanel"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2.2 2.2 4.3-4.4"/></svg>AGENDA SERVICIOS</a><button class="dk" id="bCq" type="button" aria-label="Consulta de stock" aria-expanded="false" aria-controls="cqPanel" title="Consulta de stock"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="11.5" cy="11.5" r="3.5"/><path d="M14.2 14.2L17 17"/></svg>CONSULTA DE STOCK</button></div></div>
 <main id="vista" style="padding-top:48px"></main>
-<footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><a href="#/instalar">📲 Instalar la app</a> · <a href="privacidad.html">Aviso de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
+<footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><div id="fInstW"><a href="#/instalar" id="fInst" class="finst"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg>Instalar la app</a></div><a href="privacidad.html">Aviso de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
 <div class="panel" id="pCarrito"><div class="caja" id="cCarrito"></div></div>
-<button id="bTop" type="button" aria-label="Subir al inicio de la página" title="Subir"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><div id="toast"></div><div id="inst"><span id="instT"></span><button id="instB">Instalar</button><button id="instX" aria-label="Cerrar">×</button></div>
+<button id="bTop" type="button" aria-label="Subir al inicio de la página" title="Subir"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><div id="toast"></div><div id="inst"><span id="instT"></span><button id="instB">Instalar</button><button id="instX" aria-label="Cerrar">×</button><div id="instR"><div>⭐ <b>Recomendado:</b> instálala desde Chrome, sin avisos de seguridad.</div><button id="instC">Abrir en Chrome</button></div></div>
 
 <script>
 // ============ CONFIGURACIÓN (edita aquí tus comerciantes) ============
@@ -2038,7 +2042,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v179";
+const BUILD="valle-go-v180";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2107,16 +2111,21 @@ const chromeAndroid=esAndroid&&/Chrome\/\d/.test(NAV)&&!enOtraApp&&!/SamsungBrow
 const sistemaInst=esIOS?"ios":esAndroid?(chromeAndroid?"chrome":"otro"):"pc";
 const urlChrome=()=>"intent://"+location.host+location.pathname+"?instalar=1#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url="+encodeURIComponent(location.origin+location.pathname+"?instalar=1")+";end";
 const cerrado=()=>Date.now()-Number($$("instX",0))<6048e5; // no molestar por 7 días
-function banner(txt,sub,btn,accion){ if(yaApp||cerrado()||location.hash==="#/instalar")return; $("instT").innerHTML=esc(txt)+(sub?`<small>${esc(sub)}</small>`:""); $("instB").textContent=btn; $("instB").dataset.a=accion; $("inst").style.display="flex"; }
+function banner(txt,sub,btn,accion,conChrome){ if(yaApp||cerrado()||location.hash==="#/instalar")return; $("instT").innerHTML=esc(txt)+(sub?`<small>${esc(sub)}</small>`:""); $("instB").textContent=btn; $("instB").dataset.a=accion; $("instR").style.display=conChrome?"flex":"none"; $("inst").style.display="flex"; }
+if(yaApp){const f=$("fInstW");if(f)f.remove()}   // el botón del pie solo se muestra a quien todavía no la instala
 async function instalarAhora(){if(ev){ev.prompt();const r=await ev.userChoice;ev=null;$("inst").style.display="none";if(r&&r.outcome==="accepted")aviso("Listo: Valle GO quedó en tu pantalla de inicio.");return true}return false}
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();if(sistemaInst==="otro")return;ev=e;   // en Samsung Internet y otros no se usa: Play Protect lo bloquea
-  banner("Instala Valle GO gratis","No ocupa espacio ni pide permisos. Google te pedirá confirmar: es normal y seguro.","Instalar","instalar");if(location.hash==="#/instalar")vistaInstalar()});
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;
+  if(sistemaInst==="otro")banner("Instala Valle GO gratis","Toca Instalar y confirma. No ocupa espacio ni pide permisos.","Instalar","instalar",true);   // mismo efecto que el icono de instalar de la barra de dirección
+  else banner("Instala Valle GO gratis","No ocupa espacio ni pide permisos. Google te pedirá confirmar: es normal y seguro.","Instalar","instalar");
+  if(location.hash==="#/instalar")vistaInstalar()});
 window.addEventListener("appinstalled",()=>{$("inst").style.display="none";ev=null});
 if(!yaApp)setTimeout(()=>{
-  if(sistemaInst==="otro")banner("Para instalar Valle GO, ábrela en Chrome",enOtraApp?"Estás dentro de otra app. En Chrome se instala sin avisos de seguridad.":"Así se instala sin avisos de seguridad de Google.","Abrir en Chrome","chrome");
+  if(sistemaInst==="otro"&&!ev&&!enOtraApp)banner("Instala Valle GO gratis","Usa el icono de instalar junto a la dirección o el menú del navegador.","Cómo instalar","guia",true);
+  else if(sistemaInst==="otro"&&!ev)banner("Para instalar Valle GO, ábrela en Chrome",enOtraApp?"Estás dentro de otra app. En Chrome se instala sin avisos de seguridad.":"Así se instala sin avisos de seguridad de Google.","Abrir en Chrome","chrome");
   else if(sistemaInst==="ios")banner("Instala Valle GO en tu "+(/ipad|Macintosh/i.test(NAV)?"iPad":"iPhone"),"Son 3 toques desde Safari. Te enseñamos cómo.","Ver cómo","guia");
 },2500);
 if(/[?&]instalar=1/.test(location.search)){history.replaceState(null,"",location.pathname+"#/instalar")}
+$("instC").onclick=()=>{location.href=urlChrome()};
 $("instB").onclick=async()=>{const a=$("instB").dataset.a;if(a==="instalar"&&await instalarAhora())return;if(a==="chrome"){location.href=urlChrome();return}$("inst").style.display="none";location.hash="#/instalar"};
 // Guía de instalación (también se puede compartir: valle-go.vercel.app/#/instalar)
 function vistaInstalar(){
@@ -2126,16 +2135,17 @@ function vistaInstalar(){
   const icoPuntos='<span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></span>';
   const paso=(n,t)=>`<div class="paso"><span class="num">${n}</span><div>${t}</div></div>`, yo=k=>sistemaInst===k||(k==="android"&&(sistemaInst==="chrome"||sistemaInst==="otro"));
   const bot=yaApp?`<div class="aviso">✅ Ya estás usando Valle GO como app.</div>`
-    :sistemaInst==="otro"?`<p><a class="btn" href="${esc(urlChrome())}">Abrir Valle GO en Chrome</a></p><p class="suave">Si no tienes Chrome, descárgalo gratis de Play Store y abre <b>${esc(location.host)}</b>.</p>`
+    :sistemaInst==="otro"?(ev?`<p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="insYa">📲 Instalar Valle GO</button><a class="btn sec" href="${esc(urlChrome())}">Abrir en Chrome</a></p><p class="suave">Si al instalar aparece un aviso de seguridad de Google (Play Protect), ábrela en Chrome: ahí se instala sin avisos.</p>`
+      :`<p><a class="btn" href="${esc(urlChrome())}">Abrir Valle GO en Chrome</a></p><p class="suave">Si no tienes Chrome, descárgalo gratis de Play Store y abre <b>${esc(location.host)}</b>.</p>`)
     :ev?`<p><button class="btn" id="insYa">📲 Instalar Valle GO</button></p>`:"";
   $("vista").innerHTML=`<div class="ins"><h2>📲 Instala Valle GO</h2>
    <p>Valle GO es una <b>app web</b>: se instala desde el navegador en segundos. <b>Es gratis, no ocupa espacio, no pide permisos y se actualiza sola.</b> No se descarga ningún archivo.</p>${bot}
    <details ${yo("android")?"open":""} class="${yo("android")?"yo":""}"><summary>🤖 Android (celular o tableta)</summary>
-    <p><b>Usa Google Chrome.</b> Otros navegadores (como Samsung Internet) arman la app de forma antigua y Google muestra un aviso de seguridad. En Chrome no pasa.</p>
+    <p><b>Recomendado: Google Chrome.</b> En Samsung Internet y otros navegadores también se puede (botón Instalar o el icono con flecha junto a la dirección), pero a veces Google muestra un aviso de seguridad porque esos navegadores arman la app de forma antigua. En Chrome no pasa.</p>
     ${paso(1,`Abre <b>${esc(location.host)}</b> en <b>Chrome</b>.`)}
     ${paso(2,`Toca <b>Instalar</b> en el aviso de Valle GO, o el menú ${icoPuntos} → <b>Instalar app</b> (o <b>Agregar a la pantalla principal</b>).`)}
     ${paso(3,`Google te muestra una ventana con Valle GO: toca <b>Instalar</b>. Es la confirmación normal de Google.`)}
-    <p class="suave">¿Te salió un aviso de <b>Play Protect</b>? Toca <b>Aceptar</b> (no instales así) y vuelve a instalar desde Chrome.</p></details>
+    <p class="suave">¿Te salió un aviso de <b>Play Protect</b>? Cierra el aviso y abre Valle GO en Chrome para instalarla sin avisos.</p></details>
    <details ${yo("ios")?"open":""} class="${yo("ios")?"yo":""}"><summary>🍎 iPhone o iPad</summary>
     ${paso(1,`Abre <b>${esc(location.host)}</b> en <b>Safari</b>.`)}
     ${paso(2,`Toca <b>Compartir</b> ${icoComp} (abajo, o arriba en iPad). Si no lo ves, toca los tres puntos junto a la dirección.`)}
