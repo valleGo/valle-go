@@ -2245,9 +2245,8 @@ function compartirApp(){
   const v=$("compPanel");if(v)v.remove();
   const nfc="NDEFReader" in window,share=!!navigator.share;
   const d=document.createElement("div");d.id="compPanel";d.className="";d.innerHTML=`<div id="vtFondo" style="position:fixed"><div class="vt" role="dialog" aria-modal="true" aria-labelledby="cpT">
-    <h3 id="cpT">📤 Comparte Valle GO</h3><div class="vtTxt"><p>Que escaneen el código con la cámara para abrir Valle GO e instalarla.</p></div>
+    <h3 id="cpT">📤 Comparte Valle GO</h3>
     <div class="qr"><img src="qr-instalar.svg" alt="Código QR para abrir e instalar Valle GO" width="230" height="230"></div>
-    <div class="cLink">${esc(LINK_APP.replace(/^https?:\/\//,""))}</div>
     <div class="cgrid">${share?`<button type="button" class="cPri" data-cp="share">📲 Compartir (WhatsApp, Quick Share…)</button>`:""}
      <button type="button" class="${share?"cSec":"cPri"}" data-cp="copiar">🔗 Copiar link</button>
      ${nfc?`<button type="button" class="cSec" data-cp="nfc">📡 Grabar en etiqueta NFC</button>`:""}
@@ -2317,7 +2316,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v208";
+const BUILD="valle-go-v209";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
