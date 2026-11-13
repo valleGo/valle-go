@@ -2243,7 +2243,8 @@ window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
 const LINK_APP=location.origin+"/?instalar=1";   // abre Valle GO directo en la guía de instalación
 function compartirApp(){
   const v=$("compPanel");if(v)v.remove();
-  const nfc="NDEFReader" in window,share=!!navigator.share;
+  const puedeNfc=!!sesion&&(esAdmin||misCom.length>0||misSrv.length>0);   // grabar etiquetas NFC: solo comerciantes, transportistas y admin
+  const nfc="NDEFReader" in window&&puedeNfc,share=!!navigator.share;
   const d=document.createElement("div");d.id="compPanel";d.className="";d.innerHTML=`<div id="vtFondo" style="position:fixed"><div class="vt" role="dialog" aria-modal="true" aria-labelledby="cpT">
     <h3 id="cpT">📤 Comparte Valle GO</h3>
     <div class="qr"><img src="qr-instalar.svg" alt="Código QR para abrir e instalar Valle GO" width="230" height="230"></div>
@@ -2257,7 +2258,7 @@ function compartirApp(){
     if(a==="cerrar")return cerrar();
     if(a==="share"){try{await navigator.share({title:"Valle GO",text:"Instala Valle GO, la app de Ameca para pedir, agendar y consultar:",url:LINK_APP})}catch(err){}return}
     if(a==="copiar"){try{await navigator.clipboard.writeText(LINK_APP);aviso("Link copiado")}catch(err){pregunta("Copia el link:",LINK_APP)}return}
-    if(a==="nfc"){try{const w=new NDEFReader();aviso("Acerca una etiqueta NFC a tu celular…");await w.write({records:[{recordType:"url",data:LINK_APP}]});aviso("Listo: la etiqueta NFC ya abre Valle GO")}catch(err){alert("No se pudo grabar la etiqueta NFC: "+(err.message||err))}}});
+    if(a==="nfc"){if(!puedeNfc)return;try{const w=new NDEFReader();aviso("Acerca una etiqueta NFC a tu celular…");await w.write({records:[{recordType:"url",data:LINK_APP}]});aviso("Listo: la etiqueta NFC ya abre Valle GO")}catch(err){alert("No se pudo grabar la etiqueta NFC: "+(err.message||err))}}});
   document.addEventListener("keydown",function esc_(e){if(e.key==="Escape"){cerrar();document.removeEventListener("keydown",esc_)}});
   setTimeout(()=>{const f=d.querySelector(".cPri");if(f)f.focus()},60);
 }
@@ -2316,7 +2317,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v209";
+const BUILD="valle-go-v210";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
