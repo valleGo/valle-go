@@ -220,6 +220,15 @@ h3.sec{margin:20px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--borde)
 .candado{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:999px;background:#EEF2E6;color:#3F5A2E;border:1px solid #C9D6B5;font-weight:700;font-size:.85rem}
 .tabcli{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:4px 0 14px}.tabcli a{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--borde);background:var(--tarjeta);color:var(--texto);font-weight:700;font-size:.88rem;text-decoration:none}.tabcli a.on{background:#d9aa28;border-color:#c39419;color:var(--on-acento)}
 .pmenu #bMisCons{background:var(--tarjeta);border:1px solid #c39419;color:var(--texto);display:inline-flex;align-items:center;gap:6px;font-weight:700}
+#flechaIOS{position:fixed;inset:0;z-index:9999;background:rgba(20,22,15,.45);animation:fiFade .25s ease}
+#flechaIOS .fiBox{position:absolute;display:flex;flex-direction:column;align-items:center;gap:6px;max-width:300px}
+#flechaIOS .fiTxt{background:#fff;color:#2B2D22;border-radius:16px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:.92rem;line-height:1.4;text-align:center}
+#flechaIOS .fiTxt b{color:#5D774A}#flechaIOS .fiTxt small{display:block;margin-top:6px;color:#6F6A5A}
+#flechaIOS .fiFl{width:64px;height:64px;color:#F2C230;filter:drop-shadow(0 3px 6px rgba(0,0,0,.35));animation:fiBota 1s ease-in-out infinite}
+#flechaIOS .fiFl.arriba{animation-name:fiBotaArr}
+#flechaIOS .fiX{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;background:#fff;border:0;border-radius:999px;padding:8px 14px;font-weight:700;color:#2B2D22;min-height:40px}
+@keyframes fiBota{0%,100%{transform:translateY(0)}50%{transform:translateY(12px)}}@keyframes fiBotaArr{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}@keyframes fiFade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){#flechaIOS .fiFl{animation:none}}
 .ins{max-width:640px;margin:0 auto;line-height:1.55}.ins h2{text-align:center;margin-bottom:.6em}
 .ins p,.ins .paso>div{text-align:justify;text-align-last:left;-webkit-hyphens:auto;hyphens:auto;hyphenate-limit-chars:10 4 4;-webkit-hyphenate-limit-before:4;-webkit-hyphenate-limit-after:4;margin:.55em 0}.ins .paso>div{margin:0;padding-top:4px}
 .ins .intro,.ins .nota{text-wrap:balance;-webkit-hyphens:manual;hyphens:manual}
@@ -2118,7 +2127,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v190";
+const BUILD="valle-go-v191";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2190,6 +2199,23 @@ const urlChrome=()=>"intent://"+location.host+location.pathname+"?instalar=1#Int
 const cerrado=()=>Date.now()-Number($$("instX",0))<6048e5; // no molestar por 7 días
 function banner(txt,sub,btn,accion,conChrome){ if(yaApp||cerrado()||location.hash==="#/instalar")return; $("instT").innerHTML=esc(txt)+(sub?`<small>${esc(sub)}</small>`:""); $("instB").textContent=btn; $("instB").dataset.a=accion; $("instR").style.display=conChrome?"flex":"none"; $("inst").style.display="flex"; }
 if(yaApp){const f=$("fInstW");if(f)f.remove()}   // el botón del pie solo se muestra a quien todavía no la instala
+function flechaIOS(){
+  if(!esIOS||yaApp)return;const v=+((NAV.match(/Version\/(\d+)/)||[])[1]||0),ipad=/ipad|Macintosh/i.test(NAV),crios=/CriOS/i.test(NAV);
+  let pos,txt;
+  if(ipad){pos="arribaDer";txt="Toca <b>Compartir</b> arriba a la derecha, junto a la dirección."}
+  else if(crios){pos="arribaDer";txt="Toca <b>Compartir</b> a la derecha de la dirección (en Chrome)."}
+  else if(v>=26){pos="abajoDer";txt="Toca <b>⋯</b> aquí abajo y luego <b>Compartir</b>."}
+  else{pos="abajoCen";txt="Toca <b>Compartir</b> aquí abajo, en la barra de Safari."}
+  const viejo=$("flechaIOS");if(viejo)viejo.remove();
+  const arriba=pos.startsWith("arriba"),fl=`<svg class="fiFl ${arriba?"arriba":""}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="${arriba?"M12 2 4 11h5v11h6V11h5z":"M12 22l8-9h-5V2H9v11H4z"}"/></svg>`;
+  const caja=`<div class="fiTxt" role="status">${txt}<small>Después elige <b>Agregar a inicio</b> y toca <b>Agregar</b>.</small></div>`;
+  const lugar=pos==="abajoCen"?"left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 6px)":pos==="abajoDer"?"right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);align-items:flex-end":"right:8px;top:calc(env(safe-area-inset-top,0px) + 6px);align-items:flex-end";
+  const d=document.createElement("div");d.id="flechaIOS";d.setAttribute("role","dialog");d.setAttribute("aria-label","Dónde tocar para instalar Valle GO");
+  d.innerHTML=`<button class="fiX" type="button">✕ Cerrar</button><div class="fiBox" style="${lugar}">${arriba?fl+caja:caja+fl}</div>`;
+  if(pos==="abajoDer")d.querySelector(".fiFl").style.marginRight="4px";
+  d.onclick=()=>d.remove();document.body.appendChild(d);d.querySelector(".fiX").focus();
+  setTimeout(()=>{if(d.isConnected)d.remove()},15000);
+}
 async function instalarAhora(){if(ev){ev.prompt();const r=await ev.userChoice;ev=null;$("inst").style.display="none";if(r&&r.outcome==="accepted")aviso(sistemaInst==="pc"?"Listo: Valle GO quedó instalada en tu computadora.":"Listo: Valle GO quedó en tu pantalla de inicio.");if(location.hash==="#/instalar")vistaInstalar();return true}return false}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;
   if(sistemaInst==="otro")banner("Instala Valle GO gratis","Toca Instalar y confirma. No ocupa espacio ni pide permisos.","Instalar","instalar",true);   // mismo efecto que el icono de instalar de la barra de dirección
@@ -2214,6 +2240,7 @@ function vistaInstalar(){
   const bot=yaApp?`<div class="aviso">✅ Ya estás usando Valle GO como app.</div>`
     :sistemaInst==="otro"?(ev?`<p class="cen"><button class="btn" id="insYa">📲 Instalar Valle GO</button><a class="btn sec" href="${esc(urlChrome())}">Abrir en Chrome</a></p><p class="suave nota">Recomendado: instálala desde Chrome. Si al instalar aparece un aviso de Google (Play Protect), usa el botón «Abrir en Chrome».</p>`
       :`<p class="cen"><a class="btn" href="${esc(urlChrome())}">Abrir Valle GO en Chrome</a></p><p class="suave nota">¿No tienes Chrome? Descárgalo gratis en Play Store y abre <b>${esc(location.host)}</b>.</p>`)
+    :sistemaInst==="ios"?(enOtraApp?`<p class="suave nota">Estás dentro de otra app. Toca <b>⋯</b> o el icono de la brújula y elige <b>Abrir en Safari</b>; ahí podrás instalarla.</p>`:`<p class="cen"><button class="btn" id="insFl">👇 Muéstrame dónde tocar</button></p>`)
     :ev&&sistemaInst!=="pc"?`<p class="cen"><button class="btn" id="insYa">📲 Instalar Valle GO</button></p>`:"";   // en computadora el botón va dentro de su sección
   $("vista").innerHTML=`<div class="ins"><h2>📲 Instala Valle GO</h2>
    <p class="intro">Valle GO es una <b>app web</b>: se instala desde tu navegador en segundos, sin descargar archivos. <b>Es gratis, casi no ocupa espacio, no pide permisos y se actualiza sola.</b></p>${bot}
@@ -2234,7 +2261,7 @@ function vistaInstalar(){
       :`<p>En <b>Chrome</b> o <b>Edge</b>, toca el icono de instalar que aparece a la derecha de la barra de direcciones y luego <b>Instalar</b>. En <b>Safari</b> de Mac, entra al menú <b>Archivo</b> y elige <b>Agregar al Dock</b>.</p>`}</details>
    <p class="suave nota">Valle GO nunca te pedirá contraseñas por mensaje ni te cobrará por instalarla. Si tienes dudas, escríbenos al correo que aparece en Contacto, en las <a href="terminos.html#cambios">Condiciones del Servicio</a>.</p>
    <p class="cen"><button class="btn sec" id="insComp">Compartir esta guía</button></p></div>`;
-  const b=$("insYa");if(b)b.onclick=instalarAhora;const bp=$("insPc");if(bp)bp.onclick=instalarAhora;
+  const b=$("insYa");if(b)b.onclick=instalarAhora;const bp=$("insPc");if(bp)bp.onclick=instalarAhora;const bf=$("insFl");if(bf){bf.onclick=flechaIOS;if(!vistaInstalar.vista){vistaInstalar.vista=1;setTimeout(()=>{if(location.hash==="#/instalar")flechaIOS()},700)}}
   $("insComp").onclick=()=>{const u=location.origin+location.pathname+"#/instalar";if(navigator.share)navigator.share({title:"Instala Valle GO",url:u}).catch(()=>{});else navigator.clipboard.writeText(u).then(()=>aviso("Enlace copiado")).catch(()=>prompt("Copia el enlace:",u))};
 }
 $("instX").onclick=()=>{$s("instX",Date.now());$("inst").style.display="none"};
