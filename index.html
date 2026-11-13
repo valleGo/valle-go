@@ -473,6 +473,7 @@ button,.btn,a,select,label,input[type=checkbox]{touch-action:manipulation}
 .fcard p,.fcard .aviso,.avPriv,.avPriv p,.perfilC>p,.perfilC .suave{text-align:justify;text-align-last:left;-webkit-hyphens:auto;hyphens:auto;hyphenate-limit-chars:13 6 6;-webkit-hyphenate-limit-before:6;-webkit-hyphenate-limit-after:6;line-height:1.55}
 .fcard .aviso{padding:14px 16px;font-size:.88rem}.avPriv p{margin:0}.avPriv p+p{margin-top:.55em}
 .avPriv a,.fcard .aviso a,.nw{white-space:nowrap;-webkit-hyphens:manual;hyphens:manual}
+.avPriv p.mailP{text-align:center!important;text-align-last:center!important;margin-top:.35em!important}.avPriv a.mail{display:inline-block;white-space:nowrap;font-weight:700;font-size:.82rem;letter-spacing:.01em;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.7);text-decoration:none}
 .avPriv.gAcepta,.avPriv p.acepta{text-align:center!important;text-align-last:center!important;text-wrap:balance}
 @media(max-width:520px){.fcard p,.fcard .aviso,.avPriv,.avPriv p,.perfilC>p,.perfilC .suave{text-align:left;text-wrap:pretty;-webkit-hyphens:manual;hyphens:manual}}   /* en celular el justificado abre huecos grandes: renglones parejos sin cortar palabras */
 @media(max-width:360px){.avPriv a{white-space:normal}}
@@ -1892,7 +1893,7 @@ function vistaCuenta(){
      <label><span>Teléfono <span class="opc">(opcional)</span></span><input id="rt" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="next"></label>
      <fieldset class="fdir"><legend>Dirección para tus envíos</legend>${dirCampos("rg",null)}</fieldset>
      <label><span>Contraseña <span class="opc">(mínimo 6 caracteres)</span></span><span class="fpass"><input id="rp" type="password" autocomplete="new-password" enterkeyhint="done" minlength="6" required><button type="button" class="verPass" data-verpass="rp" aria-label="Mostrar contraseña">👁</button></span></label>
-     <div class="avPriv" role="note"><p><b>Aviso de privacidad simplificado:</b> Valle&nbsp;GO (Ameca, Jalisco) usará tus datos para crear tu cuenta y hacer llegar tus pedidos, citas, consultas y viajes al comercio o transportista que elijas. No pedimos datos sensibles.</p><p>Puedes ejercer tus derechos ARCO o revocar tu consentimiento en contacto.vallego@<wbr>gmail.com.</p><p class="acepta">Al crear tu cuenta aceptas el <a href="privacidad.html" target="_blank" rel="noopener">Aviso de privacidad integral</a> y las <a href="terminos.html" target="_blank" rel="noopener">Condiciones del Servicio</a>.</p></div>
+     <div class="avPriv" role="note"><p><b>Aviso de privacidad simplificado:</b> Valle&nbsp;GO (Ameca, Jalisco) usará tus datos para crear tu cuenta y hacer llegar tus pedidos, citas, consultas y viajes al comercio o transportista que elijas. No pedimos datos sensibles.</p><p>Puedes ejercer tus derechos ARCO o revocar tu consentimiento en:</p><p class="mailP"><a href="mailto:contacto.vallego@gmail.com" class="mail">contacto.vallego@gmail.com</a></p><p class="acepta">Al crear tu cuenta aceptas el <a href="privacidad.html" target="_blank" rel="noopener">Aviso de privacidad integral</a> y las <a href="terminos.html" target="_blank" rel="noopener">Condiciones del Servicio</a>.</p></div>
      <button class="btn fbtn" id="reg" type="button">Crear cuenta</button>
     </form></section>
    <section class="fcard" id="accEntrar" aria-labelledby="accT2"><h2 id="accT2">Ya tengo cuenta</h2>
@@ -2221,7 +2222,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v198";
+const BUILD="valle-go-v199";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2340,20 +2341,20 @@ function vistaInstalar(){
   const icoPuntos='<span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></span>';
   const paso=(n,t)=>`<div class="paso"><span class="num">${n}</span><div>${t}</div></div>`, yo=k=>sistemaInst===k||(k==="android"&&(sistemaInst==="chrome"||sistemaInst==="otro"));
   const bot=yaApp?`<div class="aviso">✅ Ya estás usando Valle GO como app.</div>`
-    :sistemaInst==="otro"?(ev?`<p class="cen"><button class="btn" id="insYa">📲 Instalar Valle GO</button><a class="btn sec" href="${esc(urlChrome())}">Abrir en Chrome</a></p><p class="suave nota">Recomendado: instálala desde Chrome. Si al instalar aparece un aviso de Google (Play Protect), usa el botón «Abrir en Chrome».</p>`
-      :`<p class="cen"><a class="btn" href="${esc(urlChrome())}">Abrir Valle GO en Chrome</a></p><p class="suave nota">¿No tienes Chrome? Descárgalo gratis en Play Store y abre <b>${esc(location.host)}</b>.</p>`)
+    :sistemaInst==="otro"?(enOtraApp?`<p class="cen"><a class="btn" href="${esc(urlChrome())}">Abrir Valle GO en Chrome</a></p><p class="suave nota">Estás dentro de otra app: ábrela en Chrome para instalarla.</p>`
+      :`<p class="cen"><button class="btn" id="insOtro" type="button">📲 Instalar aquí</button><a class="btn sec" href="${esc(urlChrome())}">⭐ Abrir en Chrome</a></p><p class="suave nota"><b>Recomendado: Chrome.</b> Ahí se instala sin avisos de seguridad.</p>`)
     :sistemaInst==="ios"?(enOtraApp?`<p class="suave nota">Ábrela en <b>Safari</b> para instalarla: toca <b>⋯</b> y elige <b>Abrir en Safari</b>.</p>`:`<p class="cen"><button class="btn" id="insFl">👇 Muéstrame dónde tocar</button></p><p class="suave nota">Compartir → Agregar a inicio → Agregar</p>`)
     :ev&&sistemaInst!=="pc"?`<p class="cen"><button class="btn" id="insYa">📲 Instalar Valle GO</button></p>`:"";   // en computadora el botón va dentro de su sección
   $("vista").innerHTML=`<div class="ins"><h2>📲 Instala Valle GO</h2>
    <p class="intro">Valle GO es una <b>app web</b>: se instala desde tu navegador en segundos, sin descargar archivos. <b>Es gratis, casi no ocupa espacio y se actualiza sola.</b></p>${bot}
    <details ${yo("android")?"open":""} class="${yo("android")?"yo":""}"><summary>🤖 Android (celular o tableta)</summary>
-    <p><b>Te recomendamos usar Google Chrome.</b> Desde Samsung Internet u otro navegador también puedes instalarla, con el botón Instalar o con el icono de la flecha junto a la dirección; sin embargo, ahí Google a veces muestra un aviso de seguridad que en Chrome no aparece.</p>
-    ${paso(1,`Abre <b>${esc(location.host)}</b> en <b>Chrome</b>.`)}
+    <p><b>Recomendado: Google Chrome.</b> En otros navegadores también se instala con el botón «Instalar aquí», pero Google puede mostrar un aviso de seguridad.</p>
+    ${paso(1,`Abre <b>el Link</b> de Valle GO en <b>Chrome</b>.`)}
     ${paso(2,`Toca <b>Instalar</b> en el aviso de Valle GO. También puedes abrir el menú ${icoPuntos} y elegir <b>Instalar app</b> o <b>Agregar a la pantalla principal</b>.`)}
     ${paso(3,`Google mostrará una ventana con Valle GO. Toca <b>Instalar</b> para confirmar; es un paso normal y seguro.`)}
     <p class="suave">Si te aparece un aviso de <b>Play Protect</b>, ciérralo y abre Valle GO en Chrome para instalarla sin avisos.</p></details>
    <details ${yo("ios")?"open":""} class="${yo("ios")?"yo":""}"><summary>🍎 iPhone o iPad</summary>
-    ${paso(1,`Abre <b>${esc(location.host)}</b> en <b>Safari</b>.`)}
+    ${paso(1,`Abre <b>el Link</b> de Valle GO en <b>Safari</b>.`)}
     ${paso(2,`Toca <b>Compartir</b> ${icoComp}, que está abajo en iPhone y arriba en iPad. Si no lo ves, toca los tres puntos junto a la dirección.`)}
     ${paso(3,`Elige <b>Agregar a inicio</b> ${icoMas}, deja activada la opción <b>Abrir como app web</b> y toca <b>Agregar</b>.`)}
     <p class="suave">Para recibir avisos de tus pedidos y citas, abre Valle GO desde el icono de tu pantalla de inicio y actívalos en Mi cuenta.</p></details>
@@ -2363,7 +2364,9 @@ function vistaInstalar(){
       :`<p>En <b>Chrome</b> o <b>Edge</b>, toca el icono de instalar que aparece a la derecha de la barra de direcciones y luego <b>Instalar</b>. En <b>Safari</b> de Mac, entra al menú <b>Archivo</b> y elige <b>Agregar al Dock</b>.</p>`}</details>
    <p class="suave nota">Valle GO nunca te pedirá contraseñas por mensaje ni te cobrará por instalarla. Si tienes dudas, escríbenos al correo que aparece en Contacto, en las <a href="terminos.html#cambios">Condiciones del Servicio</a>.</p>
    <p class="cen"><button class="btn sec" id="insComp">Compartir esta guía</button></p></div>`;
-  const b=$("insYa");if(b)b.onclick=instalarAhora;const bp=$("insPc");if(bp)bp.onclick=instalarAhora;const bf=$("insFl");if(bf){bf.onclick=flechaIOS;if(!vistaInstalar.vista){vistaInstalar.vista=1;setTimeout(()=>{if(location.hash==="#/instalar")flechaIOS()},700)}}
+  const b=$("insYa");if(b)b.onclick=instalarAhora;const bp=$("insPc");if(bp)bp.onclick=instalarAhora;
+  const bo=$("insOtro");if(bo)bo.onclick=async()=>{if(await instalarAhora())return;   // si el navegador no ofrece el botón, se explica dónde está su opción
+    ventana({titulo:"Instalar Valle GO",tipo:"info",texto:"Toca el icono ⬇ junto a la dirección, o abre el menú ☰ del navegador y elige «Agregar página a» → «Pantalla de inicio».\nSi no te aparece, usa el botón «Abrir en Chrome»."})};const bf=$("insFl");if(bf){bf.onclick=flechaIOS;if(!vistaInstalar.vista){vistaInstalar.vista=1;setTimeout(()=>{if(location.hash==="#/instalar")flechaIOS()},700)}}
   $("insComp").onclick=()=>{const u=location.origin+location.pathname+"#/instalar";if(navigator.share)navigator.share({title:"Instala Valle GO",url:u}).catch(()=>{});else navigator.clipboard.writeText(u).then(()=>aviso("Enlace copiado")).catch(()=>pregunta("Copia el enlace:",u))};
 }
 $("instX").onclick=()=>{$s("instX",Date.now());$("inst").style.display="none"};
