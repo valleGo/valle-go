@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#E6E6E6">
 <meta name="color-scheme" content="light dark">
 <script>window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__bip=e});window.addEventListener("appinstalled",function(){window.__bip=null});
-(function(){var t="auto";try{t=localStorage.getItem("valle_tema")||"auto"}catch(e){}
+(function(){var t="claro",ses=null;try{t=localStorage.getItem("valle_tema")||"claro";ses=JSON.parse(localStorage.getItem("sesion"))}catch(e){}if(!ses)t="claro";   // sin sesión: siempre claro
 var o=t==="oscuro"||(t==="auto"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);
 document.documentElement.setAttribute("data-tema",o?"oscuro":"claro");
 var m=document.querySelector('meta[name=theme-color]');if(m)m.content=o?"#121410":"#E6E6E6";
@@ -1269,14 +1269,14 @@ const notifBtnHTML=()=>notifOK()
     :`<p class="aviso">Recibe avisos en tu celular de pedidos, citas y consultas. <button class="btn" id="bNotif">Activar notificaciones</button></p>`)
   :iosViejo()?`<p class="aviso">${MSG_IOS_VIEJO(iosViejo())}</p>`:`<p class="aviso">Para recibir avisos en iPhone: 1) abre esta página en Safari, 2) toca Compartir ⬆️ → «Agregar a pantalla de inicio», 3) abre Valle GO desde ese ícono nuevo (no desde Safari) y 4) toca «Activar notificaciones». Requiere iOS 16.4 o más nuevo.</p>`;
 // ---- Tema: claro, oscuro o automático (sigue al teléfono). Se guarda en este aparato ----
-const temaGuardado=()=>{try{return localStorage.getItem("valle_tema")||"auto"}catch(e){return "auto"}};
-function aplicarTema(t){const o=t==="oscuro"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);
+const temaGuardado=()=>{try{return localStorage.getItem("valle_tema")||"claro"}catch(e){return "claro"}};
+function aplicarTema(t){if(!sesion)t="claro";const o=t==="oscuro"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.setAttribute("data-tema",o?"oscuro":"claro");
   const m=document.querySelector('meta[name=theme-color]');if(m)m.content=o?"#121410":"#E6E6E6";
   const c=document.querySelector('meta[name=color-scheme]');if(c)c.content=o?"dark":"light";}
 function ponerTema(t){try{localStorage.setItem("valle_tema",t)}catch(e){}aplicarTema(t);document.querySelectorAll(".temaSel button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tema===t))}
 try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if(temaGuardado()==="auto")aplicarTema("auto")})}catch(e){}
-const temaHTML=()=>{const t=temaGuardado();return `<div class="aviso perfilC" style="display:grid;gap:10px;max-width:420px;justify-items:start"><b>🎨 Apariencia</b><div class="temaSel" role="group" aria-label="Apariencia de la app">${[["claro","☀️ Claro"],["oscuro","🌙 Oscuro"],["auto","📱 Automático"]].map(([k,n])=>`<button type="button" data-tema="${k}" aria-pressed="${t===k}">${n}</button>`).join("")}</div><span class="suave" style="font-size:.78rem">Automático usa el modo de tu celular o computadora.</span></div>`};
+const temaHTML=()=>{const t=temaGuardado();return `<div class="aviso perfilC" style="display:grid;gap:10px;max-width:420px;justify-items:start"><b>🎨 Apariencia</b><div class="temaSel" role="group" aria-label="Apariencia de la app">${[["claro","☀️ Claro"],["oscuro","🌙 Oscuro"],["auto","📱 Automático"]].map(([k,n])=>`<button type="button" data-tema="${k}" aria-pressed="${t===k}">${n}</button>`).join("")}</div><span class="suave" style="font-size:.78rem">Automático usa el modo de tu celular o computadora. Sin sesión, la app se ve en modo claro.</span></div>`};
 document.addEventListener("click",e=>{const b=e.target.closest(".temaSel [data-tema]");if(b)ponerTema(b.dataset.tema)});
 // ---- Ventanas propias de Valle GO (en lugar de las del navegador "valle-go.vercel.app dice…") ----
 let vtCola=Promise.resolve();
@@ -2088,7 +2088,7 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 setInterval(()=>{if(document.visibilityState==="visible")controlSesion(false)},120000);
 function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle||"",dir_num:u.dir_num||"",dir_col:u.dir_col||"",foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol().then(()=>controlSesion(true));location.hash="#/"}
 const medirHeader=()=>{const h=document.querySelector("header");if(h)document.documentElement.style.setProperty("--hh",h.offsetHeight+"px");};window.addEventListener("resize",medirHeader);window.addEventListener("load",medirHeader);if(window.ResizeObserver)new ResizeObserver(medirHeader).observe(document.querySelector("header"));medirHeader();
-function pintaHeader(){setTimeout(()=>{try{medirHeader()}catch(e){}},0);$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+`<span class="nm">${esc((sesion.nombre||"").split(" ")[0])}</span>`:`<span class="nm">Entrar</span>`;const staff=!!(esAdmin||misCom.length||misSrv.length);$("bPanel").style.display=staff?"":"none";$("bPedidos").style.display=(sesion&&!staff)?"":"none";$("bMisCons").style.display=(sesion&&!staff&&db)?"":"none";document.body.classList.toggle("sinPed",!(sesion&&!staff));document.body.classList.toggle("sinCarro",staff);$("bCarrito").style.display=staff?"none":""}   // carrito y pedidos son solo para clientes
+function pintaHeader(){try{aplicarTema(temaGuardado())}catch(e){}setTimeout(()=>{try{medirHeader()}catch(e){}},0);$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+`<span class="nm">${esc((sesion.nombre||"").split(" ")[0])}</span>`:`<span class="nm">Entrar</span>`;const staff=!!(esAdmin||misCom.length||misSrv.length);$("bPanel").style.display=staff?"":"none";$("bPedidos").style.display=(sesion&&!staff)?"":"none";$("bMisCons").style.display=(sesion&&!staff&&db)?"":"none";document.body.classList.toggle("sinPed",!(sesion&&!staff));document.body.classList.toggle("sinCarro",staff);$("bCarrito").style.display=staff?"none":""}   // carrito y pedidos son solo para clientes
 
 // ---------- Carrito ----------
 function pideRegistro(){alert("Para ordenar y hacer pedidos necesitas registrarte o iniciar sesión.");location.hash="#/cuenta"}
@@ -2289,7 +2289,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v203";
+const BUILD="valle-go-v204";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2358,7 +2358,7 @@ const enOtraApp=/FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|TikTok|Snapchat|; wv
 const chromeAndroid=esAndroid&&/Chrome\/\d/.test(NAV)&&!enOtraApp&&!/SamsungBrowser|MiuiBrowser|XiaoMi|HuaweiBrowser|HeyTapBrowser|VivoBrowser|OPR\/|EdgA|YaBrowser|UCBrowser|DuckDuckGo|Firefox|Version\/\d/i.test(NAV);
 const sistemaInst=esIOS?"ios":esAndroid?(chromeAndroid?"chrome":"otro"):"pc";
 const urlChrome=()=>"intent://"+location.host+location.pathname+"?instalar=1#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url="+encodeURIComponent(location.origin+location.pathname+"?instalar=1")+";end";
-const cerrado=()=>Date.now()-Number($$("instX",0))<6048e5; // no molestar por 7 días
+const cerrado=()=>{try{return sessionStorage.getItem("instX")==="1"}catch(e){return false}};   // cerrado solo durante esta visita
 function banner(txt,sub,btn,accion){ if(yaApp||cerrado()||location.hash==="#/instalar")return; $("instB").dataset.a=accion==="chrome"?"chrome":"directo"; $("instB").textContent=accion==="chrome"?"📲 Instalar en Chrome":"📲 Instalar app"; $("inst").style.display="flex"; }   // aviso breve; los textos largos ya no se muestran
 if(yaApp){const f=$("fInstW");if(f)f.remove()}
 // Botón "Instalar" bajo el carrito: visible para todos hasta que la app quede instalada en este aparato
@@ -2390,7 +2390,8 @@ async function instalarDirecto(){
   if(yaApp)return aviso("Ya estás usando Valle GO como app.");
   if(await instalarAhora())return;                         // Android, tableta y PC: abre directo la instalación del navegador
   if(esIOS)return enOtraApp?aviso("Ábrela en Safari para instalarla."):flechaIOS();   // iPhone/iPad: Apple solo permite instalar desde Compartir
-  if(esAndroid){location.href=urlChrome();return}          // Android sin permiso del navegador: abre en Chrome (si ya está instalada, abre la app)
+  if(esAndroid&&sistemaInst==="chrome")return aviso("Toca el menú ⋮ y elige «Instalar app».");   // Chrome aún sin permiso (pide unos segundos de uso)
+  if(esAndroid){location.href=urlChrome();return}          // otros navegadores Android sin permiso: abre en Chrome (si ya está instalada, abre la app)
   aviso("Toca el icono de instalar ⊕ de la barra de direcciones.");   // computadora sin permiso (Firefox, Safari o ya instalada)
 }
 async function instalarAhora(){if(!ev&&window.__bip)ev=window.__bip;if(ev){ev.prompt();const r=await ev.userChoice;ev=null;$("inst").style.display="none";if(r&&r.outcome==="accepted")aviso(sistemaInst==="pc"?"Listo: Valle GO quedó instalada en tu computadora.":"Listo: Valle GO quedó en tu pantalla de inicio.");if(location.hash==="#/instalar")vistaInstalar();return true}return false}
@@ -2398,11 +2399,8 @@ const hayPermiso=()=>{banner("","","Instalar","instalar");if(location.hash==="#/
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;window.__bip=e;hayPermiso()});
 if(ev)setTimeout(hayPermiso,0);
 window.addEventListener("appinstalled",()=>{$("inst").style.display="none";ev=null;marcaInstalada()});
-if(!yaApp)setTimeout(()=>{
-  if(sistemaInst==="otro"&&!ev&&!enOtraApp)banner("Instala Valle GO gratis","Usa el icono de instalar junto a la dirección o el menú del navegador.","Cómo instalar","guia",true);
-  else if(sistemaInst==="otro"&&!ev)banner("Para instalar Valle GO, ábrela en Chrome",enOtraApp?"Estás dentro de otra app. En Chrome se instala sin avisos de seguridad.":"Así se instala sin avisos de seguridad de Google.","Abrir en Chrome","chrome");
-  else if(sistemaInst==="ios")banner("Instala Valle GO en tu "+(/ipad|Macintosh/i.test(NAV)?"iPad":"iPhone"),"Se instala desde Safari en pocos toques. Te enseñamos cómo.","Ver cómo","guia");
-},2500);
+if(!yaApp)setTimeout(()=>{if(instaladaAntes())return;   // aparece a los 2.5 s a todos los que no la tienen instalada (aunque el navegador aún no dé permiso)
+  if(sistemaInst==="otro"&&enOtraApp)banner("","","","chrome");else banner("","","","directo")},2500);
 if(/[?&]instalar=1/.test(location.search)){history.replaceState(null,"",location.pathname+"#/instalar")}
 $("instB").onclick=()=>{$("inst").style.display="none";if($("instB").dataset.a==="chrome"){location.href=urlChrome();return}instalarDirecto()};
 // Guía de instalación (también se puede compartir: valle-go.vercel.app/#/instalar)
@@ -2439,7 +2437,7 @@ function vistaInstalar(){
   const ba=$("insAqui");if(ba)ba.onclick=instalarDirecto;if(sistemaInst==="ios"&&!enOtraApp&&!yaApp){if(!vistaInstalar.vista){vistaInstalar.vista=1;setTimeout(()=>{if(location.hash==="#/instalar")flechaIOS()},700)}}
   $("insComp").onclick=()=>{const u=location.origin+location.pathname+"#/instalar";if(navigator.share)navigator.share({title:"Instala Valle GO",url:u}).catch(()=>{});else navigator.clipboard.writeText(u).then(()=>aviso("Enlace copiado")).catch(()=>pregunta("Copia el enlace:",u))};
 }
-$("instX").onclick=()=>{$s("instX",Date.now());$("inst").style.display="none"};
+$("instX").onclick=()=>{try{sessionStorage.setItem("instX","1")}catch(e){}$("inst").style.display="none"};
 if(/[?&]mp=(ok|error)/.test(location.search)){const bien=/mp=ok/.test(location.search);history.replaceState(null,"",location.pathname+location.hash);
   setTimeout(()=>alert(bien?"Listo: tu cuenta de Mercado Pago quedó conectada. Los pagos en línea llegarán directo a tu cuenta.":"No se pudo conectar tu cuenta de Mercado Pago. Intenta de nuevo."),600)}
 if(/pago=ok/.test(location.search)){aviso("Gracias. Estamos confirmando tu pago; se actualizará en unos segundos.");history.replaceState(null,"",location.pathname+location.hash)}
