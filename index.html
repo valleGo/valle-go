@@ -1436,11 +1436,11 @@ async function vistaCompra(id){
 // --- Mis solicitudes (cliente) ---
 async function vistaMisServicios(){
   if(!sesion||!db){location.hash="#/cuenta";return}
-  const [c,q,vj]=await Promise.all([db.from("citas").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50),
-    db.from("consultas_stock").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50),
+  const [c,q,vj]=await Promise.all([db.from("citas").select("*, comercios(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50),
+    db.from("consultas_stock").select("*, comercios(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50),
     db.from("viajes").select("*, servicios_perfiles(nombre,whatsapp)").eq("cliente_id",sesion.id).order("creado",{ascending:false}).limit(50)]);
   const C=c.data||[],Q=q.data||[],V=vj.data||[];
-  const wa=()=>"",nomPerfil=x=>(x.servicios_perfiles||{}).nombre||(tienda(x.perfil_id)||{}).nombre||"Comercio";
+  const wa=()=>"",nomPerfil=x=>(x.comercios||{}).nombre||(x.servicios_perfiles||{}).nombre||(tienda(x.perfil_id)||{}).nombre||"Comercio";   // citas y consultas son de comercios; viajes, de transportistas
   $("vista").innerHTML=`<p><a href="#/">← Inicio</a></p><h2>Mis solicitudes</h2><p class="suave"><button class="btn sec mini" data-svref>🔄 Actualizar</button> En tiempo real</p>${notifBtnHTML()}
    <h3>Citas</h3>`+(C.map(x=>`<div class="item"><div class="in"><b>${esc(nomPerfil(x))}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
     ${x.estado==="Reprogramada"?`<span class="aviso" style="padding:8px">🔁 El prestador propone esta nueva fecha y hora.</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
@@ -2032,7 +2032,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v177";
+const BUILD="valle-go-v178";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
