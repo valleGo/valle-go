@@ -1,5 +1,5 @@
 // Service worker de Valle GO: abre sin internet, siempre intenta traer la versión nueva y recibe notificaciones.
-const CACHE = "valle-go-v183";
+const CACHE = "valle-go-v184";
 // Imágenes propias, librería de Supabase y fuente: se sirven al instante desde aquí y se actualizan en segundo plano.
 // Este caché no cambia de nombre con cada versión, así no se vuelven a descargar en cada actualización.
 const ESTATICO = "valle-go-estatico-v1";
@@ -24,7 +24,8 @@ function rapido(e) {
   e.waitUntil(red.then(() => {}, () => {}));
   return caches.match(e.request).then(g => g || red);
 }
-// Red primero (para recibir siempre la versión nueva). Si la red tarda más de 4 s al abrir la app, usa la copia guardada.
+// Red primero (para recibir siempre la versión nueva). Si ya hay copia guardada y la red tarda más de 1.2 s, usa la copia
+// guardada (la versión nueva queda lista para la siguiente vez). Sin copia guardada, espera a la red.
 function redPrimero(e) {
   const req = e.request;
   const red = fetch(req).then(r => {
@@ -33,11 +34,10 @@ function redPrimero(e) {
   });
   e.waitUntil(red.then(() => {}, () => {}));
   const respaldo = () => caches.match(req).then(r => r || caches.match("./index.html"));
-  if (req.mode !== "navigate") return red.catch(respaldo);
   return new Promise(res => {
     let hecho = false;
     const fin = r => { if (!hecho && r) { hecho = true; res(r); } };
-    const t = setTimeout(() => respaldo().then(fin), 4000);
+    const t = setTimeout(() => (req.mode === "navigate" ? respaldo() : caches.match(req)).then(fin), 1200);
     red.then(r => { clearTimeout(t); fin(r); },
              () => { clearTimeout(t); respaldo().then(r => { fin(r); if (!hecho) { hecho = true; res(Response.error()); } }); });
   });
