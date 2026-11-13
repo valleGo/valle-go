@@ -223,9 +223,10 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .btnrec{background:#da9c48;color:#fff;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 22px;box-shadow:0 3px 10px rgba(0,0,0,.2)}.btnrec:active{transform:scale(.97)}.btnrec img{width:170px;height:auto;pointer-events:none}.btnrec span{pointer-events:none}
 .pasos{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.78rem;color:var(--suave,#888)}.paso.ok{color:var(--texto);font-weight:600}.paso.act{color:var(--salvia)}.paso.mal{color:var(--coral);font-weight:600}
 .estado{display:inline-block;background:color-mix(in srgb,var(--salvia) 30%,var(--tarjeta));color:var(--texto);border-radius:999px;padding:3px 12px;font-size:.78rem;font-weight:600}
-#inst{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:5;align-items:center;gap:2px;padding:4px;border-radius:999px;background:linear-gradient(135deg,#5D774A,#7C9A5E);box-shadow:0 8px 22px rgba(40,50,25,.32);animation:instSube .35s cubic-bezier(.2,.9,.3,1.2)}
-#inst #instB{border:0;background:transparent;color:#fff;font-weight:800;font-size:.9rem;padding:9px 6px 9px 14px;border-radius:999px;white-space:nowrap;min-height:40px}
-#inst #instX{border:0;background:rgba(255,255,255,.18);color:#fff;width:32px;height:32px;border-radius:50%;font-size:1.05rem;line-height:1;display:grid;place-items:center;padding:0}
+#inst{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:5;align-items:center;padding:0;border-radius:999px;background:linear-gradient(135deg,#E8582F,#F29A2E);border:2px solid #fff;box-shadow:0 8px 24px rgba(214,84,32,.45),0 0 0 0 rgba(232,88,47,.55);animation:instSube .35s cubic-bezier(.2,.9,.3,1.2),instLate 2.2s ease-out .6s infinite}
+#inst #instB{border:0;background:transparent;color:#fff;font-weight:800;font-size:.98rem;letter-spacing:.01em;padding:11px 22px;border-radius:999px;white-space:nowrap;min-height:46px;text-shadow:0 1px 2px rgba(120,40,10,.35)}
+@keyframes instLate{0%{box-shadow:0 8px 24px rgba(214,84,32,.45),0 0 0 0 rgba(232,88,47,.55)}70%{box-shadow:0 8px 24px rgba(214,84,32,.45),0 0 0 14px rgba(232,88,47,0)}100%{box-shadow:0 8px 24px rgba(214,84,32,.45),0 0 0 0 rgba(232,88,47,0)}}
+html[data-tema=oscuro] #inst{border-color:#2B2D22}
 #inst button:focus-visible{outline:3px solid #F2C230;outline-offset:2px}
 @keyframes instSube{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}@media (prefers-reduced-motion:reduce){#inst{animation:none}}
 #fInstW{margin:0 0 10px}.finst{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;background:linear-gradient(135deg,#5D774A,#7C9A5E);color:#fff!important;font-weight:700;font-size:.74rem;letter-spacing:.02em;text-decoration:none!important;box-shadow:0 3px 10px rgba(93,119,74,.28);transition:transform .15s,box-shadow .15s}
@@ -552,7 +553,7 @@ if(document.readyState!=="loading")intenta();else document.addEventListener("DOM
 <main id="vista" style="padding-top:48px"></main>
 <footer style="max-width:960px;margin:0 auto;padding:8px 16px 96px;text-align:center;font-size:.72rem"><div id="fInstW"><a href="#/instalar" id="fInst" class="finst"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg>Instalar la app</a></div><a href="privacidad.html">Aviso de Privacidad</a> · <a href="terminos.html">Condiciones del Servicio</a></footer>
 <div class="panel" id="pCarrito"><div class="caja" id="cCarrito"></div></div>
-<button id="bTop" type="button" aria-label="Subir al inicio de la página" title="Subir"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><div id="toast"></div><div id="inst" role="region" aria-label="Instalar Valle GO"><button id="instB" type="button">📲 Instalar app</button><button id="instX" type="button" aria-label="Cerrar">×</button></div>
+<button id="bTop" type="button" aria-label="Subir al inicio de la página" title="Subir"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button><div id="toast"></div><div id="inst" role="region" aria-label="Instalar Valle GO"><button id="instB" type="button">📲 Instalar app</button></div>
 
 <script>
 // ============ CONFIGURACIÓN (edita aquí tus comerciantes) ============
@@ -2285,7 +2286,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v205";
+const BUILD="valle-go-v206";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2354,8 +2355,8 @@ const enOtraApp=/FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|TikTok|Snapchat|; wv
 const chromeAndroid=esAndroid&&/Chrome\/\d/.test(NAV)&&!enOtraApp&&!/SamsungBrowser|MiuiBrowser|XiaoMi|HuaweiBrowser|HeyTapBrowser|VivoBrowser|OPR\/|EdgA|YaBrowser|UCBrowser|DuckDuckGo|Firefox|Version\/\d/i.test(NAV);
 const sistemaInst=esIOS?"ios":esAndroid?(chromeAndroid?"chrome":"otro"):"pc";
 const urlChrome=()=>"intent://"+location.host+location.pathname+"?instalar=1#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url="+encodeURIComponent(location.origin+location.pathname+"?instalar=1")+";end";
-const cerrado=()=>{try{return sessionStorage.getItem("instX")==="1"}catch(e){return false}};   // cerrado solo durante esta visita
-function banner(txt,sub,btn,accion){ if(yaApp||cerrado()||location.hash==="#/instalar")return; $("instB").dataset.a=accion==="chrome"?"chrome":"directo"; $("instB").textContent=accion==="chrome"?"📲 Instalar en Chrome":"📲 Instalar app"; $("inst").style.display="flex"; }   // aviso breve; los textos largos ya no se muestran
+const cerrado=()=>false;   // ya no se puede cerrar: se quita solo cuando la app queda instalada
+function banner(txt,sub,btn,accion){ if(yaApp||(typeof instaladaAntes==="function"&&instaladaAntes())||location.hash==="#/instalar")return; $("instB").dataset.a=accion==="chrome"?"chrome":"directo"; $("instB").textContent=accion==="chrome"?"📲 Instalar en Chrome":"📲 Instalar app"; $("inst").dataset.listo="1"; $("inst").style.display="flex"; }   // aviso breve; los textos largos ya no se muestran
 if(yaApp){const f=$("fInstW");if(f)f.remove()}
 // Botón "Instalar" bajo el carrito: visible para todos hasta que la app quede instalada en este aparato
 const INST_K="valle_instalada";
@@ -2390,7 +2391,7 @@ async function instalarDirecto(){
   if(esAndroid){location.href=urlChrome();return}          // otros navegadores Android sin permiso: abre en Chrome (si ya está instalada, abre la app)
   aviso("Toca el icono de instalar ⊕ de la barra de direcciones.");   // computadora sin permiso (Firefox, Safari o ya instalada)
 }
-async function instalarAhora(){if(!ev&&window.__bip)ev=window.__bip;if(ev){ev.prompt();const r=await ev.userChoice;ev=null;$("inst").style.display="none";if(r&&r.outcome==="accepted")aviso(sistemaInst==="pc"?"Listo: Valle GO quedó instalada en tu computadora.":"Listo: Valle GO quedó en tu pantalla de inicio.");if(location.hash==="#/instalar")vistaInstalar();return true}return false}
+async function instalarAhora(){if(!ev&&window.__bip)ev=window.__bip;if(ev){ev.prompt();const r=await ev.userChoice;ev=null;if(r&&r.outcome==="accepted")marcaInstalada();if(r&&r.outcome==="accepted")aviso(sistemaInst==="pc"?"Listo: Valle GO quedó instalada en tu computadora.":"Listo: Valle GO quedó en tu pantalla de inicio.");if(location.hash==="#/instalar")vistaInstalar();return true}return false}
 const hayPermiso=()=>{banner("","","Instalar","instalar");if(location.hash==="#/instalar")vistaInstalar()};
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;window.__bip=e;hayPermiso()});
 if(ev)setTimeout(hayPermiso,0);
@@ -2401,7 +2402,8 @@ if(/[?&]instalar=1/.test(location.search)){history.replaceState(null,"",location
 // si está el aviso de notificaciones abajo, "Instalar app" se acomoda arriba de él (no se tapan)
 (()=>{const pos=()=>{const n=$("bnotif"),i=$("inst");if(i)i.style.bottom=n?`calc(${n.offsetHeight+26}px + env(safe-area-inset-bottom,0px))`:""};
   new MutationObserver(pos).observe(document.body,{childList:true});addEventListener("resize",pos);pos()})();
-$("instB").onclick=()=>{$("inst").style.display="none";if($("instB").dataset.a==="chrome"){location.href=urlChrome();return}instalarDirecto()};
+$("instB").onclick=()=>{if($("instB").dataset.a==="chrome"){location.href=urlChrome();return}instalarDirecto()};
+addEventListener("hashchange",()=>{const i=$("inst");if(!i)return;if(location.hash==="#/instalar")i.style.display="none";else if(i.dataset.listo)banner("","","",$("instB").dataset.a||"directo")});
 // Guía de instalación (también se puede compartir: valle-go.vercel.app/#/instalar)
 function vistaInstalar(){
   $("inst").style.display="none";
@@ -2436,7 +2438,7 @@ function vistaInstalar(){
   const ba=$("insAqui");if(ba)ba.onclick=instalarDirecto;if(sistemaInst==="ios"&&!enOtraApp&&!yaApp){if(!vistaInstalar.vista){vistaInstalar.vista=1;setTimeout(()=>{if(location.hash==="#/instalar")flechaIOS()},700)}}
   $("insComp").onclick=()=>{const u=location.origin+location.pathname+"#/instalar";if(navigator.share)navigator.share({title:"Instala Valle GO",url:u}).catch(()=>{});else navigator.clipboard.writeText(u).then(()=>aviso("Enlace copiado")).catch(()=>pregunta("Copia el enlace:",u))};
 }
-$("instX").onclick=()=>{try{sessionStorage.setItem("instX","1")}catch(e){}$("inst").style.display="none"};
+
 if(/[?&]mp=(ok|error)/.test(location.search)){const bien=/mp=ok/.test(location.search);history.replaceState(null,"",location.pathname+location.hash);
   setTimeout(()=>alert(bien?"Listo: tu cuenta de Mercado Pago quedó conectada. Los pagos en línea llegarán directo a tu cuenta.":"No se pudo conectar tu cuenta de Mercado Pago. Intenta de nuevo."),600)}
 if(/pago=ok/.test(location.search)){aviso("Gracias. Estamos confirmando tu pago; se actualizará en unos segundos.");history.replaceState(null,"",location.pathname+location.hash)}
