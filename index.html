@@ -210,6 +210,13 @@ label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 #inst #instC{background:#fff;color:#2B2D22;border:1.5px solid #2B2D22;padding:6px 12px;font-size:.78rem;white-space:nowrap}
 .ins .cen{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;text-align:center;margin:14px 0}
 #inst span{flex:1}#inst small{display:block;font-weight:500;opacity:.85;font-size:.78rem;margin-top:2px}
+.panc{max-width:900px;margin:0 auto}.tabcli.tabpan{position:sticky;top:calc(var(--hh,0px) + 4px);z-index:3;padding:6px;background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.08);width:max-content;max-width:100%;margin:6px auto 14px}
+.tabpan button{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:999px;border:1.5px solid var(--borde);background:var(--tarjeta);color:var(--texto);font-weight:700;font-size:.88rem;min-height:44px;cursor:pointer}.tabpan button.on{background:#d9aa28;border-color:#c39419;color:var(--on-acento)}
+.tabpan button:focus-visible,.lnk:focus-visible{outline:3px solid #5D774A;outline-offset:2px}.tabpan .cnt{background:#C0392B;color:#fff;border-radius:999px;padding:1px 8px;font-size:.75rem}
+@media(max-width:520px){.tabcli.tabpan{display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:6px;border-radius:18px;width:100%}.tabpan button{justify-content:center;text-align:center;padding:6px 6px;font-size:.76rem;line-height:1.2;border-radius:14px;flex-wrap:wrap}}
+.resumen{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 4px}.resumen span{background:var(--tarjeta);border:1px solid var(--borde);border-radius:999px;padding:6px 12px;font-size:.85rem}.resumen .alerta{background:#FFF4D6;border-color:#E9C46A;font-weight:700}
+h3.sec{margin:20px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--borde)}.vacio{text-align:center;color:var(--suave,#6F6A5A);padding:14px;border:1px dashed var(--borde);border-radius:14px}
+.lnk{background:none;border:0;padding:0;color:#5D774A;font-weight:700;text-decoration:underline;cursor:pointer;font:inherit}
 .candado{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:999px;background:#EEF2E6;color:#3F5A2E;border:1px solid #C9D6B5;font-weight:700;font-size:.85rem}
 .tabcli{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:4px 0 14px}.tabcli a{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--borde);background:var(--tarjeta);color:var(--texto);font-weight:700;font-size:.88rem;text-decoration:none}.tabcli a.on{background:#d9aa28;border-color:#c39419;color:var(--on-acento)}
 .pmenu #bMisCons{background:var(--tarjeta);border:1px solid #c39419;color:var(--texto);display:inline-flex;align-items:center;gap:6px;font-weight:700}
@@ -559,18 +566,52 @@ async function vistaPanel(){
   if(!misCom.length){$("vista").innerHTML=`<h2>Panel de comerciante</h2><p>Esta cuenta aún no está vinculada a un comercio. Pide al administrador de Valle GO que la vincule con tu correo.</p>`;return}
   if(misCom.every(c=>c.plan==="simple")&&(misSrv.length||misCom.some(c=>c.ofrece_citas||c.ofrece_consulta))){location.hash="#/panel-servicios";return}
   if(misCom.every(c=>c.plan==="simple")){$("vista").innerHTML=`<h2>Mi panel</h2><div class="aviso"><b>Plan SIMPLE (servicios)</b><br>Tu negocio tiene su tarjeta de presentación en el DIRECTORIO (logo, portada, nombre, domicilio, horarios, días y teléfono), agenda y citas con tus clientes por medio de la app y un reporte mensual corto. Tu agenda aún no está activada: pídele al administrador de Valle GO que la active. Para vender productos con menú, pedidos y consulta de stock, pasa al plan Básico (PRODUCTOS).</div>`;return}
-  const ids=misCom.map(c=>c.id);
-  const [pe,me]=await Promise.all([
-    db.from("pedidos").select("*, comercios(nombre)").in("comercio_id",ids).order("creado",{ascending:false}).limit(100),
-    db.from("menu_items").select("*").in("comercio_id",ids).order("categoria")]);
-  const P=pe.data||[], M=me.data||[];
+  const ids=misCom.map(c=>c.id),idsCq=misCom.filter(c=>c.plan!=="simple"&&c.ofrece_consulta).map(c=>c.id);
+  const [pe,me,cq]=await Promise.all([
+    db.from("pedidos").select("*, comercios(nombre)").in("comercio_id",ids).order("creado",{ascending:false}).limit(200),
+    db.from("menu_items").select("*").in("comercio_id",ids).order("categoria"),
+    idsCq.length?db.from("consultas_stock").select("*").in("perfil_id",idsCq).order("creado",{ascending:false}).limit(150):Promise.resolve({data:[]})]);
+  const P=pe.data||[], M=me.data||[], Q=cq.data||[];
+  // Activo = todavía requiere algo del comercio. Historial = ya terminado.
+  const pedCerrado=p=>p.estado==="Cancelado"||(p.estado==="Entregado"&&(p.estado_pago==="Pagado"||p.pago==="en_linea"));
+  const consCerrada=c=>c.estado==="No hay"||!!c.oferta_pedido_id;
+  const PA=P.filter(p=>!pedCerrado(p)),PH=P.filter(pedCerrado),QA=Q.filter(c=>!consCerrada(c)),QH=Q.filter(consCerrada);
   const ventas=P.filter(p=>p.estado!=="Cancelado").reduce((a,p)=>a+Number(p.total),0);
-  $("vista").innerHTML=`<h2>Mi panel</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)} · ${misCom.map(c=>esc(c.nombre)).join(", ")}</p>${(misSrv.length||misCom.some(c=>c.ofrece_citas||c.ofrece_consulta))?`<p><a class="btn sec mini" href="#/panel-servicios">Ir a mi agenda y servicios →</a></p>`:""}${pe.error?`<div class="aviso" style="color:var(--coral)">No se pudieron cargar los pedidos: ${esc(pe.error.message)}. Toca 🔄 o recarga la página.</div>`:""}<p class="suave">Aquí confirmas y actualizas el estado de tus pedidos. Para cambiar fotos, precios o productos, contacta al administrador de Valle GO.</p>
-   ${notifBtnHTML()}${cobroHTML()}<div class="aviso">${P.length} pedidos recientes · ${din(ventas)} en ventas</div><h2>Historial de pedidos</h2>`+
-   (P.map(p=>ped2html(p,"com")).join("")||"<p>Aún no hay pedidos.</p>")+`<h2>Mi menú completo</h2>`+
-   (M.map(m=>`<div class="item"><div class="foto" ${foto({foto:m.foto_url})}>${m.foto_url?"":esc(m.emoji||"🍽️")}</div><div class="in"><b>${esc(m.nombre)}</b>
-    <span class="suave">${esc(m.categoria)} · ${m.disponible?"Disponible":"No disponible"}</span><span class="precio">${din(Number(m.precio))}</span></div></div>`).join("")||"<p>Sin productos.</p>");
+  const nuevos=PA.filter(p=>p.estado==="Enviado al comercio").length,sinResp=QA.filter(c=>c.estado==="Pendiente").length;
+  const tab=["act","his","neg"].includes(panTab)?panTab:"act";
+  const tabBtn=(k,txt,n)=>`<button type="button" role="tab" id="pt_${k}" aria-controls="pp_${k}" aria-selected="${tab===k}" tabindex="${tab===k?0:-1}" class="${tab===k?"on":""}" data-pantab="${k}">${txt}${n?` <span class="cnt" aria-label="${n} pendientes">${n}</span>`:""}</button>`;
+  const consHist=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span class="suave">${new Date(x.creado).toLocaleString("es-MX")}</span><span>${esc(x.texto)}</span>${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}${x.oferta_pedido_id?`<span class="suave">✅ El cliente lo compró con el enlace de compra.</span>`:""}</div></div>`;
+  const vacio=t=>`<p class="vacio">${t}</p>`;
+  let cuerpo="";
+  if(tab==="act")cuerpo=`<div class="resumen"><span><b>${PA.length}</b> ${PA.length===1?"pedido activo":"pedidos activos"}</span>${idsCq.length?`<span><b>${QA.length}</b> ${QA.length===1?"consulta abierta":"consultas abiertas"}</span>`:""}${nuevos?`<span class="alerta">🛎️ ${nuevos} por confirmar</span>`:""}${sinResp?`<span class="alerta">🔎 ${sinResp} sin responder</span>`:""}</div>
+    <h3 class="sec">🛍️ Pedidos activos</h3>`+(PA.map(p=>ped2html(p,"com")).join("")||vacio("No tienes pedidos pendientes. Cuando llegue uno, sonará un aviso."))+
+    (idsCq.length?`<h3 class="sec">🔎 Consultas de stock</h3>`+(QA.map(consHTML).join("")||vacio("No tienes consultas abiertas.")):"")+
+    `<p class="suave" style="text-align:center">Los pedidos entregados y pagados, los cancelados y las consultas ya cerradas pasan a <button type="button" class="lnk" data-pantab="his">🗂️ Historial</button>.</p>`;
+  else if(tab==="his")cuerpo=`<p class="suave">Pedidos ya terminados (entregados y pagados, o cancelados) y consultas cerradas. Solo para consulta: ya no se modifican. Si hay un error, pide ayuda a la administración de Valle GO.</p>
+    <h3 class="sec">🛍️ Pedidos terminados <span class="suave">(${PH.length})</span></h3>`+(PH.map(p=>ped2html(p)).join("")||vacio("Aún no hay pedidos terminados."))+
+    (idsCq.length?`<h3 class="sec">🔎 Consultas cerradas <span class="suave">(${QH.length})</span></h3>`+(QH.map(consHist).join("")||vacio("Aún no hay consultas cerradas.")):"");
+  else cuerpo=`${(misSrv.length||misCom.some(c=>c.ofrece_citas))?`<p><a class="btn sec" href="#/panel-servicios">📅 Mi agenda y citas →</a></p>`:""}${notifBtnHTML()}${cobroHTML()}<div class="aviso">${P.length} pedidos recientes · ${din(ventas)} en ventas</div>
+    <h3 class="sec">📋 Mi menú completo</h3><p class="suave">Para cambiar fotos, precios o productos, contacta al administrador de Valle GO.</p>`+
+    (M.map(m=>`<div class="item"><div class="foto" ${foto({foto:m.foto_url})}>${m.foto_url?"":esc(m.emoji||"🍽️")}</div><div class="in"><b>${esc(m.nombre)}</b>
+    <span class="suave">${esc(m.categoria)} · ${m.disponible?"Disponible":"No disponible"}</span><span class="precio">${din(Number(m.precio))}</span></div></div>`).join("")||vacio("Sin productos."));
+  $("vista").innerHTML=`<div class="panc"><h2>Mi panel</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)} · ${misCom.map(c=>esc(c.nombre)).join(", ")}</p>
+   ${pe.error?`<div class="aviso" style="color:var(--coral)">No se pudieron cargar los pedidos: ${esc(pe.error.message)}. Toca 🔄 o recarga la página.</div>`:""}
+   <div class="tabcli tabpan" role="tablist" aria-label="Secciones de mi panel">${tabBtn("act",idsCq.length?"📥 Pedidos y consultas":"📥 Pedidos",nuevos+sinResp)}${tabBtn("his","🗂️ Historial")}${tabBtn("neg","🏪 Mi negocio")}</div>
+   <div role="tabpanel" id="pp_${tab}" aria-labelledby="pt_${tab}" tabindex="0">${cuerpo}</div>
+   <p style="text-align:center;margin-top:18px"><button class="btn sec mini" type="button" data-panref>🔄 Actualizar</button></p></div>`;
 }
+let panTab=(()=>{try{return localStorage.getItem("valle_pantab")||"act"}catch(e){return "act"}})();
+document.addEventListener("click",e=>{
+  const t=e.target.closest&&e.target.closest("[data-pantab],[data-panref]");if(!t)return;
+  if(t.dataset.pantab){panTab=t.dataset.pantab;try{localStorage.setItem("valle_pantab",panTab)}catch(err){}}
+  vistaPanel().then(()=>{const b=$("pt_"+panTab);if(b&&t.dataset.pantab)b.focus()});window.scrollTo({top:0});
+});
+document.addEventListener("keydown",e=>{   // flechas izquierda/derecha para moverse entre pestañas (accesibilidad)
+  const t=e.target.closest&&e.target.closest(".tabpan [role=tab]");if(!t||!["ArrowLeft","ArrowRight","Home","End"].includes(e.key))return;
+  const L=[...t.parentNode.querySelectorAll("[role=tab]")],i=L.indexOf(t);
+  const n=e.key==="Home"?0:e.key==="End"?L.length-1:(i+(e.key==="ArrowRight"?1:-1)+L.length)%L.length;
+  e.preventDefault();L[n].click();
+});
 
 // ---- Panel de administración: SOLO el administrador edita ----
 let adm={tab:"anuncios",com:null};
@@ -1178,11 +1219,11 @@ function escucharPedidos(){
   if(!db||canal||!(esAdmin||misCom.length))return;
   canal=db.channel("pedidos-nuevos").on("postgres_changes",{event:"INSERT",schema:"public",table:"pedidos"},p=>{
     vistos.add(p.new.id);sonido();aviso("🛎️ Nuevo pedido por "+din(Number(p.new.total)));
-    if((location.hash==="#/panel"||location.hash==="#/admin")&&!formAbierto())ruta();
+    if((location.hash==="#/panel"||location.hash==="#/admin")&&!formAbierto()&&!escribiendo())ruta();
   }).on("postgres_changes",{event:"UPDATE",schema:"public",table:"pedidos"},p=>{
     const n=p.new||{};
     if(n.recibido_en&&Date.now()-new Date(n.recibido_en)<20000){sonido();aviso("✅ El cliente confirmó que recibió su pedido ("+din(Number(n.total))+")")}
-    if((location.hash==="#/panel"||location.hash==="#/admin")&&!formAbierto())ruta();
+    if((location.hash==="#/panel"||location.hash==="#/admin")&&!formAbierto()&&!escribiendo())ruta();
   }).subscribe();
 }
 // ---- Cliente: avisos en tiempo real de sus pedidos ----
@@ -1480,6 +1521,17 @@ function svForm(titulo,cs,v,guardar){
     try{const o=await leerForm(cs,$("vista"),v);if(!o.nombre)throw new Error("Falta el nombre.");await guardar(o);borrBorrar(bk);cierraCapa()}
     catch(err){alert(err.message);$("gSF").disabled=false;$("gSF").textContent="Guardar"}};
 }
+// Consultas de stock (las responde el comercio; se muestran en Mi panel)
+const consHTML=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
+    ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
+    <label>Precio (opcional)<input id="cqP_${x.id}" value="${esc(x.precio||"")}" placeholder="$250"></label><label>Mensaje (opcional)<input id="cqM_${x.id}" value="${esc(x.respuesta||"")}" placeholder="Disponible en tienda, llega mañana..."></label>
+    <span class="svbtns"><button class="btn mini" data-cqr="${x.id}|Hay">Sí hay</button><button class="btn mini sec" data-cqr="${x.id}|No hay">No hay</button><button class="btn mini sec" data-cqr="${x.id}|Consultar">Responder</button></span>${ofertaHTML(x)}</div></div>`;
+  // Enlace de compra: el comercio convierte la consulta en un producto que el cliente compra en la app
+const ofertaHTML=x=>x.estado!=="Hay"?"":x.oferta_pedido_id?`<span class="aviso" style="padding:8px">✅ El cliente ya lo compró. Lo ves en tus <b>Pedidos</b>.</span>`
+    :x.oferta_precio?`<span class="aviso" style="padding:8px">🛒 <b>Enlace de compra activo:</b> ${esc(x.oferta_nombre)} · ${din(Number(x.oferta_precio))}${x.oferta_max>1?" · hasta "+x.oferta_max+" piezas":""}<br><small>El cliente ya recibió el aviso para comprarlo.</small></span><span class="svbtns"><button class="btn mini sec" data-cqlink="${x.id}">📤 Compartir enlace</button><button class="btn mini sec" data-cqofx="${x.id}">Quitar enlace</button></span>`
+    :`<span style="display:grid;gap:6px;border:1px dashed var(--borde);border-radius:12px;padding:10px"><b>🛒 Crear enlace de compra</b><small class="suave">El cliente recibe un aviso y lo compra en la app como un pedido normal.</small>
+      <label>Producto<input id="cqON_${x.id}" value="${esc(String(x.texto||"").slice(0,120))}" maxlength="120"></label><span class="fila" style="gap:8px"><label style="flex:1">Precio por pieza<input id="cqOP_${x.id}" inputmode="decimal" value="${numMX(x.precio)>0?numMX(x.precio):""}" placeholder="$250"></label><label style="width:90px">Piezas<input id="cqOM_${x.id}" type="number" min="1" max="99" value="1"></label></span>
+      <button class="btn mini" data-cqof="${x.id}">🛒 Crear enlace de compra</button></span>`;
 async function vistaPanelSrv(){
   if(!sesion||!db){location.hash="#/cuenta";return}
   $("vista").innerHTML="<p>Cargando...</p>";await cargarRol();
@@ -1489,7 +1541,7 @@ async function vistaPanelSrv(){
   const [pf,it,ci,co,vj]=await Promise.all([db.from("servicios_perfiles").select("*").in("id",idsP).order("nombre"),db.from("servicios_items").select("*").in("perfil_id",ids).order("nombre"),
     db.from("citas").select("*").in("perfil_id",ids).order("creado",{ascending:false}).limit(150),db.from("consultas_stock").select("*").in("perfil_id",ids).order("creado",{ascending:false}).limit(100),
     idsP.length?db.from("viajes").select("*").in("perfil_id",idsP).order("creado",{ascending:false}).limit(100):Promise.resolve({data:[]})]);
-  const P=[...agCom.filter(c=>c.ofrece_citas).map(c=>({id:c.id,tipo:"agenda",nombre:c.nombre,activo:true,_com:true,plan:c.plan})),...agCom.filter(c=>c.ofrece_consulta).map(c=>({id:c.id,tipo:"consulta",nombre:c.nombre,activo:true,_com:true,plan:c.plan})),...(pf.data||[])],I=it.data||[],orden={Solicitada:0,Reprogramada:1,Confirmada:2,Completada:3,Cancelada:4};
+  const P=[...agCom.filter(c=>c.ofrece_citas).map(c=>({id:c.id,tipo:"agenda",nombre:c.nombre,activo:true,_com:true,plan:c.plan})),...(pf.data||[])],I=it.data||[],orden={Solicitada:0,Reprogramada:1,Confirmada:2,Completada:3,Cancelada:4};
   const C=(ci.data||[]).sort((a,b)=>(orden[a.estado]-orden[b.estado])||((a.fecha+a.hora)<(b.fecha+b.hora)?-1:1)),Q=co.data||[],Vj=(vj.data||[]).sort((a,b)=>({Solicitada:0,Cotizada:1,Confirmada:2,Completada:3,Cancelada:4}[a.estado]-{Solicitada:0,Cotizada:1,Confirmada:2,Completada:3,Cancelada:4}[b.estado]));
   window._vj={};Vj.forEach(v=>window._vj[v.id]=v);window._ci={};C.forEach(c=>window._ci[c.id]=c);window._itP={};I.forEach(i=>window._itP[i.id]=i.precio);
   const idsTr=misSrv.filter(s=>s.tipo==="transporte").map(s=>s.id),mesAct=mkey(new Date());let cortes=[];
@@ -1504,17 +1556,8 @@ async function vistaPanelSrv(){
     ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.notas?`<span class="suave">📝 ${esc(x.notas)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}${x.estado==="Completada"&&x.monto?`<span><b>Cobrado:</b> ${mxn(x.monto)} · 3% Valle GO: ${mxn(x.comision||0)}</span>`:""}
     <span class="svbtns">${x.estado==="Solicitada"?`<button class="btn mini" data-cok="${x.id}">Confirmar</button>`:""}${x.estado==="Confirmada"?`<button class="btn mini" data-cfin="${x.id}">Completada</button>`:""}${["Solicitada","Confirmada"].includes(x.estado)?`<button class="btn mini sec" data-crep="${x.id}">Otra hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-ccan="${x.id}">${x.estado==="Solicitada"?"Rechazar":"Cancelar"}</button>`:""}</span>
     <div class="aviso" id="rep_${x.id}" style="display:none;gap:8px"><label>Nueva fecha<input type="date" id="repF_${x.id}" min="${hoyISO()}" value="${esc(x.fecha)}"></label><label>Nueva hora<input type="time" id="repH_${x.id}" value="${esc(x.hora)}"></label><label>Mensaje (opcional)<input id="repM_${x.id}"></label><button class="btn mini" data-crepok="${x.id}">Enviar propuesta</button></div></div></div>`;
-  const consHTML=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
-    ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
-    <label>Precio (opcional)<input id="cqP_${x.id}" value="${esc(x.precio||"")}" placeholder="$250"></label><label>Mensaje (opcional)<input id="cqM_${x.id}" value="${esc(x.respuesta||"")}" placeholder="Disponible en tienda, llega mañana..."></label>
-    <span class="svbtns"><button class="btn mini" data-cqr="${x.id}|Hay">Sí hay</button><button class="btn mini sec" data-cqr="${x.id}|No hay">No hay</button><button class="btn mini sec" data-cqr="${x.id}|Consultar">Responder</button></span>${ofertaHTML(x)}</div></div>`;
-  // Enlace de compra: el comercio convierte la consulta en un producto que el cliente compra en la app
-  const ofertaHTML=x=>x.estado!=="Hay"?"":x.oferta_pedido_id?`<span class="aviso" style="padding:8px">✅ El cliente ya lo compró. Lo ves en tus <b>Pedidos</b>.</span>`
-    :x.oferta_precio?`<span class="aviso" style="padding:8px">🛒 <b>Enlace de compra activo:</b> ${esc(x.oferta_nombre)} · ${din(Number(x.oferta_precio))}${x.oferta_max>1?" · hasta "+x.oferta_max+" piezas":""}<br><small>El cliente ya recibió el aviso para comprarlo.</small></span><span class="svbtns"><button class="btn mini sec" data-cqlink="${x.id}">📤 Compartir enlace</button><button class="btn mini sec" data-cqofx="${x.id}">Quitar enlace</button></span>`
-    :`<span style="display:grid;gap:6px;border:1px dashed var(--borde);border-radius:12px;padding:10px"><b>🛒 Crear enlace de compra</b><small class="suave">El cliente recibe un aviso y lo compra en la app como un pedido normal.</small>
-      <label>Producto<input id="cqON_${x.id}" value="${esc(String(x.texto||"").slice(0,120))}" maxlength="120"></label><span class="fila" style="gap:8px"><label style="flex:1">Precio por pieza<input id="cqOP_${x.id}" inputmode="decimal" value="${numMX(x.precio)>0?numMX(x.precio):""}" placeholder="$250"></label><label style="width:90px">Piezas<input id="cqOM_${x.id}" type="number" min="1" max="99" value="1"></label></span>
-      <button class="btn mini" data-cqof="${x.id}">🛒 Crear enlace de compra</button></span>`;
-  $("vista").innerHTML=`<h2>Mi panel de servicios</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)}</p>${misCom.some(c=>c.plan!=="simple")?`<p><a class="btn sec mini" href="#/panel">← Mi panel de comercio</a></p>`:""}${notifBtnHTML()}`+
+  if(!P.length){location.hash=misCom.some(c=>c.plan!=="simple")?"#/panel":esAdmin?"#/admin":"#/panel";return}
+  $("vista").innerHTML=`<h2>Mi panel de servicios</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)}</p>${misCom.some(c=>c.plan!=="simple")?`<p><a class="btn sec mini" href="#/panel">← Mi panel: pedidos y consultas</a></p>`:""}${notifBtnHTML()}`+
    P.map(p=>{const mi=I.filter(i=>i.perfil_id===p.id),mc=C.filter(c=>c.perfil_id===p.id),mq=Q.filter(q=>q.perfil_id===p.id);
     return `<div class="perfil" style="padding:14px;margin-top:16px"><h3 style="margin:0">${SV[p.tipo].e} ${esc(p.nombre)} <span class="suave" style="font-size:.8rem">· ${SV[p.tipo].t}${p.activo?"":" · Oculto"}</span></h3>
      ${p._com?`<p class="suave" style="font-size:.85rem">Tu perfil de comercio lo edita el administrador de Valle GO.</p>`:`<p><button class="btn sec mini" data-sped="${p.id}">Editar mi perfil</button></p>`}`+
@@ -1545,13 +1588,13 @@ document.addEventListener("click",async e=>{
     if(await cita(d.crepok,{estado:"Reprogramada",fecha:f,hora:h,respuesta:$("repM_"+d.crepok).value.trim()||null}))vistaPanelSrv();return}
   if(d.cqr){const[id,est]=d.cqr.split("|");b.disabled=true;
     const r=await db.from("consultas_stock").update({estado:est,precio:$("cqP_"+id).value.trim()||null,respuesta:$("cqM_"+id).value.trim()||null}).eq("id",id);
-    if(r.error){alert("No se pudo responder: "+r.error.message);b.disabled=false;return}return vistaPanelSrv()}
+    if(r.error){alert("No se pudo responder: "+r.error.message);b.disabled=false;return}return reCons()}
   if(d.cqof){const id=d.cqof,n=$("cqON_"+id).value.trim(),pr=numMX($("cqOP_"+id).value),mx=parseInt($("cqOM_"+id).value,10)||1;
     if(!n)return alert("Escribe el nombre del producto.");if(!(pr>0))return alert("Escribe el precio por pieza.");b.disabled=true;
     const r=await db.from("consultas_stock").update({oferta_nombre:n,oferta_precio:pr,oferta_max:Math.min(Math.max(mx,1),99)}).eq("id",id);
-    if(r.error){alert("No se pudo crear el enlace: "+r.error.message);b.disabled=false;return}return vistaPanelSrv()}
+    if(r.error){alert("No se pudo crear el enlace: "+r.error.message);b.disabled=false;return}return reCons()}
   if(d.cqofx){if(!confirm("¿Quitar el enlace de compra? El cliente ya no podrá comprarlo."))return;b.disabled=true;
-    const r=await db.from("consultas_stock").update({oferta_precio:null}).eq("id",d.cqofx);if(r.error){alert(r.error.message);b.disabled=false;return}return vistaPanelSrv()}
+    const r=await db.from("consultas_stock").update({oferta_precio:null}).eq("id",d.cqofx);if(r.error){alert(r.error.message);b.disabled=false;return}return reCons()}
   if(d.cqlink){const u=location.origin+location.pathname+"#/compra/"+d.cqlink,txt="Ya puedes comprar lo que me preguntaste en Valle GO: "+u;
     try{if(navigator.share){await navigator.share({title:"Valle GO",text:txt});return}}catch(e){return}
     try{await navigator.clipboard.writeText(u);alert("Enlace copiado. Pégalo en WhatsApp para tu cliente.\n\nSolo funciona con la cuenta del cliente que hizo la consulta.")}catch(e){prompt("Copia el enlace:",u)}return}
@@ -1574,7 +1617,9 @@ document.addEventListener("click",async e=>{
 });
 
 // --- Tiempo real: avisos dentro de la app (además de las notificaciones push) ---
-const refrescaSrv=()=>{const h=location.hash;if(h==="#/mis-servicios")vistaMisServicios();else if(h==="#/panel-servicios")vistaPanelSrv()};
+const escribiendo=()=>{const a=document.activeElement;return !!(a&&$("vista").contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))};
+const reCons=()=>location.hash==="#/panel"?vistaPanel():vistaPanelSrv();
+const refrescaSrv=()=>{const h=location.hash;if(h==="#/mis-servicios")vistaMisServicios();else if(h==="#/panel-servicios"&&!escribiendo())vistaPanelSrv();else if(h==="#/panel"&&!escribiendo()&&!formAbierto())vistaPanel()};
 function escucharServicios(){
   if(!db||canalSrv||!sesion||!sesion.id)return;
   const ch=db.channel("servicios-"+sesion.id);
@@ -2073,7 +2118,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v188";
+const BUILD="valle-go-v189";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
