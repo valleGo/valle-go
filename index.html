@@ -1123,6 +1123,7 @@ async function registrarPush(){   // crea (o renueva) la suscripción de este di
       await sub.unsubscribe();sub=null}}
   if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:llave});
   const j=sub.toJSON();
+  const {data:sd}=await db.auth.getSession();if(!sd.session){quitarSesionLocal();throw new Error("tu sesión terminó. Vuelve a iniciar sesión y activa las notificaciones otra vez.")}
   const r=await db.rpc("guardar_push",{p_endpoint:j.endpoint,p_p256dh:j.keys.p256dh,p_auth:j.keys.auth});   // el aparato queda con la cuenta que tiene la sesión abierta (aunque antes lo usara otra)
   if(r.error)throw r.error;
 }
@@ -1849,7 +1850,26 @@ async function entrar(){
   if(!u)return alert("Correo o contraseña incorrectos.");
   abrirSesion(u);
 }
-function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle||"",dir_num:u.dir_num||"",dir_col:u.dir_col||"",foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol();location.hash="#/"}
+// ---- Dispositivos con sesión abierta: clientes 1; comerciantes y administradores hasta 5 (lo decide la base: registrar_sesion / sesion_vigente) ----
+let revisandoSes=false;
+function quitarSesionLocal(msg){
+  if(!sesion)return;
+  try{cerrarMisPedidos();if(canal){db.removeChannel(canal);canal=null}}catch(e){}
+  try{if(db)db.auth.signOut({scope:"local"})}catch(e){}
+  esAdmin=false;misCom=[];misSrv=[];rolOK=false;sesion=null;$s("sesion",null);pintaHeader();
+  if(location.hash.startsWith("#/panel")||location.hash.startsWith("#/cuenta"))location.hash="#/";else ruta();
+  if(msg)setTimeout(()=>alert(msg),300)}
+const MSG_OTRO_DISP="Se cerró tu sesión en este dispositivo porque tu cuenta se abrió en otro. Vuelve a iniciar sesión si quieres usarla aquí.";
+async function controlSesion(registrar){
+  if(!db||!sesion||revisandoSes)return;revisandoSes=true;
+  try{const {data}=await db.auth.getSession();
+    if(!data.session){quitarSesionLocal("Tu sesión terminó. Vuelve a iniciar sesión.");return}
+    if(registrar){const r=await db.rpc("registrar_sesion");if(!r.error&&r.data&&r.data.ok===false)quitarSesionLocal(MSG_OTRO_DISP)}
+    else{const r=await db.rpc("sesion_vigente");if(!r.error&&r.data===false)quitarSesionLocal(MSG_OTRO_DISP)}
+  }catch(e){}finally{revisandoSes=false}}   // sin internet no se saca a nadie
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")controlSesion(false)});
+setInterval(()=>{if(document.visibilityState==="visible")controlSesion(false)},120000);
+function abrirSesion(u){sesion={id:u.id,nombre:u.nombre,email:u.email,tel:u.tel,dir:u.dir,dir_calle:u.dir_calle||"",dir_num:u.dir_num||"",dir_col:u.dir_col||"",foto:u.foto||""};$s("sesion",sesion);pintaHeader();cargarRol().then(()=>controlSesion(true));location.hash="#/"}
 const medirHeader=()=>{const h=document.querySelector("header");if(h)document.documentElement.style.setProperty("--hh",h.offsetHeight+"px");};window.addEventListener("resize",medirHeader);window.addEventListener("load",medirHeader);if(window.ResizeObserver)new ResizeObserver(medirHeader).observe(document.querySelector("header"));medirHeader();
 function pintaHeader(){setTimeout(()=>{try{medirHeader()}catch(e){}},0);$("bCuenta").innerHTML=sesion?(sesion.foto?`<img class="hav" src="${esc(sesion.foto)}" alt="" referrerpolicy="no-referrer">`:"")+`<span class="nm">${esc((sesion.nombre||"").split(" ")[0])}</span>`:`<span class="nm">Entrar</span>`;const staff=!!(esAdmin||misCom.length||misSrv.length);$("bPanel").style.display=staff?"":"none";$("bPedidos").style.display=(sesion&&!staff)?"":"none";document.body.classList.toggle("sinPed",!(sesion&&!staff));document.body.classList.toggle("sinCarro",staff);$("bCarrito").style.display=staff?"none":""}   // carrito y pedidos son solo para clientes
 
@@ -2042,7 +2062,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v181";
+const BUILD="valle-go-v182";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2166,7 +2186,9 @@ if(db&&!datosLocales())COMERCIANTES=[];   // con base de datos nunca se muestran
 pintaHeader();pintaCarrito();ruta();
 (async()=>{
   const pDatos=cargarDatos();   // en paralelo con la sesión (Supabase espera la sesión antes de consultar)
-  if(db){const {data}=await db.auth.getSession(); if(data.session){sesion=sesionDe(data.session.user);$s("sesion",sesion);await cargarRol();}
+  if(db){const {data}=await db.auth.getSession(); if(data.session){sesion=sesionDe(data.session.user);$s("sesion",sesion);await cargarRol();controlSesion(true);}
+    else if(sesion){esAdmin=false;misCom=[];misSrv=[];rolOK=false;sesion=null;$s("sesion",null);}   // la sesión guardada ya venció
+    db.auth.onAuthStateChange(ev=>{if(ev==="SIGNED_OUT"&&sesion)quitarSesionLocal("Tu sesión terminó. Vuelve a iniciar sesión.")});
     if(/access_token=|refresh_token=/.test(location.hash))history.replaceState(null,"",location.pathname+location.search);}
   const ok=await pDatos;
   if((ok||!db)&&carrito.tienda&&!tienda(carrito.tienda)){carrito={tienda:null,items:{}};gcar();}   // solo con datos confirmados
