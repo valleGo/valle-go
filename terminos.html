@@ -14,6 +14,13 @@ h1{font-size:1.6rem;margin:.2em 0 .1em}h2{font-size:1.1rem;margin:1.6em 0 .3em;c
 .f{color:var(--suave);font-size:.9rem}a{color:var(--verde)}ul{padding-left:1.2em}
 h3{font-size:1rem;margin:1.1em 0 .2em}
 .ind{font-size:.92rem;columns:2;column-gap:24px}@media(max-width:600px){.ind{columns:1}}
+/* Texto justificado y ordenado (igual que la guía de instalación); solo estilo, el texto no cambia */
+main>h1,main>h1+.f{text-align:center;text-align-last:center;text-wrap:balance}
+main p,main li{text-align:justify;text-align-last:left;-webkit-hyphens:auto;hyphens:auto;hyphenate-limit-chars:10 4 4;-webkit-hyphenate-limit-before:4;-webkit-hyphenate-limit-after:4}
+main p{margin:.6em 0}main li{margin:.3em 0}h2,h3{text-wrap:balance}
+main a{-webkit-hyphens:manual;hyphens:manual}main a[href^="http"],main a[href^="mailto"]{white-space:nowrap}
+main>p.f:last-of-type{text-align:center;text-align-last:center}
+.ind li,.ind p,td,th{text-align:left;-webkit-hyphens:manual;hyphens:manual}
 </style></head><body>
 <header><a href="./"><img src="logo.png" alt=""><span>Valle GO</span></a></header><main>
 <h1>Condiciones del Servicio</h1>
