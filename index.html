@@ -193,8 +193,12 @@ main:has(.gcom) h2,main:has(.gcom) .seccat{text-align:center}main:has(.gcom) .ca
 .caja{touch-action:pan-y;grid-auto-rows:max-content}.caja>*{min-height:min-content}   /* evita que los botones y campos se aplasten cuando el formulario es largo */
 .linea{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--borde);padding:9px 0;gap:8px}
 .q button{width:30px;height:30px;border-radius:50%;border:1px solid var(--borde);background:var(--tarjeta);color:var(--texto);font-weight:700}
-input,select,textarea{font-size:16px;width:100%;padding:11px 12px;border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta);color:var(--texto);font-weight:500}
-input:focus,select:focus,textarea:focus{outline:2px solid var(--verde);outline-offset:0;border-color:var(--verde)}
+input,select,textarea{font-size:16px;width:100%;max-width:100%;min-height:48px;padding:11px 14px;border:1.5px solid color-mix(in srgb,var(--borde) 70%,#9A9480);border-radius:14px;background:#fff;color:var(--texto);font-weight:500;-webkit-appearance:none;appearance:none;box-sizing:border-box}
+textarea{min-height:90px}select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235D774A' stroke-width='2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+input[type=checkbox],input[type=radio]{min-height:0;width:auto;-webkit-appearance:auto;appearance:auto}input[type=file]{min-height:0;padding:8px}input[type=color]{padding:4px;min-height:44px}
+input::placeholder,textarea::placeholder{color:#A39E8C;opacity:1}
+input:focus,select:focus,textarea:focus{outline:3px solid color-mix(in srgb,var(--verde) 35%,transparent);outline-offset:0;border-color:var(--verde)}
+html{scroll-padding-top:calc(var(--hh,120px) + 100px)}body.escribe #bTop,body.escribe #inst{display:none!important}
 label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .fila{display:flex;justify-content:space-between}.tot{font-weight:800;font-size:1.1rem}
 .x{justify-self:end;background:none;border:0;font-size:1.6rem;color:var(--texto);line-height:1}
@@ -448,6 +452,18 @@ button,.btn,a,select,label,input[type=checkbox]{touch-action:manipulation}
 #cCarrito .linea small{display:block;margin-left:38px}
 @media(prefers-reduced-motion:reduce){#cCarrito .vchk{animation:none}}
 /* Aviso de privacidad simplificado en el registro */
+.acceso{max-width:1000px;margin:0 auto}.accGrid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));align-items:start}
+.accLink{text-align:center;margin:0 0 12px}.accLink a{display:inline-block;padding:9px 16px;border-radius:999px;background:var(--tarjeta);border:1px solid var(--borde);text-decoration:none;color:var(--texto);font-size:.9rem}
+@media(min-width:760px){.accLink{display:none}}
+.fcard{background:var(--tarjeta);border:1px solid var(--borde);border-radius:20px;padding:20px 18px;box-shadow:0 6px 20px rgba(60,70,40,.08);display:grid;gap:14px;min-width:0;scroll-margin-top:calc(var(--hh,120px) + 100px)}
+.fcard h2{margin:0;font-size:1.25rem}.fcard .aviso{margin:0}
+.fgrid{display:grid;gap:14px;min-width:0}.fgrid label{min-width:0}.fgrid .avPriv{margin:0}
+.fdir{border:1px solid var(--borde);border-radius:16px;padding:12px 12px 14px;margin:0;display:grid;gap:12px;min-width:0}.fdir legend{padding:0 6px;font-size:.85rem;font-weight:700;color:var(--texto)}
+.fdos{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:10px}
+.opc{font-weight:500;color:var(--suave);font-size:.75rem}
+.fpass{position:relative;display:block}.fpass input{padding-right:52px}.verPass{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:40px;border:0;background:transparent;font-size:1.1rem;border-radius:10px;opacity:.75}.verPass[aria-pressed=true]{opacity:1}
+.fbtn{width:100%;min-height:50px;font-size:1rem}
+.perfilC label,.perfilC .fdos{justify-self:stretch;width:100%}
 .avPriv{font-size:.74rem;line-height:1.45;color:var(--suave);background:var(--crema);border-radius:10px;padding:8px 11px;margin:6px 0 10px}
 .avPriv a{color:var(--verde);font-weight:700}
 </style>
@@ -1321,9 +1337,9 @@ const sesionDe=u=>{const m=u.user_metadata||{};return {id:u.id,nombre:m.nombre||
 // Domicilio en partes: calle, número y colonia (cada uno en su propio campo)
 const dirTxt=(c,n,l)=>[(c||"")+(n?" #"+n:""),l?"Col. "+l:""].map(x=>x.trim()).filter(Boolean).join(", ");
 function dirCampos(p,s){const t=s&&(s.dir_calle||s.dir_num||s.dir_col)?s:{dir_calle:(s&&s.dir)||"",dir_num:"",dir_col:""};
-  return `<label>Calle<input id="${p}_c" autocomplete="address-line1" placeholder="Ej. Hidalgo" value="${esc(t.dir_calle||"")}"></label>
-  <label>Número<input id="${p}_n" autocomplete="off" placeholder="Ej. 123" value="${esc(t.dir_num||"")}"></label>
-  <label>Colonia<input id="${p}_l" autocomplete="address-line2" placeholder="Ej. Centro" value="${esc(t.dir_col||"")}"></label>`}
+  return `<label>Calle<input id="${p}_c" autocomplete="address-line1" enterkeyhint="next" placeholder="Ej. Hidalgo" value="${esc(t.dir_calle||"")}"></label>
+  <div class="fdos"><label>Número<input id="${p}_n" autocomplete="off" inputmode="text" enterkeyhint="next" placeholder="Ej. 123" value="${esc(t.dir_num||"")}"></label>
+  <label>Colonia<input id="${p}_l" autocomplete="address-line2" enterkeyhint="next" placeholder="Ej. Centro" value="${esc(t.dir_col||"")}"></label></div>`}
 const leeDir=p=>{const dir_calle=$(p+"_c").value.trim(),dir_num=$(p+"_n").value.trim(),dir_col=$(p+"_l").value.trim();return {dir_calle,dir_num,dir_col,dir:dirTxt(dir_calle,dir_num,dir_col)}};
 const avatarHTML=u=>u.foto?`<img class="avatar" src="${esc(u.foto)}" alt="Foto de perfil" referrerpolicy="no-referrer">`:`<div class="avatar ini">${esc((u.nombre||"?").trim().charAt(0).toUpperCase())}</div>`;
 let _gAct=null;
@@ -1795,7 +1811,7 @@ function vistaTienda(id){
    <b>${m.nombre}</b><span class="suave">${m.desc}</span><span class="precio">${din(m.precio)}</span>
    <button class="btn" data-add="${t.id}|${m.id}">Agregar al carrito</button></div></div>`).join("");
 }
-function perfilHTML(){return `<div class="aviso" style="display:grid;gap:10px;max-width:360px;justify-items:start"><b>Mi perfil</b>${avatarHTML(sesion)}
+function perfilHTML(){return `<div class="aviso perfilC" style="display:grid;gap:10px;max-width:420px;justify-items:start"><b>Mi perfil</b>${avatarHTML(sesion)}
     <label style="width:100%">Foto de perfil<input type="file" accept="image/*" id="fPerfil"></label><span id="fMsg" class="suave"></span>
     <label style="width:100%">Correo<input id="dc" type="email" autocomplete="email" value="${esc(sesion.email)}"></label>
     <button class="btn sec" id="gCorreo" type="button">Cambiar correo</button><span id="cMsg" class="suave"></span>
@@ -1848,19 +1864,33 @@ function vistaCuenta(){
      $("np1").value="";$("np2").value="";alert("Contraseña actualizada. Úsala la próxima vez que entres.");
    };
    $("salir").onclick=async()=>{await cerrarAvisos();if(db)db.auth.signOut();esAdmin=false;misCom=[];rolOK=false;sesion=null;$s("sesion",null);pintaHeader();location.hash="#/"};return;}
-  $("vista").innerHTML=`<h2>Crea tu cuenta Valle GO:</h2><p class="aviso">📧 <b>Importante:</b> al crear tu cuenta te enviaremos un correo de confirmación. Debes abrirlo en tu bandeja de entrada (revisa también Spam o Promociones) y tocar el enlace para poder entrar. Aplica para usuarios y comercios.</p><div id="gBox"></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
-   <div class="caja" style="position:static;width:auto;padding:0">
-    <label>Nombre<input id="rn" autocomplete="name"></label><label>Correo<input id="re" type="email" autocomplete="email"></label>
-    <label>Teléfono<input id="rt" type="tel" autocomplete="tel"></label><b style="font-size:.85rem">Dirección de entrega</b>${dirCampos("rg",null)}
-    <label>Contraseña (mínimo 6)<input id="rp" type="password" autocomplete="new-password"></label>
-    <p class="avPriv"><b>Aviso de privacidad simplificado:</b> Valle GO (Ameca, Jalisco) usará tus datos para crear tu cuenta y hacer llegar tus pedidos, citas, consultas y viajes al comercio o transportista que elijas. No pedimos datos sensibles. Puedes ejercer tus derechos ARCO o revocar tu consentimiento en contacto.vallego@gmail.com. Al crear tu cuenta aceptas el <a href="privacidad.html" target="_blank" rel="noopener">Aviso de privacidad integral</a> y las <a href="terminos.html" target="_blank" rel="noopener">Condiciones del Servicio</a>.</p>
-    <button class="btn" id="reg">Crear cuenta</button></div>
-   <div class="caja" style="position:static;width:auto;padding:0">
-    <h2>Ya tengo cuenta</h2><label>Correo<input id="le" type="email" autocomplete="username"></label>
-    <label>Contraseña<input id="lp" type="password" autocomplete="current-password"></label><button class="btn sec" id="ent">Entrar</button></div></div>`;
+  $("vista").innerHTML=`<div class="acceso">
+   <p class="accLink"><a href="#accEntrar" id="irEntrar">¿Ya tienes cuenta? <b>Entra aquí ↓</b></a></p>
+   <div class="accGrid">
+   <section class="fcard" aria-labelledby="accT1"><h2 id="accT1">Crea tu cuenta Valle GO</h2>
+    <p class="aviso">📧 <b>Importante:</b> al crear tu cuenta te enviaremos un correo de confirmación. Ábrelo en tu bandeja de entrada (revisa también Spam o Promociones) y toca el enlace para poder entrar. Aplica para usuarios y comercios.</p>
+    <div id="gBox"></div>
+    <form class="fgrid" id="fReg" novalidate onsubmit="return false">
+     <label>Nombre<input id="rn" autocomplete="name" enterkeyhint="next" required></label>
+     <label>Correo<input id="re" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" enterkeyhint="next" required></label>
+     <label><span>Teléfono <span class="opc">(opcional)</span></span><input id="rt" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="next"></label>
+     <fieldset class="fdir"><legend>Dirección de entrega <span class="opc">(opcional)</span></legend>${dirCampos("rg",null)}</fieldset>
+     <label><span>Contraseña <span class="opc">(mínimo 6 caracteres)</span></span><span class="fpass"><input id="rp" type="password" autocomplete="new-password" enterkeyhint="done" minlength="6" required><button type="button" class="verPass" data-verpass="rp" aria-label="Mostrar contraseña">👁</button></span></label>
+     <p class="avPriv"><b>Aviso de privacidad simplificado:</b> Valle GO (Ameca, Jalisco) usará tus datos para crear tu cuenta y hacer llegar tus pedidos, citas, consultas y viajes al comercio o transportista que elijas. No pedimos datos sensibles. Puedes ejercer tus derechos ARCO o revocar tu consentimiento en contacto.vallego@gmail.com. Al crear tu cuenta aceptas el <a href="privacidad.html" target="_blank" rel="noopener">Aviso de privacidad integral</a> y las <a href="terminos.html" target="_blank" rel="noopener">Condiciones del Servicio</a>.</p>
+     <button class="btn fbtn" id="reg" type="button">Crear cuenta</button>
+    </form></section>
+   <section class="fcard" id="accEntrar" aria-labelledby="accT2"><h2 id="accT2">Ya tengo cuenta</h2>
+    <form class="fgrid" id="fEnt" novalidate onsubmit="return false">
+     <label>Correo<input id="le" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" enterkeyhint="next"></label>
+     <label>Contraseña<span class="fpass"><input id="lp" type="password" autocomplete="current-password" enterkeyhint="go"><button type="button" class="verPass" data-verpass="lp" aria-label="Mostrar contraseña">👁</button></span></label>
+     <button class="btn sec fbtn" id="ent" type="button">Entrar</button>
+    </form></section></div></div>`;
+  $("irEntrar").onclick=e=>{e.preventDefault();$("accEntrar").scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>$("le").focus({preventScroll:true}),450)};
+  $("lp").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();entrar()}});
+  $("rp").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();registrar()}});
   $("reg").onclick=registrar; $("ent").onclick=entrar;
   googleActivo().then(ok=>{const b=$("gBox");if(!ok||!b)return;
-    b.innerHTML=`<button class="btn" id="gBtn" style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#1f1f1f;border:1px solid #dadce0"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continuar con Google</button><p class="avPriv">Al continuar con Google aceptas el <a href="privacidad.html" target="_blank" rel="noopener">Aviso de privacidad</a> y las <a href="terminos.html" target="_blank" rel="noopener">Condiciones del Servicio</a>.</p><p class="suave">o usa tu correo:</p>`;
+    b.innerHTML=`<button class="btn" id="gBtn" type="button" style="display:flex;width:100%;justify-content:center;align-items:center;gap:10px;background:#fff;color:#1f1f1f;border:1px solid #dadce0;min-height:48px"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continuar con Google</button><p class="avPriv">Al continuar con Google aceptas el <a href="privacidad.html" target="_blank" rel="noopener">Aviso de privacidad</a> y las <a href="terminos.html" target="_blank" rel="noopener">Condiciones del Servicio</a>.</p><p class="suave">o usa tu correo:</p>`;
     $("gBtn").onclick=entrarGoogle});
 }
 // ---- Respaldo: revisa cambios cada 8 s (por si la conexión en tiempo real se corta, común en iPhone) ----
@@ -2100,6 +2130,15 @@ $("bPedidos").onclick=async()=>{await cierraTodasCapas();location.hash="#/pedido
 $("bMisCons").onclick=async()=>{await cierraTodasCapas();location.hash="#/mis-servicios"};
 $("bPanel").onclick=()=>{const h=location.hash;location.hash=(h.startsWith("#/admin")||h.startsWith("#/panel"))?"#/":(esAdmin?"#/admin":"#/panel")};   // clic: abre el panel; otro clic: regresa al inicio
 window.addEventListener("hashchange",()=>{cat="Todo";ruta();scrollTo(0,0)});
+// Formularios: al tocar un campo se ocultan los botones flotantes y el campo se acomoda a la vista cuando sale el teclado (Android, iPhone, tableta)
+(()=>{const esCampo=el=>el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)&&!/^(checkbox|radio|file|color|range|button|submit)$/i.test(el.type||"");
+  let t=0;const acomoda=el=>{clearTimeout(t);t=setTimeout(()=>{if(document.activeElement!==el)return;const r=el.getBoundingClientRect(),vv=window.visualViewport,alto=vv?vv.height:innerHeight,arriba=(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hh"))||110)+90;
+    if(r.top<arriba||r.bottom>alto-16)el.scrollIntoView({block:"center",behavior:"smooth"})},320)};
+  document.addEventListener("focusin",e=>{if(!esCampo(e.target)||e.target.closest("#vtFondo"))return;document.body.classList.add("escribe");acomoda(e.target)});
+  document.addEventListener("focusout",()=>setTimeout(()=>{if(!esCampo(document.activeElement))document.body.classList.remove("escribe")},120));
+  if(window.visualViewport)visualViewport.addEventListener("resize",()=>{if(esCampo(document.activeElement))acomoda(document.activeElement)});
+  document.addEventListener("click",e=>{const b=e.target.closest("[data-verpass]");if(!b)return;const i=$(b.dataset.verpass);if(!i)return;const ver=i.type==="password";i.type=ver?"text":"password";b.setAttribute("aria-pressed",ver);b.setAttribute("aria-label",ver?"Ocultar contraseña":"Mostrar contraseña");b.textContent=ver?"🙈":"👁"});
+})();
 // Botón flotante para subir: aparece al bajar y su única función es regresar hasta arriba
 // Con el Directorio abierto, sube al principio del Directorio (su propia caja con scroll)
 (()=>{const b=$("bTop");if(!b)return;let t=0;
@@ -2166,7 +2205,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v192";
+const BUILD="valle-go-v193";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
