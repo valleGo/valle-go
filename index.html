@@ -1400,11 +1400,11 @@ async function notifAuto(){
 function escucharPedidos(){
   if(!db||canal||!(esAdmin||misCom.length))return;
   canal=db.channel("pedidos-nuevos").on("postgres_changes",{event:"INSERT",schema:"public",table:"pedidos"},p=>{
-    vistos.add(p.new.id);sonido();aviso("🛎️ Nuevo pedido por "+din(Number(p.new.total)));
+    vistos.add(p.new.id);if(misCom.some(c=>c.id===p.new.comercio_id)){sonido();aviso("🛎️ Nuevo pedido por "+din(Number(p.new.total)))}   // v218: solo avisa al comercio del pedido
     if((location.hash==="#/panel"||location.hash==="#/admin")&&!formAbierto()&&!escribiendo())ruta();
   }).on("postgres_changes",{event:"UPDATE",schema:"public",table:"pedidos"},p=>{
     const n=p.new||{};
-    if(n.recibido_en&&Date.now()-new Date(n.recibido_en)<20000){sonido();aviso("✅ El cliente confirmó que recibió su pedido ("+din(Number(n.total))+")")}
+    if(n.recibido_en&&Date.now()-new Date(n.recibido_en)<20000&&misCom.some(c=>c.id===n.comercio_id)){sonido();aviso("✅ El cliente confirmó que recibió su pedido ("+din(Number(n.total))+")")}
     if((location.hash==="#/panel"||location.hash==="#/admin")&&!formAbierto()&&!escribiendo())ruta();
   }).subscribe();
 }
@@ -1812,7 +1812,7 @@ function escucharServicios(){
   const ch=db.channel("servicios-"+sesion.id);
   ["citas","consultas_stock","viajes"].forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},p=>{
     const n=p.new||{},esCita=t==="citas",esV=t==="viajes";
-    if(p.eventType==="INSERT"&&n.cliente_id!==sesion.id){sonido();aviso(esV?"🚕 Nueva solicitud de viaje":esCita?"📅 Nueva solicitud de cita":"🔎 Nueva consulta de stock")}
+    if(p.eventType==="INSERT"&&n.cliente_id!==sesion.id&&[...misCom,...misSrv].some(x=>x.id===n.perfil_id)){sonido();aviso(esV?"🚕 Nueva solicitud de viaje":esCita?"📅 Nueva solicitud de cita":"🔎 Nueva consulta de stock")}
     else if(p.eventType==="UPDATE"&&n.cliente_id===sesion.id&&n.cambio_por!==sesion.id&&(n.estado||"")!=="Pendiente"){sonido();aviso((esV?"🚕 Tu viaje: ":esCita?"📅 Tu cita: ":"🔎 Tu consulta: ")+n.estado)}
     refrescaSrv()}));
   canalSrv=ch.subscribe();
@@ -2405,7 +2405,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v217";
+const BUILD="valle-go-v218";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
