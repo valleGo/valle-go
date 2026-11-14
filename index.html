@@ -543,6 +543,7 @@ html[data-tema=oscuro] .fcard{box-shadow:0 6px 20px rgba(0,0,0,.35)}
 #compPanel .cgrid{display:grid;gap:8px;margin-top:14px}#compPanel .cgrid button{min-height:46px;border-radius:999px;border:0;font-weight:700;font-size:.95rem;cursor:pointer}
 #compPanel .cPri{background:linear-gradient(120deg,#E08A3C,#CC5F55);color:#fff}#compPanel .cSec{background:var(--crema);color:var(--texto);border:1px solid var(--borde)!important}
 #compPanel .cLink{font-size:.8rem;color:var(--suave);word-break:break-all;margin-top:4px}
+.selq,.lq{margin:4px 0 6px}.item[hidden],label[hidden],option[hidden]{display:none!important}.lqw{display:block;margin:0 0 10px}.lqn{display:block;font-size:.85em}
 </style>
 </head>
 <body>
@@ -1008,7 +1009,44 @@ async function vistaAdmin(){
   $("vista").innerHTML=`<div class="admtop"><div class="monstack izq">${["perfil","admins","usuarios"].map(mb).join("")}</div><h2>Administración</h2><div class="monstack der">${["cobros","membresias","monitoreo"].map(mb).join("")}</div></div>${notifBtnHTML()}<div class="cats admcats">${["anuncios","comercios","categorias","menu","servicios","pedidos"].map(k=>`<button class="${k===adm.tab?"on":""}" data-tab="${k}">${T[k]}</button>`).join("")}</div><div id="adm"></div>`;
   await admTab();
 }
-async function admTab(){
+// ---- v219: en Administración, listas y desplegables en orden alfabético y con buscador ----
+const ALF=(a,b)=>String(a).localeCompare(String(b),"es",{sensitivity:"base",numeric:true});
+const sinAc=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+const SIN_ORDEN="[data-est],[data-pag],[data-hor],#entrega,#pago,#tvT,[data-noord]";
+function ordenaSelects(root){
+  root.querySelectorAll("select").forEach(s=>{
+    if(s.matches(SIN_ORDEN)||s.dataset.ord)return;s.dataset.ord="1";const val=s.value;
+    [s,...s.querySelectorAll("optgroup")].forEach(g=>{const ops=[...g.children].filter(o=>o.tagName==="OPTION"&&o.value!=="");
+      ops.sort((a,b)=>ALF(a.text,b.text)).forEach(o=>g.appendChild(o))});
+    [...s.children].filter(x=>x.tagName==="OPTGROUP").sort((a,b)=>ALF(a.label,b.label)).forEach(g=>s.appendChild(g));
+    s.value=val;
+    const ops=[...s.options].filter(o=>o.value!=="");
+    if(ops.length>6){const q=document.createElement("input");q.type="search";q.className="selq";q.placeholder="🔎 Buscar por nombre…";q.setAttribute("aria-label","Buscar en la lista");q.autocomplete="off";
+      q.oninput=()=>{const t=sinAc(q.value);let pri=null;ops.forEach(o=>{const ok=!t||sinAc(o.text).includes(t);o.hidden=!ok;o.disabled=!ok&&o!==s.selectedOptions[0];if(ok&&!pri)pri=o});
+        if(t&&pri&&(!s.selectedOptions[0]||s.selectedOptions[0].hidden||s.value==="")){s.value=pri.value}};
+      q.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();s.dispatchEvent(new Event("change",{bubbles:true}))}};
+      q.onchange=()=>s.dispatchEvent(new Event("change",{bubbles:true}));
+      s.before(q)}
+  });
+}
+async function listaUsuariosDL(){   // sugerencias de correos al escribir (nombre o correo)
+  if(!$("dlUsr")){const d=document.createElement("datalist");d.id="dlUsr";document.body.appendChild(d)}
+  if(!adm.ul){const r=await db.rpc("admin_usuarios");if(r.error)return;adm.ul=r.data||[]}
+  $("dlUsr").innerHTML=[...adm.ul].sort((a,b)=>ALF(a.nombre||a.email,b.nombre||b.email)).map(u=>`<option value="${esc(u.email)}" label="${esc((u.nombre||"")+(u.tel?" · "+u.tel:""))}"></option>`).join("");
+}
+function mejoraAdm(root){
+  if(!root)return;ordenaSelects(root);
+  const mails=root.querySelectorAll("#dueno,#paCorreo,#aCorreo");
+  if(mails.length){mails.forEach(i=>{i.setAttribute("list","dlUsr");i.placeholder="Escribe nombre o correo";i.autocomplete="off"});listaUsuariosDL()}
+  if(root.id!=="adm"||adm.tab==="usuarios"||root.querySelector(".lq"))return;
+  const items=[...root.querySelectorAll(".item")];if(items.length<=6)return;
+  adm.lq=adm.lq||{};const q=document.createElement("input");q.type="search";q.className="lq";q.placeholder="🔎 Buscar por nombre en esta lista…";q.setAttribute("aria-label","Buscar en la lista");q.value=adm.lq[adm.tab]||"";
+  const filtra=()=>{const t=sinAc(q.value);adm.lq[adm.tab]=q.value;let n=0;items.forEach(it=>{const ok=!t||sinAc(it.textContent).includes(t);it.hidden=!ok;if(ok)n++});cnt.textContent=t?`${n} de ${items.length}`:""};
+  const cnt=document.createElement("span");cnt.className="suave lqn";q.oninput=filtra;
+  const w=document.createElement("label");w.className="lqw";w.append(q,cnt);root.prepend(w);filtra();
+}
+async function admTab(){await admTab0();mejoraAdm($("adm"))}
+async function admTab0(){
   try{localStorage.setItem("valle_adm",JSON.stringify({tab:adm.tab,mes:adm.mes,mesM:adm.mesM}))}catch(e){}
   const box=$("adm"), t=adm.tab; box.innerHTML="<p>Cargando...</p>";
   if(t==="anuncios"){
@@ -1023,7 +1061,7 @@ async function admTab(){
       catch(err){alert(err.message);$("gAd").disabled=false}};
   }
   if(t==="categorias"){
-    const L=(await db.from("categorias").select("*").order("orden").order("nombre")).data||[];CATEGORIAS=L;
+    const L=((await db.from("categorias").select("*").order("orden").order("nombre")).data||[]);CATEGORIAS=L;L.sort((a,b)=>ALF(a.nombre,b.nombre));
     const cm=(await db.from("comercios").select("categoria_id")).data||[];
     const itK=k=>`<div class="item"><div class="in"><b>${k.emoji?esc(k.emoji)+" ":""}${esc(k.nombre)}</b><span class="suave">Orden ${k.orden} · ${cm.filter(c=>c.categoria_id===k.id).length} comercio(s)</span><span><button class="btn sec" data-caed="${k.id}">Editar</button> <button class="btn sec" data-cadel="${k.id}">Borrar</button></span></div></div>`;
     box.innerHTML=`<div class="aviso"><b>Los comercios se dividen en 2 planes</b><br><b>Plan SIMPLE (servicios):</b> masajes, tatuajes, doctores, estéticas, transporte… <b>Plan BÁSICO (productos):</b> restaurantes, cafeterías, papelerías, tiendas… Dentro de cada una creas subcategorías (Pizza, Cafetería, Tatuajes…) y las asignas en <b>Comercios → Editar</b>. Los clientes las usan para filtrar.</div><button class="btn" data-canew>+ Nueva subcategoría</button>`+
@@ -1031,12 +1069,12 @@ async function admTab(){
   }
   if(t==="comercios"){
     if(!CATEGORIAS.length){const ct=await db.from("categorias").select("*").order("orden").order("nombre");if(ct.data)CATEGORIAS=ct.data}
-    const L=(await db.from("comercios").select("*").order("nombre")).data||[];await promoUsados();
+    const L=((await db.from("comercios").select("*").order("nombre")).data||[]).sort((a,b)=>ALF(a.nombre,b.nombre));await promoUsados();
     box.innerHTML=`<p class="suave">Promoción de apertura: <b>${PROMO_N} de ${PROMO_CUPO}</b> lugares usados (comercios y transportistas).</p><button class="btn" data-cnew>+ Nuevo comercio</button><br><br>`+L.map(c=>`<div class="item"><div class="foto" ${foto({foto:c.foto_url})}>${c.foto_url?"":esc(c.emoji||"🏪")}</div><div class="in"><b>${c.logo_url?`<img src="${esc(c.logo_url)}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px">`:""}${esc(c.nombre)}</b>
       <span class="suave">${esc(c.giro)} · ${esc((CATEGORIAS.find(k=>k.id===c.categoria_id)||{nombre:"Sin subcategoría"}).nombre)} · ${c.activo?"Visible":"Oculto"} · ${PLAN_TXT(c.plan)}${c.promo_inicio?" · Promo desde "+nomMes(c.promo_inicio):""}</span><button class="btn sec" data-ced="${c.id}">Editar</button></div></div>`).join("");
   }
   if(t==="servicios"){
-    const L=(await db.from("servicios_perfiles").select("*").order("tipo").order("nombre")).data||[];
+    const L=((await db.from("servicios_perfiles").select("*").order("nombre")).data||[]).sort((a,b)=>ALF(a.nombre,b.nombre));
     const hoyA=new Date();if(!adm.mes)adm.mes=mkey(hoyA);let CT=[],ctErr="";try{CT=await corteTransporte(adm.mes)}catch(e){ctErr=e.message||String(e)}
     const ctHTML=`<div class="aviso"><b>Corte mensual de transporte</b><br>Los transportistas están en SERVICIOS: pagan la membresía del plan Simple (${mxn(memConIva("simple"))} al mes, IVA incluido; con la promoción de apertura, 20% en los meses 1 a 3 y el mes 4 gratis), que se paga al inicio del mes, más el 5% del total de los viajes completados en la app (sin IVA), que se paga al final del mes.</div>
       <label>Mes<input type="month" id="tcMes" value="${adm.mes}"></label>`+(ctErr?`<p class="suave">No se pudo cargar el corte: ${esc(ctErr)}</p>`:CT.length?CT.map(r=>`<div class="item"><div class="in"><b>${esc(r.nombre)}</b><span>Viajes completados: ${r.n} · Total: ${mxn(r.tot)}</span><span>Comisión 5%: <b>${mxn(r.com)}</b>${r.comMP?` (+ ${mxn(r.comMP)} descontada por Mercado Pago)`:""}</span><span>Membresía: ${mxn(r.mem)}${r.promo?" ("+r.promo+")":""}</span><span>Total a cobrar: <b>${mxn(r.cobrar)}</b> · Pagado: ${mxn(r.pag)}</span><span>${r.saldo<=0.004?'<b style="color:var(--verde)">✔ Pagado</b>':"Saldo: <b>"+mxn(r.saldo)+"</b>"+(r.pag>0?" (parcial)":"")}</span>
@@ -1201,7 +1239,7 @@ const formAbierto=()=>!!document.querySelector("#gF,#gSF");
 function formAdm(tabla,cs,v){
   const extra=(tabla==="comercios"||tabla==="servicios_perfiles")?`<label>Correo del ${tabla==="comercios"?"comerciante":"prestador"}, para su panel (vacío = no cambiar)<input id="dueno" type="email"></label>`:"";
   $("adm").innerHTML=`<div class="aviso"><b>${v.id?"Editar":"Nuevo"}</b></div>`+formHTML(cs,v)+extra+`<br><button class="btn" id="gF">Guardar</button> <button class="btn sec" id="cF">Cancelar</button>`;
-  abreCapa(admTab);
+  abreCapa(admTab);mejoraAdm($("adm"));
   const bk=tabla+"_"+(v.id||"nuevo");
   if(borrActivar($("adm"),bk)){const av=document.createElement("div");av.className="aviso";av.innerHTML='📝 Recuperamos lo que habías escrito. <button class="btn sec mini" id="bDesc">Descartar borrador</button>';$("adm").prepend(av);$("bDesc").onclick=()=>{borrBorrar(bk);formAdm(tabla,cs,v)}}
   $("cF").onclick=()=>{borrBorrar(bk);cierraCapa()};
@@ -2405,7 +2443,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v218";
+const BUILD="valle-go-v219";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
