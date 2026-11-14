@@ -214,7 +214,7 @@ textarea{min-height:90px}select{background-image:url("data:image/svg+xml,%3Csvg 
 input[type=checkbox],input[type=radio]{min-height:0;width:auto;-webkit-appearance:auto;appearance:auto}input[type=file]{min-height:0;padding:8px}input[type=color]{padding:4px;min-height:44px}
 input::placeholder,textarea::placeholder{color:#A39E8C;opacity:1}
 input:focus,select:focus,textarea:focus{outline:3px solid color-mix(in srgb,var(--verde) 35%,transparent);outline-offset:0;border-color:var(--verde)}
-html{scroll-padding-top:calc(var(--hh,120px) + 100px)}body.escribe #bTop,body.escribe #inst{display:none!important}
+html{scroll-padding-top:calc(var(--hh,120px) + 100px)}body.escribe #bTop,body.escribe #inst{display:none!important}body:has(#bnueva) #inst,body:has(#bnueva) #bnotif{display:none!important}#bnueva{bottom:calc(14px + env(safe-area-inset-bottom,0px))!important}
 label{font-size:.8rem;font-weight:600;color:var(--suave);display:grid;gap:5px}
 .fila{display:flex;justify-content:space-between}.tot{font-weight:800;font-size:1.1rem}
 .x{justify-self:end;background:none;border:0;font-size:1.6rem;color:var(--texto);line-height:1}
@@ -2443,7 +2443,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v219";
+const BUILD="valle-go-v220";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{
@@ -2468,12 +2468,12 @@ document.addEventListener("visibilitychange",()=>{
   if(fuera>15000&&!ocupado())location.reload();   // la app estuvo cerrada o en segundo plano: se recarga con lo más reciente
 });
 // ---- Aviso de "Nueva versión disponible" (solo si no se puede recargar sola, por ejemplo mientras escribes) ----
-function avisoNueva(){
+function avisoNueva(){   // v220: un solo aviso de versión nueva (antes salían dos: uno arriba y otro abajo)
   if($("bnueva"))return;
   const d=document.createElement("div");d.id="bnueva";
-  d.innerHTML='<span>✨ Hay una nueva versión de Valle GO.</span><button id="bnuevaOk">Actualizar</button><button id="bnuevaX" aria-label="Cerrar">×</button>';
+  d.setAttribute("role","status");d.innerHTML='<span>✨ Hay una nueva versión de Valle GO.</span><button id="bnuevaOk">Actualizar</button><button id="bnuevaX" aria-label="Cerrar">×</button>';
   document.body.appendChild(d);
-  $("bnuevaOk").onclick=()=>{$("bnuevaOk").textContent="Actualizando…";location.reload()};
+  $("bnuevaOk").onclick=async()=>{$("bnuevaOk").textContent="Actualizando…";try{const r=await navigator.serviceWorker.getRegistration();if(r)await r.update();const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}location.reload()};
   $("bnuevaX").onclick=()=>d.remove();
 }
 if("serviceWorker"in navigator){
@@ -2493,11 +2493,7 @@ if("serviceWorker"in navigator){
   const huella=async()=>{const t=await (await fetch("sw.js?v="+Date.now(),{cache:"no-store"})).text();const m=t.match(/valle-go-v\d+/);if(!m)throw 0;return m[0]};
   async function revisa(){if(avisado||!navigator.onLine)return;
     try{const h=await huella();if(base===null)base=BUILD;
-      if(h!==base){avisado=true;const b=document.createElement("div");b.id="bnuevo";b.setAttribute("role","status");
-        b.innerHTML='<span>✨ Hay una nueva versión de Valle GO</span><button id="bnuevoOk">Actualizar</button><button class="x" id="bnuevoX" aria-label="Cerrar">×</button>';
-        document.body.appendChild(b);
-        $("bnuevoOk").onclick=async()=>{try{const r=await navigator.serviceWorker.getRegistration();if(r)await r.update();const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}location.reload()};
-        $("bnuevoX").onclick=()=>b.remove()}
+      if(h!==base){avisado=true;avisoNueva()}
     }catch(e){}}
   setTimeout(revisa,6000);   // después de que la app ya cargó, para no competir con los datos al abrir
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")revisa()});
