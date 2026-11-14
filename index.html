@@ -631,6 +631,8 @@ function iniAds(){
 
 // ---- Roles ----
 let rolP=null,rolOK=false;
+let rolT=0;
+const rolFresco=()=>rolOK&&Date.now()-rolT<120000?Promise.resolve():cargarRol();   // v217: no vuelve a preguntar el rol en cada cambio de pestaña
 function cargarRol(){   // una sola consulta a la vez, aunque varias partes de la app la pidan
   if(!rolP)rolP=cargarRolReal().finally(()=>{rolP=null});return rolP}
 async function cargarRolReal(){
@@ -641,13 +643,18 @@ async function cargarRolReal(){
     pintaHeader()}
   let a,c,sv;
   for(let i=0;i<3;i++){
-    try{[a,c,sv]=await Promise.all([db.from("admins").select("user_id").eq("user_id",sesion.id),db.from("comercios").select("id,nombre,mp_conectado,plan,ofrece_citas,ofrece_consulta").eq("dueno_id",sesion.id),db.from("servicios_perfiles").select("id,nombre,tipo").eq("dueno_id",sesion.id)])}catch(e){a=c=sv={error:e}}
+    try{const C1="id,nombre,mp_conectado,plan,ofrece_citas,ofrece_consulta,dueno_id",C2="id,nombre,tipo";let pa;
+      [a,c,sv,pa]=await Promise.all([db.from("admins").select("user_id").eq("user_id",sesion.id),db.from("comercios").select(C1).eq("dueno_id",sesion.id),db.from("servicios_perfiles").select(C2).eq("dueno_id",sesion.id),db.rpc("mis_perfiles_admin")]);
+      // v217: comercios o transportistas que administra sin ser el dueño (si la función aún no existe, se ignora)
+      const ex=(pa&&!pa.error&&pa.data||[]).map(x=>typeof x==="string"?x:x&&x.mis_perfiles_admin).filter(x=>/^[0-9a-f-]{36}$/i.test(x||""));
+      if(ex.length&&!c.error&&!sv.error){const [c2,s2]=await Promise.all([db.from("comercios").select(C1).in("id",ex),db.from("servicios_perfiles").select(C2).in("id",ex)]);
+        const mz=(A,B)=>({...A,data:[...(A.data||[]),...((B&&B.data)||[]).filter(x=>!(A.data||[]).some(y=>y.id===x.id))]});c=mz(c,c2);sv=mz(sv,s2)}}catch(e){a=c=sv={error:e}}
     if(!a.error&&!c.error&&!sv.error)break;await new Promise(r=>setTimeout(r,1200*(i+1)))}
   if(a.error||c.error||sv.error){pintaHeader();notifAuto();return}   // falló la red: se conserva lo último que se sabía, no se oculta el botón
-  esAdmin=!!(a.data&&a.data.length);misCom=(c.data||[]).map(x=>x.plan==="simple"?{...x,ofrece_consulta:false}:x);misSrv=sv.data||[];rolOK=true;   // agenda y citas: ambos planes; consulta de stock: solo Básico (PRODUCTOS)
+  esAdmin=!!(a.data&&a.data.length);misCom=(c.data||[]).map(x=>x.plan==="simple"?{...x,ofrece_consulta:false}:x);misSrv=sv.data||[];rolOK=true;rolT=Date.now();   // agenda y citas: ambos planes; consulta de stock: solo Básico (PRODUCTOS)
   
   try{localStorage.setItem("valle_rol_"+sesion.id,JSON.stringify({a:esAdmin,c:misCom,s:misSrv}))}catch(e){}
-  pintaHeader();escucharPedidos();escucharMisPedidos();escucharServicios();notifAuto();
+  pintaHeader();escucharPedidos();escucharMisPedidos();escucharServicios();notifAuto();contarLuego();
 }
 
 // ---- Subir foto comprimida (WebP, máx. 1000 px) ----
@@ -655,9 +662,11 @@ async function subirFoto(archivo,carpeta,max=1000){
   const img=await createImageBitmap(archivo), esc2=Math.min(1,max/Math.max(img.width,img.height));
   const c=document.createElement("canvas"); c.width=Math.round(img.width*esc2); c.height=Math.round(img.height*esc2);
   c.getContext("2d").drawImage(img,0,0,c.width,c.height);
-  const blob=await new Promise(r=>c.toBlob(r,"image/webp",0.75));
-  const ruta=`${carpeta}/${Date.now()}-${Math.random().toString(36).slice(2,7)}.webp`;
-  const {error}=await db.storage.from("fotos").upload(ruta,blob,{cacheControl:"31536000",contentType:"image/webp"});
+  let blob=await new Promise(r=>c.toBlob(r,"image/webp",0.75));
+  if(!blob||blob.type!=="image/webp")blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.78));   // v217: Safari (iPhone) no crea WebP y mandaba PNG de ~1 MB; ahora JPEG ligero
+  const ext=blob.type==="image/webp"?"webp":"jpg";
+  const ruta=`${carpeta}/${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`;
+  const {error}=await db.storage.from("fotos").upload(ruta,blob,{cacheControl:"31536000",contentType:blob.type});
   if(error)throw error;
   return db.storage.from("fotos").getPublicUrl(ruta).data.publicUrl;
 }
@@ -674,13 +683,13 @@ const ped2html=(p,admin)=>`<div class="item"><div class="in"><b>${esc(p.comercio
 const cobroHTML=()=>`<div class="aviso" style="display:grid;gap:8px"><b>💳 Cobros en línea</b>
   <span class="suave">Conecta tu cuenta de Mercado Pago para que el dinero de los pedidos pagados en línea llegue directo a tu cuenta. Mercado Pago descuenta su comisión por procesar cada pago en línea. Aparte, Valle GO cobra 3% del total de todos los pedidos (en línea, transferencia, depósito o efectivo) y de las citas atendidas por el uso y mantenimiento de la app; el 3% se paga al final de cada mes y tu membresía al inicio del mes. Tu tarjeta de débito o tu cuenta bancaria se agregan dentro de tu cuenta de Mercado Pago, para retirar tu dinero cuando quieras.</span>
   ${misCom.map(c=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span><b>${esc(c.nombre)}</b>: ${c.mp_conectado?"✅ cuenta conectada":"sin conectar"}</span>
-   ${c.mp_conectado?`<button class="btn sec" data-mpd="${c.id}">Desconectar</button>`:`<button class="btn" data-mpc="${c.id}">Conectar mi Mercado Pago</button>`}</div>`).join("")}</div>`;
+   ${c.dueno_id&&c.dueno_id!==sesion.id&&!esAdmin?'<span class="suave">Solo el dueño del negocio conecta o desconecta Mercado Pago.</span>':c.mp_conectado?`<button class="btn sec" data-mpd="${c.id}">Desconectar</button>`:`<button class="btn" data-mpc="${c.id}">Conectar mi Mercado Pago</button>`}</div>`).join("")}</div>`;
 async function llamaMp(cuerpo){const {data}=await db.auth.getSession();
   const r=await fetch("/api/mp-conectar",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+data.session.access_token},body:JSON.stringify(cuerpo)});
   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||"No se pudo completar.");return j}
 async function vistaPanel(){
   if(!sesion||!db){location.hash="#/cuenta";return}
-  $("vista").innerHTML="<p>Cargando...</p>"; await cargarRol();
+  if(!rolOK)$("vista").innerHTML="<p>Cargando...</p>"; await rolFresco();
   if(!misCom.length&&misSrv.length){location.hash="#/panel-servicios";return}
   if(!misCom.length&&esAdmin){location.hash="#/admin";return}
   if(!misCom.length){$("vista").innerHTML=`<h2>Panel de comerciante</h2><p>Esta cuenta aún no está vinculada a un comercio. Pide al administrador de Valle GO que la vincule con tu correo.</p>`;return}
@@ -689,7 +698,7 @@ async function vistaPanel(){
   const ids=misCom.map(c=>c.id),idsCq=misCom.filter(c=>c.plan!=="simple"&&c.ofrece_consulta).map(c=>c.id);
   const [pe,me,cq]=await Promise.all([
     db.from("pedidos").select("*, comercios(nombre)").in("comercio_id",ids).order("creado",{ascending:false}).limit(200),
-    db.from("menu_items").select("*").in("comercio_id",ids).order("categoria"),
+    panTab==="neg"&&negSub==="menu"?db.from("menu_items").select("*").in("comercio_id",ids).order("categoria"):Promise.resolve({data:[]}),
     idsCq.length?db.from("consultas_stock").select("*").in("perfil_id",idsCq).order("creado",{ascending:false}).limit(150):Promise.resolve({data:[]})]);
   const P=pe.data||[], M=me.data||[], Q=cq.data||[];
   // Activo = todavía requiere algo del comercio. Historial = ya terminado.
@@ -700,7 +709,7 @@ async function vistaPanel(){
   const nuevos=PA.filter(p=>p.estado==="Enviado al comercio").length,sinResp=QA.filter(c=>c.estado==="Pendiente").length;
   const tab=["act","his","neg"].includes(panTab)?panTab:"act";
   const tabBtn=(k,txt,n)=>`<button type="button" role="tab" id="pt_${k}" aria-controls="pp_${k}" aria-selected="${tab===k}" tabindex="${tab===k?0:-1}" class="${tab===k?"on":""}" data-pantab="${k}">${txt}${n?` <span class="cnt" aria-label="${n} pendientes">${n}</span>`:""}</button>`;
-  const consHist=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span class="suave">${new Date(x.creado).toLocaleString("es-MX")}</span><span>${esc(x.texto)}</span>${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}${x.oferta_precio!=null?`<span><b>🛒 ${esc(x.oferta_nombre||"")}</b> · ${din(Number(x.oferta_precio))}${x.oferta_max>1?" · hasta "+x.oferta_max+" piezas":""}</span>`:""}<span class="cierre">${CQ_CIERRE[cqCierre(x)]||""}</span></div></div>`;
+  const consHist=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" data-bg="${esc(x.foto_url)}"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span class="suave">${new Date(x.creado).toLocaleString("es-MX")}</span><span>${esc(x.texto)}</span>${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}${x.oferta_precio!=null?`<span><b>🛒 ${esc(x.oferta_nombre||"")}</b> · ${din(Number(x.oferta_precio))}${x.oferta_max>1?" · hasta "+x.oferta_max+" piezas":""}</span>`:""}<span class="cierre">${CQ_CIERRE[cqCierre(x)]||""}</span></div></div>`;
   const vacio=t=>`<p class="vacio">${t}</p>`;
   let cuerpo="";
   if(tab==="act")cuerpo=`<div class="resumen"><span><b>${PA.length}</b> ${PA.length===1?"pedido activo":"pedidos activos"}</span>${idsCq.length?`<span><b>${QA.length}</b> ${QA.length===1?"consulta abierta":"consultas abiertas"}</span>`:""}${nuevos?`<span class="alerta">🛎️ ${nuevos} por confirmar</span>`:""}${sinResp?`<span class="alerta">🔎 ${sinResp} sin responder</span>`:""}</div>
@@ -710,10 +719,13 @@ async function vistaPanel(){
   else if(tab==="his")cuerpo=`<p class="suave">Pedidos ya terminados (entregados y pagados, o cancelados) y consultas cerradas. Solo para consulta: ya no se modifican. Si hay un error, pide ayuda a la administración de Valle GO.</p>
     <h3 class="sec">🛍️ Pedidos terminados <span class="suave">(${PH.length})</span></h3>`+(PH.map(p=>ped2html(p)).join("")||vacio("Aún no hay pedidos terminados."))+
     (idsCq.length?`<h3 class="sec">🔎 Consultas cerradas <span class="suave">(${QH.length})</span></h3>`+(QH.map(consHist).join("")||vacio("Aún no hay consultas cerradas.")):"");
-  else cuerpo=`${(misSrv.length||misCom.some(c=>c.ofrece_citas))?`<p><a class="btn sec" href="#/panel-servicios">📅 Mi agenda y citas →</a></p>`:""}${notifBtnHTML()}${cobroHTML()}<div class="aviso">${P.length} pedidos recientes · ${din(ventas)} en ventas</div>
-    <h3 class="sec">📋 Mi menú completo</h3><p class="suave">Para cambiar fotos, precios o productos, contacta al administrador de Valle GO.</p>`+
+  else{const sub=["pag","menu","not"].includes(negSub)?negSub:"pag",sb=(k,t)=>`<button type="button" class="${sub===k?"on":""}" aria-pressed="${sub===k}" data-negsub="${k}">${t}</button>`;
+    cuerpo=`${(misSrv.length||misCom.some(c=>c.ofrece_citas))?`<p><a class="btn sec" href="#/panel-servicios">📅 Mi agenda y citas →</a></p>`:""}<div class="cats negsub" role="group" aria-label="Mi negocio">${sb("pag","💳 Pagos")}${sb("menu","📋 Menú completo")}${sb("not","🔔 Notificaciones")}</div>`+
+    (sub==="pag"?`${cobroHTML()}<div class="aviso">${P.length} pedidos recientes · ${din(ventas)} en ventas</div>`
+    :sub==="not"?`${notifBtnHTML()||'<p class="suave">Las notificaciones de este aparato ya están configuradas.</p>'}<p class="suave">Los avisos llegan a este aparato cuando entra un pedido, una consulta o una cita. Actívalos en cada celular, tableta o PC donde atiendas.</p>`
+    :`<h3 class="sec">📋 Mi menú completo <span class="suave">(${M.length})</span></h3><p class="suave">Para cambiar fotos, precios o productos, contacta al administrador de Valle GO.</p>`+
     (M.map(m=>`<div class="item"><div class="foto" ${foto({foto:m.foto_url})}>${m.foto_url?"":esc(m.emoji||"🍽️")}</div><div class="in"><b>${esc(m.nombre)}</b>
-    <span class="suave">${esc(m.categoria)} · ${m.disponible?"Disponible":"No disponible"}</span><span class="precio">${din(Number(m.precio))}</span></div></div>`).join("")||vacio("Sin productos."));
+    <span class="suave">${esc(m.categoria)} · ${m.disponible?"Disponible":"No disponible"}</span><span class="precio">${din(Number(m.precio))}</span></div></div>`).join("")||vacio("Sin productos.")))}
   $("vista").innerHTML=`<div class="panc"><h2>Mi panel</h2><p class="suave" style="font-size:.78rem">Sesión: ${esc(sesion.email)} · ${misCom.map(c=>esc(c.nombre)).join(", ")}</p>
    ${pe.error?`<div class="aviso" style="color:var(--coral)">No se pudieron cargar los pedidos: ${esc(pe.error.message)}. Toca 🔄 o recarga la página.</div>`:""}
    <div class="tabcli tabpan" role="tablist" aria-label="Secciones de mi panel">${tabBtn("act",idsCq.length?"📥 Pedidos y consultas":"📥 Pedidos",nuevos+sinResp)}${tabBtn("his","🗂️ Historial")}${tabBtn("neg","🏪 Mi negocio")}</div>
@@ -721,6 +733,8 @@ async function vistaPanel(){
    <p style="text-align:center;margin-top:18px"><button class="btn sec mini" type="button" data-panref>🔄 Actualizar</button></p></div>`;
 }
 let panTab=(()=>{try{return localStorage.getItem("valle_pantab")||"act"}catch(e){return "act"}})();
+let negSub=(()=>{try{return localStorage.getItem("valle_negsub")||"pag"}catch(e){return "pag"}})();
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-negsub]");if(!t)return;negSub=t.dataset.negsub;try{localStorage.setItem("valle_negsub",negSub)}catch(err){}vistaPanel()});
 document.addEventListener("click",e=>{
   const t=e.target.closest&&e.target.closest("[data-pantab],[data-panref]");if(!t)return;
   if(t.dataset.pantab){panTab=t.dataset.pantab;try{localStorage.setItem("valle_pantab",panTab)}catch(err){}}
@@ -1082,6 +1096,14 @@ async function admTab(){
     box.innerHTML=`<div class="aviso"><b>Administradores</b><br>Un administrador puede ver y modificar comercios, menús, pedidos, cobros y usuarios. Dalo solo a personas de plena confianza. La persona debe haberse registrado antes en la app con ese correo.</div>
     <label>Correo del nuevo administrador<input id="aCorreo" type="email" placeholder="correo@ejemplo.com"></label><button class="btn" data-aadd>Agregar administrador</button><span class="suave" id="aMsg"></span>
     <h3>Administradores actuales</h3>`+A.map(a=>`<div class="item"><div class="in"><b>${esc(a.email)}</b>${a.user_id===sesion.id?'<span class="suave">Tú</span>':`<button class="btn sec" data-arm="${a.user_id}" data-ae="${esc(a.email)}">Quitar</button>`}</div></div>`).join("");
+    // v217: administradores de cada comercio o transportista (solo Valle GO los agrega o quita)
+    const [pa,lc,ls]=await Promise.all([db.rpc("admin_lista_perfil_admins"),db.from("comercios").select("id,nombre").order("nombre"),db.from("servicios_perfiles").select("id,nombre").order("nombre")]);
+    const PL=[...(lc.data||[]),...(ls.data||[]).map(x=>({...x,nombre:x.nombre+" (transporte)"}))],PA=pa.data||[];
+    box.insertAdjacentHTML("beforeend",`<h3 class="sec" style="margin-top:26px">🏪 Administradores de comercios</h3><div class="aviso">Personas que atienden el panel de un comercio o transportista además del dueño: ven y atienden sus pedidos, citas, consultas y viajes, y pueden abrir su cuenta en hasta 5 aparatos. <b>No</b> conectan ni desconectan Mercado Pago (eso es solo del dueño). Solo la administración de Valle GO los agrega o quita. La persona debe haberse registrado antes en la app.</div>`+
+     (pa.error?`<p class="suave">Esta función aún no está activa en la base de datos.</p>`:`<label>Comercio<select id="paCom"><option value="">Elige un comercio</option>${PL.map(c=>`<option value="${c.id}">${esc(c.nombre)}</option>`).join("")}</select></label>
+     <label>Correo de la persona<input id="paCorreo" type="email" placeholder="correo@ejemplo.com"></label><button class="btn" data-paadd>Agregar administrador del comercio</button><span class="suave" id="paMsg"></span>
+     <h3>Administradores de comercios actuales</h3>`+(PA.map(x=>`<div class="item"><div class="in"><b>${esc(x.perfil||"Comercio")}</b><span>${esc(x.email)}</span><span class="suave">Dueño: ${esc(x.dueno_email||"sin asignar")}</span><span><button class="btn sec" data-parm="${x.perfil_id}" data-pau="${x.user_id}" data-pae="${esc(x.email)}" data-pan="${esc(x.perfil||"")}">Quitar</button></span></div></div>`).join("")||'<p class="vacio">Ningún comercio tiene administradores extra.</p>')));
+
   }
   if(t==="usuarios"){
     const fe=x=>x?new Date(x).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):"—";
@@ -1214,6 +1236,11 @@ document.addEventListener("click",async e=>{
     const r=await db.rpc("admin_agregar_admin",{correo:c});if(r.error){$("aMsg").textContent=" "+r.error.message;return}return admTab()}
   if(d.arm){if(!await confirma("¿Quitar permisos de administrador a "+(d.ae||"este usuario")+"?"))return;
     const r=await db.rpc("admin_quitar_admin",{uid:d.arm});if(r.error){alert(r.error.message);return}return admTab()}
+  if(d.paadd!==undefined){const pid=$("paCom").value,c=$("paCorreo").value.trim();if(!pid||!c){$("paMsg").textContent=" Elige el comercio y escribe el correo.";return}
+    if(!await confirma(`¿Dar acceso al panel de «${$("paCom").selectedOptions[0].text}» a ${c}? Podrá ver y atender sus pedidos, citas, consultas y viajes.`))return;
+    const r=await db.rpc("admin_agregar_perfil_admin",{pid,correo:c});if(r.error){$("paMsg").textContent=" "+r.error.message;return}return admTab()}
+  if(d.parm){if(!await confirma(`¿Quitar a ${d.pae} como administrador de «${d.pan}»?`))return;
+    const r=await db.rpc("admin_quitar_perfil_admin",{pid:d.parm,uid:d.pau});if(r.error){alert(r.error.message);return}return admTab()}
   if(d.uh){adm.uh=(adm.ul||[]).find(u=>u.id===d.uh)||null;if(adm.uh)abreCapa(()=>{adm.uh=null;admTab()});return admTab()}
   if(d.uback!==undefined){if(adm.uh&&capas.length)return cierraCapa();adm.uh=null;return admTab()}
   if(d.udel){const u=(adm.ul||[]).find(x=>x.id===d.udel)||adm.uh; const n=u?u.nombre+" ("+u.email+")":"este usuario";
@@ -1503,7 +1530,7 @@ const estTag=e=>`<span class="ctag">${EST_CLS[e]||""} ${esc(e)}</span>`;
 // --- Paneles flotantes: AGENDA SERVICIOS (citas y transporte) y consulta de stock (círculo de búsqueda) ---
 let agTab="agenda",agSel=null,cqSel=null;
 const adaptaCom=(t,tipo="agenda")=>({id:t.id,tipo,nombre:t.nombre,giro:t.giro,horario:t.horario,dias_abiertos:t.dias,zona:t.direccion,descripcion:t.desc,foto_url:t.foto,logo_url:t.logo,whatsapp:t.whatsapp,telefono:t.whatsapp});
-const svCard=p=>`<div class="card"><div class="foto-w"><div class="foto" ${p.foto_url?`style="background-image:url('${esc(p.foto_url)}')"`:""}>${p.foto_url?"":SV[p.tipo].e}</div>${p.logo_url?`<img class="logo-c" src="${esc(p.logo_url)}" alt="" loading="lazy">`:""}</div><div class="in${p.logo_url?" cl":""}">
+const svCard=p=>`<div class="card"><div class="foto-w"><div class="foto" ${p.foto_url?`data-bg="${esc(p.foto_url)}"`:""}>${p.foto_url?"":SV[p.tipo].e}</div>${p.logo_url?`<img class="logo-c" src="${esc(p.logo_url)}" alt="" loading="lazy">`:""}</div><div class="in${p.logo_url?" cl":""}">
   <b>${esc(p.nombre)}</b><span class="suave">${esc(p.giro||"")}${p.horario?" · "+esc(p.horario):""}</span>
   ${p.zona?`<span class="suave">📍 ${esc(p.zona)}</span>`:""}${p.tipo==="transporte"&&p.vehiculo?`<span class="suave">🚗 ${esc(p.vehiculo)}</span>`:""}${p.dias_abiertos?`<span class="suave">📅 ${diasTxt(p.dias_abiertos)}</span>`:""}
   ${p.tipo==="transporte"?`<button class="btn" data-svopen="${p.id}" data-svt="transporte">🚕 Cotizar / Agendar viaje</button>`
@@ -1553,7 +1580,7 @@ async function svDetalle(root,id,volver,cod){
   if(!p){root.innerHTML=`<p>No encontramos este servicio.</p><button class="btn" data-svback>Volver</button>`;root.querySelector("[data-svback]").onclick=volver;return}
   const hoy=hoyISO();
   const cab=`<div class="svph"><button class="btn sec mini" data-svback>← Volver</button><button class="x" data-svclose="${cod}" aria-label="Cerrar">×</button></div>
-   <div class="perfil" style="margin-top:10px"><div class="foto" ${p.foto_url?`style="background-image:url('${esc(p.foto_url)}')"`:""}>${p.foto_url?"":SV[p.tipo].e}</div><div class="in"><h2 style="margin:0">${esc(p.nombre)}</h2>
+   <div class="perfil" style="margin-top:10px"><div class="foto" ${p.foto_url?`data-bg="${esc(p.foto_url)}"`:""}>${p.foto_url?"":SV[p.tipo].e}</div><div class="in"><h2 style="margin:0">${esc(p.nombre)}</h2>
    <span class="suave">${esc(p.giro||"")}${p.horario?" · "+esc(p.horario):""}</span>${p.dias_abiertos?`<span class="suave">📅 ${diasTxt(p.dias_abiertos)}</span>`:""}${p.zona?`<span class="suave">📍 ${esc(p.zona)}</span>`:""}
    ${p.descripcion?`<p style="margin:4px 0 0">${esc(p.descripcion)}</p>`:""}
 </div></div>`;
@@ -1660,7 +1687,7 @@ async function vistaMisServicios(){
    <h3>Citas</h3>`+(C.map(x=>`<div class="item"><div class="in"><b>${esc(nomPerfil(x))}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>
     ${x.estado==="Reprogramada"?`<span class="aviso" style="padding:8px">🔁 El prestador propone esta nueva fecha y hora.</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <span class="svbtns">${x.estado==="Reprogramada"?`<button class="btn mini" data-svok="${x.id}">Aceptar nueva hora</button>`:""}${["Solicitada","Confirmada","Reprogramada"].includes(x.estado)?`<button class="btn mini sec" data-svcan="${x.id}">Cancelar cita</button>`:""}${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no tienes citas.</p>")+
-   `<h3>Consultas de stock</h3>`+(Q.map(x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(nomPerfil(x))}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
+   `<h3>Consultas de stock</h3>`+(Q.map(x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" data-bg="${esc(x.foto_url)}"></div>`:""}<div class="in"><b>${esc(nomPerfil(x))}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
     ${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     ${cqCierre(x)==="sin_respuesta"?`<span class="suave">⏱️ Se cerró porque el comercio no respondió en 1 hora. Puedes enviar una nueva consulta.</span>`:""}${x.oferta_pedido_id?`<span class="suave">✅ Ya lo compraste. <a href="#/pedidos">Ver en Mis pedidos</a></span>`:x.estado==="Hay"&&x.oferta_precio?`<span><b>🛒 ${esc(x.oferta_nombre)}</b> · ${din(Number(x.oferta_precio))}${x.oferta_max>1?" · hasta "+x.oferta_max+" piezas":""}</span><span class="svbtns"><a class="btn mini" href="#/compra/${x.id}">🛒 Comprar ahora</a></span>`:""}<span class="svbtns">${wa(x.servicios_perfiles)}</span></div></div>`).join("")||"<p>Aún no has enviado consultas.</p>")+
    `<h3>Viajes y cotizaciones</h3>`+(V.map(x=>`<div class="item"><div class="in"><b>${esc((x.servicios_perfiles||{}).nombre||"")}</b>${estTag(x.estado)}<span>${x.tipo==="agenda"?"Viaje agendado":"Cotización"}: ${esc(x.origen)} → ${esc(x.destino)}</span>
@@ -1682,7 +1709,7 @@ const cqCierre=c=>{const h=t=>(Date.now()-new Date(t).getTime())/36e5;
   if(c.estado==="Hay"&&h(c.respondida_en||c.creado)>24)return "respondida";if((c.estado==="Pendiente"||c.estado==="Consultar")&&h(c.creado)>1)return "sin_respuesta";return null};
 const CQ_CIERRE={comprada:"✅ El cliente lo compró con el enlace de compra.",enlace:"🛒 Se envió enlace de compra al cliente.",no_hay:"Respondida: no hay.",respondida:"Respondida: sí hay (sin enlace de compra).",sin_respuesta:"⏱️ Cerrada automáticamente: quedó sin respuesta final en 1 hora."};
 // Consultas de stock (las responde el comercio; se muestran en Mi panel)
-const consHTML=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" style="background-image:url('${esc(x.foto_url)}')"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
+const consHTML=x=>`<div class="item">${x.foto_url?`<div class="foto" data-ver="${esc(x.foto_url)}" data-nom="" data-bg="${esc(x.foto_url)}"></div>`:""}<div class="in"><b>${esc(x.cliente_nombre||"Cliente")}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span>
     ${x.cliente_tel?`<span class="suave">📞 <a href="${telUrl(x.cliente_tel)}">${esc(x.cliente_tel)}</a></span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}${x.respuesta?`<span class="suave">💬 ${esc(x.respuesta)}</span>`:""}
     <label>Precio (opcional)<input id="cqP_${x.id}" value="${esc(x.precio||"")}" placeholder="$250"></label><label>Mensaje (opcional)<input id="cqM_${x.id}" value="${esc(x.respuesta||"")}" placeholder="Disponible en tienda, llega mañana..."></label>
     <span class="svbtns"><button class="btn mini" data-cqr="${x.id}|Hay">Sí hay</button><button class="btn mini sec" data-cqr="${x.id}|No hay">No hay</button><button class="btn mini sec" data-cqr="${x.id}|Consultar">Responder</button></span>${ofertaHTML(x)}</div></div>`;
@@ -1694,7 +1721,7 @@ const ofertaHTML=x=>x.estado!=="Hay"?"":x.oferta_pedido_id?`<span class="aviso" 
       <button class="btn mini" data-cqof="${x.id}">🛒 Crear enlace de compra</button></span>`;
 async function vistaPanelSrv(){
   if(!sesion||!db){location.hash="#/cuenta";return}
-  $("vista").innerHTML="<p>Cargando...</p>";await cargarRol();
+  if(!rolOK)$("vista").innerHTML="<p>Cargando...</p>";await rolFresco();
   const agCom=misCom.filter(c=>c.ofrece_citas||c.ofrece_consulta);
   if(!misSrv.length&&!agCom.length){location.hash=esAdmin?"#/admin":"#/panel";return}
   const idsP=misSrv.map(x=>x.id),ids=[...idsP,...agCom.map(c=>c.id)];
@@ -1779,7 +1806,7 @@ document.addEventListener("click",async e=>{
 // --- Tiempo real: avisos dentro de la app (además de las notificaciones push) ---
 const escribiendo=()=>{const a=document.activeElement;return !!(a&&$("vista").contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))};
 const reCons=()=>location.hash==="#/panel"?vistaPanel():vistaPanelSrv();
-const refrescaSrv=()=>{const h=location.hash;if(h==="#/mis-servicios")vistaMisServicios();else if(h==="#/panel-servicios"&&!escribiendo())vistaPanelSrv();else if(h==="#/panel"&&!escribiendo()&&!formAbierto())vistaPanel()};
+const refrescaSrv=()=>{contarLuego();const h=location.hash;if(h==="#/mis-servicios")vistaMisServicios();else if(h==="#/panel-servicios"&&!escribiendo())vistaPanelSrv();else if(h==="#/panel"&&!escribiendo()&&!formAbierto())vistaPanel()};
 function escucharServicios(){
   if(!db||canalSrv||!sesion||!sesion.id)return;
   const ch=db.channel("servicios-"+sesion.id);
@@ -1789,6 +1816,58 @@ function escucharServicios(){
     else if(p.eventType==="UPDATE"&&n.cliente_id===sesion.id&&n.cambio_por!==sesion.id&&(n.estado||"")!=="Pendiente"){sonido();aviso((esV?"🚕 Tu viaje: ":esCita?"📅 Tu cita: ":"🔎 Tu consulta: ")+n.estado)}
     refrescaSrv()}));
   canalSrv=ch.subscribe();
+}
+
+// ---- v217: el número del carrito también cuenta consultas, citas y viajes en curso ----
+// Cliente: sus solicitudes abiertas. Comercio o transportista: lo que le llegó y falta responder.
+let srvN=0,srvT=null;
+const prodN=()=>Object.values(carrito.items||{}).reduce((a,b)=>a+b,0);
+function pintaN(){const el=$("n");if(el)el.textContent=prodN()+srvN}
+async function contarSolic(){
+  if(!db||!sesion||!sesion.id){if(srvN){srvN=0;pintaN()}return}
+  try{const me=sesion.id,hoy=new Date().toISOString().slice(0,10),h1=new Date(Date.now()-36e5).toISOString(),hd={count:"exact",head:true};
+    const mios=[...misCom.map(c=>c.id),...misSrv.map(x=>x.id)];
+    const qs=[db.from("citas").select("id",hd).eq("cliente_id",me).in("estado",["Solicitada","Confirmada","Reprogramada"]).gte("fecha",hoy),
+      db.from("viajes").select("id",hd).eq("cliente_id",me).in("estado",["Solicitada","Cotizada","Confirmada"]),
+      db.from("consultas_stock").select("estado,creado,respondida_en,oferta_precio,oferta_pedido_id").eq("cliente_id",me).gte("creado",new Date(Date.now()-2*864e5).toISOString()).limit(60)];
+    if(mios.length)qs.push(db.from("citas").select("id",hd).in("perfil_id",mios).eq("estado","Solicitada").neq("cliente_id",me),
+      db.from("viajes").select("id",hd).in("perfil_id",mios).eq("estado","Solicitada").neq("cliente_id",me),
+      db.from("consultas_stock").select("id",hd).in("perfil_id",mios).in("estado",["Pendiente","Consultar"]).gte("creado",h1).neq("cliente_id",me));
+    const R=await Promise.all(qs);if(R.some(r=>r.error))return;
+    const k=i=>R[i]&&Number(R[i].count)||0,n=k(0)+k(1)+(R[2].data||[]).filter(c=>!cqCierre(c)).length+k(3)+k(4)+k(5);
+    if(n!==srvN){srvN=n;pintaN();notaSolic()}}catch(e){}
+}
+const contarLuego=()=>{clearTimeout(srvT);srvT=setTimeout(contarSolic,400)};
+function notaSolic(){const c=$("cCarrito");if(!c)return;let el=$("carSol");
+  if(!srvN){if(el)el.remove();return}
+  const staff=misCom.length||misSrv.length,txt=`📋 Tienes <b>${srvN}</b> ${srvN===1?"consulta, cita o viaje en curso":"consultas, citas o viajes en curso"}.`;
+  if(!el){el=document.createElement("div");el.id="carSol";el.className="aviso";el.style.cssText="padding:10px;margin:6px 0 10px";const x=c.querySelector(".x");x?x.after(el):c.prepend(el)}
+  el.innerHTML=`${txt} <a href="#/mis-servicios" data-carsol>Ver mis consultas y citas</a>${staff?` · <a href="#/panel-servicios" data-carsol>Atender en mi panel</a>`:""}`}
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-carsol]"))setTimeout(()=>cierraTodasCapas(),0)});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)contarLuego()});
+setInterval(()=>{if(!document.hidden)contarSolic()},90000);
+
+// ---- v217: Historial general del cliente (solo para ver) ----
+async function vistaHistorial(){
+  if(!sesion||!db){location.hash="#/cuenta";return}
+  $("vista").innerHTML=tabCli("his")+`<h2>Mi historial</h2><p class="suave">Cargando…</p>`;
+  const me=sesion.id,[pe,ci,cq,vj]=await Promise.all([
+    db.from("pedidos").select("*, comercios(nombre)").eq("comprador_id",me).in("estado",["Entregado","Cancelado"]).order("creado",{ascending:false}).limit(100),
+    db.from("citas").select("*, comercios(nombre)").eq("cliente_id",me).order("fecha",{ascending:false}).limit(100),
+    db.from("consultas_stock").select("*, comercios(nombre)").eq("cliente_id",me).order("creado",{ascending:false}).limit(100),
+    db.from("viajes").select("*, servicios_perfiles(nombre)").eq("cliente_id",me).in("estado",["Completada","Cancelada","Rechazada"]).order("creado",{ascending:false}).limit(100)]);
+  if(location.hash!=="#/historial")return;
+  const hoy=new Date().toISOString().slice(0,10);
+  const P=pe.data||[],C=(ci.data||[]).filter(x=>["Completada","Cancelada","Rechazada"].includes(x.estado)||x.fecha<hoy),Q=(cq.data||[]).filter(x=>!!cqCierre(x)),V=vj.data||[];
+  const gasto=P.filter(p=>p.estado==="Entregado").reduce((a,p)=>a+Number(p.total),0);
+  const vac=t=>`<p class="vacio">${t}</p>`,nom=x=>(x.comercios||{}).nombre||(x.servicios_perfiles||{}).nombre||(tienda(x.perfil_id)||{}).nombre||"Comercio";
+  const lineaP=p=>`<div class="item"><div class="in"><b>${esc(nom(p))}</b>${estTag(p.estado)}<span class="suave">${new Date(p.creado).toLocaleString("es-MX")}</span><span>${(p.lineas||[]).map(esc).join("<br>")}</span><span class="tot">${din(Number(p.total))}</span><span class="suave">${p.entrega==="domicilio"?"A domicilio":"Recogió en tienda"} · ${NPAGO[p.pago]||esc(p.pago)}</span></div></div>`;
+  $("vista").innerHTML=tabCli("his")+`<h2>Mi historial</h2><p class="suave">Todo lo que ya terminó: pedidos entregados o cancelados, citas pasadas, consultas cerradas y viajes terminados. Solo para ver; si hay un error, escribe a la administración de Valle GO.</p>
+   <div class="resumen"><span><b>${P.length}</b> ${P.length===1?"pedido":"pedidos"}</span><span><b>${C.length}</b> ${C.length===1?"cita":"citas"}</span><span><b>${Q.length}</b> ${Q.length===1?"consulta":"consultas"}</span><span><b>${V.length}</b> ${V.length===1?"viaje":"viajes"}</span><span>${din(gasto)} en compras entregadas</span></div>
+   <h3 class="sec">🛍️ Productos (pedidos)</h3>${P.map(lineaP).join("")||vac("Aún no tienes pedidos terminados.")}
+   <h3 class="sec">📅 Citas y servicios</h3>${C.map(x=>`<div class="item"><div class="in"><b>${esc(nom(x))}</b>${estTag(x.estado)}<span>${esc(x.servicio_nombre||"Cita")}</span><span class="suave">📅 ${fMX(x.fecha)} · ${esc(x.hora)}</span>${Number(x.monto)>0?`<span class="tot">${din(Number(x.monto))}</span>`:""}</div></div>`).join("")||vac("Aún no tienes citas pasadas.")}
+   <h3 class="sec">🔎 Consultas de stock</h3>${Q.map(x=>`<div class="item"><div class="in"><b>${esc(nom(x))}</b>${estTag(x.estado)}<span>${esc(x.texto)}</span><span class="suave">${new Date(x.creado).toLocaleString("es-MX")} · ${({comprada:"✅ Lo compraste con el enlace",enlace:"🛒 Te enviaron enlace de compra",no_hay:"No había",respondida:"Sí había",sin_respuesta:"⏱️ Sin respuesta en 1 hora"})[cqCierre(x)]||"Cerrada"}</span></div></div>`).join("")||vac("Aún no tienes consultas cerradas.")}
+   <h3 class="sec">🚕 Viajes</h3>${V.map(x=>`<div class="item"><div class="in"><b>${esc(nom(x))}</b>${estTag(x.estado)}<span>${esc(x.origen)} → ${esc(x.destino)}</span>${x.fecha?`<span class="suave">📅 ${fMX(x.fecha)}${x.hora?" · "+esc(x.hora):""}</span>`:""}${x.precio?`<span><b>Precio:</b> ${esc(x.precio)}</span>`:""}</div></div>`).join("")||vac("Aún no tienes viajes terminados.")}`;
 }
 
 // ---------- Vistas ----------
@@ -1803,6 +1882,7 @@ function ruta(){
   if(r==="admin")return vistaAdmin();
   if(r==="pedidos")return vistaPedidos();
   if(r==="mis-servicios")return vistaMisServicios();
+  if(r==="historial")return vistaHistorial();
   if(r==="instalar")return vistaInstalar();
   if(r==="compra")return vistaCompra(id);
   if(r==="panel-servicios")return vistaPanelSrv();
@@ -2019,7 +2099,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&sesion&&s
 if("serviceWorker"in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.tipo==="renovarPush"&&sesion&&sesion.id)notifAuto()});
 window.addEventListener("focus",sondeo);
 const PASOS=["Enviado al comercio","Preparando","En camino","Entregado"];
-const tabCli=k=>`<div class="tabcli" role="tablist"><a href="#/pedidos" role="tab" class="${k==="ped"?"on":""}" aria-selected="${k==="ped"}">🛍️ Mis pedidos</a><a href="#/mis-servicios" role="tab" class="${k==="sol"?"on":""}" aria-selected="${k==="sol"}">🗂️ Consultas y citas</a></div>`;
+const tabCli=k=>`<div class="tabcli" role="tablist"><a href="#/pedidos" role="tab" class="${k==="ped"?"on":""}" aria-selected="${k==="ped"}">🛍️ Mis pedidos</a><a href="#/mis-servicios" role="tab" class="${k==="sol"?"on":""}" aria-selected="${k==="sol"}">🗂️ Consultas y citas</a><a href="#/historial" role="tab" class="${k==="his"?"on":""}" aria-selected="${k==="his"}">📜 Historial</a></div>`;
 async function vistaPedidos(silencio){
   if(!sesion){location.hash="#/cuenta";return}
   let ps=$$("pedidos",[]).filter(p=>p.email===sesion.email).reverse();
@@ -2123,14 +2203,15 @@ function actualizaLinea(mid,q){
   const b=[...c.querySelectorAll("[data-menos]")].find(x=>x.dataset.menos===mid);if(!b)return false;
   const L=b.closest(".linea");if(!L)return false;
   if(q<=0)L.remove();else{const n=L.querySelector(".q b");if(!n)return false;n.textContent=q}
-  $("n").textContent=Object.values(carrito.items).reduce((a,v)=>a+v,0);
+  pintaN();
   $("csub").textContent=din(subtotal(t));$("entrega").onchange();
   return true}
 function gcar(){$s("carrito",carrito)}
 function subtotal(t){return Object.entries(carrito.items).reduce((s,[id,c])=>{const m=itemCar(t,id);return s+(m?m.precio*c:0)},0)}
-function pintaCarrito(){
+function pintaCarrito(){pintaCarrito0();notaSolic()}
+function pintaCarrito0(){
   const t=tienda(carrito.tienda), ids=Object.keys(carrito.items);
-  $("n").textContent=Object.values(carrito.items).reduce((a,b)=>a+b,0);
+  pintaN();
   if(!t){$("cCarrito").innerHTML=`<button class="x" data-cerrar aria-label="Cerrar carrito">×</button><h2>Tu carrito</h2><p>Está vacío. Elige un comercio y agrega productos.</p>`;return}
   if(!t.menu){   // el menú de esta tienda aún no está en el teléfono: se descarga y se vuelve a pintar
     if(db&&!menuPend[t.id]&&reintento(t))cargarMenu(t.id).then(c=>{if(c===null)t._mErr=Date.now();pintaCarrito()});
@@ -2324,7 +2405,7 @@ document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest
     else{el.style.transition="transform .2s,opacity .2s";el.style.transform="translateY(-60px)";el.style.opacity=0}});
   addEventListener("touchcancel",()=>{y0=null;el.style.opacity=0});
 })();
-const BUILD="valle-go-v216";
+const BUILD="valle-go-v217";
 // Compara la versión de esta pantalla con la publicada (sw.js sin caché). Si es distinta, se recarga sola: rápido y sin depender del service worker.
 async function revisaVersion(){
   try{

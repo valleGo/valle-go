@@ -38,7 +38,8 @@ async function servicios(p, res) {
   const [per] = await sb(`${p.table === "viajes" ? "servicios_perfiles" : "comercios"}?id=eq.${encodeURIComponent(r.perfil_id)}&select=nombre,dueno_id`);   // citas y consultas son de comercios (planes Básico y Simple)
   if (!per) return res.status(200).json({ ok: true, omitido: true });
   const admins = (await sb("admins?select=user_id")).map(a => a.user_id);
-  const dueño = per.dueno_id ? [per.dueno_id] : admins;   // si aún no tiene dueño asignado, avisa a los administradores
+  const extra = (await sb(`perfil_admins?perfil_id=eq.${encodeURIComponent(r.perfil_id)}&select=user_id`).catch(() => [])).map(x => x.user_id);   // v217: administradores del comercio
+  const dueño = per.dueno_id || extra.length ? [...new Set([per.dueno_id, ...extra].filter(Boolean))] : admins;   // si aún no tiene dueño asignado, avisa a los administradores
   let ids, titulo, cuerpo, url, tag = r.id + (p.type === "UPDATE" ? r.estado : "");
   if (p.table === "citas") {
     const cuando = `${fechaMX(r.fecha)} a las ${r.hora}`;
@@ -103,7 +104,8 @@ module.exports = async (req, res) => {
     let prefijo, ids, cuerpoX, urlX;
     const [com] = await sb(`comercios?id=eq.${encodeURIComponent(ped.comercio_id)}&select=nombre,dueno_id`);
     const admins = await sb("admins?select=user_id");
-    const staff = [...new Set([com && com.dueno_id, ...admins.map(a => a.user_id)].filter(Boolean))];
+    const extra = (await sb(`perfil_admins?perfil_id=eq.${encodeURIComponent(ped.comercio_id)}&select=user_id`).catch(() => [])).map(x => x.user_id);   // v217
+    const staff = [...new Set([com && com.dueno_id, ...extra, ...admins.map(a => a.user_id)].filter(Boolean))];
     if (p.type === "INSERT") { prefijo = ped.pago === "en_linea" ? "🛎️ Nuevo pedido (en línea, pago pendiente)" : "🛎️ Nuevo pedido"; ids = staff; }
     else if (p.type === "UPDATE" && ped.pago === "en_linea" && ped.estado_pago === "Pagado" && old.estado_pago !== "Pagado") { prefijo = "💳 Pedido pagado"; ids = staff; }
     else if (p.type === "UPDATE" && ped.recibido_en && !old.recibido_en) { prefijo = "✅ Cliente confirmó recibido"; ids = staff; }
